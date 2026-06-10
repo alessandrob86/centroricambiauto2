@@ -1,0 +1,111 @@
+/* ============================================================
+   Centro Ricambi Auto — TYPOGRAPHY TOKENS
+   Typeface: Spartan MB (geometric sans, League Spartan lineage).
+   Voice: ALL-CAPS heavy weights for logo/headlines, regular for body.
+   ============================================================ */
+:root {
+  /* Families */
+  --font-brand: "Spartan MB", "League Spartan", system-ui, sans-serif;
+  --font-body:  "Spartan MB", "League Spartan", system-ui, sans-serif;
+
+  /* Weights (mapped to the 7 Spartan MB cuts shipped) */
+  --fw-thin:      100;
+  --fw-light:     300;
+  --fw-regular:   400;
+  --fw-semibold:  600;
+  --fw-bold:      700;
+  --fw-extrabold: 800;
+  --fw-black:     900;
+
+  /* Type scale — 1.250 major-third, base 16px.
+     Geometric caps headlines run tight & heavy. */
+  --fs-2xs:  0.6875rem;  /* 11px — micro labels */
+  --fs-xs:   0.75rem;    /* 12px — meta, eyebrow */
+  --fs-sm:   0.875rem;   /* 14px — secondary text */
+  --fs-base: 1rem;       /* 16px — body */
+  --fs-md:   1.125rem;   /* 18px — lead body */
+  --fs-lg:   1.375rem;   /* 22px */
+  --fs-xl:   1.75rem;    /* 28px */
+  --fs-2xl:  2.25rem;    /* 36px */
+  --fs-3xl:  3rem;       /* 48px */
+  --fs-4xl:  3.75rem;    /* 60px */
+  --fs-5xl:  4.75rem;    /* 76px — hero display */
+
+  /* Line heights */
+  --lh-tight:   1.02;
+  --lh-snug:    1.15;
+  --lh-normal:  1.55;
+  --lh-relaxed: 1.7;
+
+  /* Letter spacing — geometric caps need air; lowercase body neutral */
+  --ls-caps:    0.04em;
+  --ls-eyebrow: 0.16em;
+  --ls-tight:   -0.01em;
+  --ls-normal:  0;
+}
+
+/* ---- Reusable text roles ---- */
+.cra-eyebrow {
+  font-family: var(--font-brand);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+.cra-display {
+  font-family: var(--font-brand);
+  font-weight: var(--fw-black);
+  font-size: var(--fs-5xl);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-strong);
+}
+.cra-h1 {
+  font-family: var(--font-brand);
+  font-weight: var(--fw-extrabold);
+  font-size: var(--fs-3xl);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-strong);
+}
+.cra-h2 {
+  font-family: var(--font-brand);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-strong);
+}
+.cra-h3 {
+  font-family: var(--font-brand);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-snug);
+  color: var(--text-strong);
+}
+.cra-lead {
+  font-family: var(--font-body);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  color: var(--text-body);
+}
+.cra-body {
+  font-family: var(--font-body);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--text-body);
+}
+.cra-meta {
+  font-family: var(--font-body);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

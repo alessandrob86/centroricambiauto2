@@ -1,0 +1,87 @@
+/* ============================================================
+   Centro Ricambi Auto — COLOR TOKENS
+   Source of truth: official logo guide (cra-logo-guida.pdf)
+   Gold   #fdc543  · C0  M25 Y80 K0
+   Char.  #272d2b  · C75 M60 Y60 K70
+   Red    #bd3432  · C20 M90 Y80 K7
+   ============================================================ */
+:root {
+  /* ---- Brand core ---- */
+  --cra-gold:        #fdc543;   /* primary accent — the "C" in the gear */
+  --cra-red:         #bd3432;   /* energy / call-to-action / the play wedge */
+  --cra-charcoal:    #272d2b;   /* the gear, primary ink, dark surfaces */
+  --cra-white:       #ffffff;
+
+  /* ---- Gold scale ---- */
+  --gold-50:  #fff8e6;
+  --gold-100: #fdedbf;
+  --gold-200: #fddf8c;
+  --gold-300: #fdd163;
+  --gold-400: #fdc543;   /* brand gold */
+  --gold-500: #f0b21f;
+  --gold-600: #cf9410;
+  --gold-700: #9e700c;
+
+  /* ---- Red scale ---- */
+  --red-50:  #fbeceb;
+  --red-100: #f3c9c8;
+  --red-200: #e69b99;
+  --red-300: #d56b69;
+  --red-400: #c84846;
+  --red-500: #bd3432;   /* brand red */
+  --red-600: #a02927;
+  --red-700: #7a1f1d;
+
+  /* ---- Charcoal / neutral scale (cool, warm-grey leaning) ---- */
+  --char-900: #1b201f;
+  --char-800: #272d2b;   /* brand charcoal */
+  --char-700: #353c3a;
+  --char-600: #4b5350;
+  --char-500: #6b736f;
+  --char-400: #939b97;
+  --char-300: #c2c8c5;
+  --char-200: #dfe3e1;
+  --char-100: #eef1ef;
+  --char-50:  #f6f8f7;
+
+  /* ============================================================
+     SEMANTIC ALIASES — prefer these in components / layouts
+     ============================================================ */
+
+  /* Text */
+  --text-strong:    var(--char-800);   /* headings, primary copy */
+  --text-body:      var(--char-700);   /* default running text */
+  --text-muted:     var(--char-500);   /* captions, meta, labels */
+  --text-on-dark:   var(--cra-white);
+  --text-on-gold:   var(--char-900);   /* dark ink reads best on gold */
+  --text-accent:    var(--cra-red);    /* taglines, emphasis */
+
+  /* Surfaces */
+  --surface-page:   var(--cra-white);
+  --surface-subtle: var(--char-50);
+  --surface-card:   var(--cra-white);
+  --surface-dark:   var(--char-800);   /* footer, hero overlays, nav */
+  --surface-darker: var(--char-900);
+
+  /* Brand actions */
+  --action-primary:        var(--cra-red);
+  --action-primary-hover:  var(--red-600);
+  --action-primary-press:  var(--red-700);
+  --action-accent:         var(--cra-gold);
+  --action-accent-hover:   var(--gold-500);
+  --action-accent-press:   var(--gold-600);
+
+  /* Borders & dividers */
+  --border-subtle:  var(--char-200);
+  --border-strong:  var(--char-300);
+  --border-dark:    var(--char-700);
+
+  /* Status (derived to fit the warm/industrial palette) */
+  --status-success: #2f8f57;
+  --status-warning: var(--gold-500);
+  --status-danger:  var(--cra-red);
+  --status-info:    #3a6ea5;
+
+  /* Focus ring */
+  --focus-ring: color-mix(in srgb, var(--cra-gold) 70%, transparent);
+}

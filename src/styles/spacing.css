@@ -1,0 +1,56 @@
+/* ============================================================
+   Centro Ricambi Auto — SPACING, RADII, SHADOWS, LAYOUT
+   Industrial / mechanical feel: tight, squared, confident.
+   ============================================================ */
+:root {
+  /* Spacing — 4px base grid */
+  --space-0:  0;
+  --space-1:  0.25rem;   /* 4 */
+  --space-2:  0.5rem;    /* 8 */
+  --space-3:  0.75rem;   /* 12 */
+  --space-4:  1rem;      /* 16 */
+  --space-5:  1.5rem;    /* 24 */
+  --space-6:  2rem;      /* 32 */
+  --space-7:  2.5rem;    /* 40 */
+  --space-8:  3rem;      /* 48 */
+  --space-9:  4rem;      /* 64 */
+  --space-10: 5rem;      /* 80 */
+  --space-11: 6rem;      /* 96 */
+  --space-12: 8rem;      /* 128 */
+
+  /* Radii — restrained. The brand is squared/mechanical;
+     gears and play-wedges are sharp. Keep corners crisp. */
+  --radius-none: 0;
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   10px;
+  --radius-pill: 999px;
+
+  /* Borders */
+  --border-w:      1px;
+  --border-w-2:    2px;
+  --border-w-bold: 3px;
+
+  /* Shadows — neutral, grounded (charcoal tint, not blue) */
+  --shadow-xs: 0 1px 2px rgba(27, 32, 31, 0.08);
+  --shadow-sm: 0 1px 3px rgba(27, 32, 31, 0.12), 0 1px 2px rgba(27, 32, 31, 0.06);
+  --shadow-md: 0 4px 10px rgba(27, 32, 31, 0.10), 0 2px 4px rgba(27, 32, 31, 0.06);
+  --shadow-lg: 0 12px 28px rgba(27, 32, 31, 0.14), 0 4px 10px rgba(27, 32, 31, 0.08);
+  --shadow-xl: 0 24px 50px rgba(27, 32, 31, 0.18);
+
+  /* Layout */
+  --container-max: 1200px;
+  --container-pad: var(--space-5);
+  --header-h: 76px;
+
+  /* Motion — purposeful, mechanical. No bounces. */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast:  120ms;
+  --dur-base:  200ms;
+  --dur-slow:  320ms;
+
+  /* Accent stripe — the brand's signature red/gold key line */
+  --keyline: linear-gradient(90deg, var(--cra-red) 0 60%, var(--cra-gold) 60% 100%);
+}

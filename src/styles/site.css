@@ -1,0 +1,97 @@
+/* ============================================================
+   Centro Ricambi Auto — global site styles & animations.
+   Ported from the design-system website kit (index.html).
+   ============================================================ */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+html, body { margin: 0; }
+body { font-family: var(--font-body); color: var(--text-body); background: var(--surface-page); }
+a { color: var(--cra-red); }
+::selection { background: var(--cra-gold); color: var(--char-900); }
+
+/* --- Hero entrance (base style = visible; animate FROM hidden, gated on .hero-play) --- */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-play .hero-line { animation: heroUp 720ms var(--ease-out) backwards; }
+  @keyframes heroUp {
+    from { opacity: 0; transform: translateY(42px); }
+  }
+}
+
+/* --- Hero scroll cue --- */
+.hero-scroll-cue { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.hero-scroll-track { width: 22px; height: 36px; border: 2px solid var(--char-600); border-radius: 12px; display: flex; justify-content: center; padding-top: 6px; }
+.hero-scroll-dot { width: 4px; height: 8px; border-radius: 2px; background: var(--cra-gold); }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-scroll-dot { animation: cueSlide 1.8s var(--ease-standard) infinite; }
+  @keyframes cueSlide {
+    0% { transform: translateY(0); opacity: 1; }
+    60% { transform: translateY(12px); opacity: 0; }
+    61% { transform: translateY(0); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+}
+
+/* --- Anchor flash (footer deep-links highlight the target card) --- */
+.anchor-flash { animation: anchorFlash 1.4s var(--ease-standard, ease); border-radius: var(--radius-md); }
+@keyframes anchorFlash {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(189,52,50,0); }
+  18% { box-shadow: 0 0 0 4px rgba(189,52,50,0.55); }
+  60% { box-shadow: 0 0 0 4px rgba(189,52,50,0.25); }
+}
+
+/* --- Brands marquee --- */
+.brand-marquee { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.brand-track { display: flex; width: max-content; }
+@media (prefers-reduced-motion: no-preference) {
+  .brand-track { animation: marquee 32s linear infinite; }
+  @keyframes marquee { to { transform: translateX(-50%); } }
+}
+
+/* --- Chrome CTA (animated metallic border) --- */
+.chrome-btn { position: relative; border-radius: var(--radius-sm); padding: 2px; overflow: hidden; isolation: isolate; }
+.chrome-btn::before {
+  content: ""; position: absolute; inset: -170%; z-index: -1;
+  background: conic-gradient(from 0deg,
+    #6e7678, #eef2f2 10%, #7c8486 20%, var(--cra-gold) 30%,
+    #f7fafa 44%, #6e7678 54%, #ccd4d4 68%, var(--cra-gold) 80%,
+    #eef2f2 90%, #6e7678);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .chrome-btn::before { animation: chromeSpin 3.8s linear infinite; }
+  @keyframes chromeSpin { to { transform: rotate(360deg); } }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .chrome-btn-inner svg { transition: transform 700ms var(--ease-out); }
+  .chrome-btn:hover .chrome-btn-inner svg { transform: rotate(180deg); }
+}
+.chrome-btn-inner {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, var(--char-800), var(--char-900));
+  border-radius: calc(var(--radius-sm) - 1px);
+  color: var(--cra-white); font-family: var(--font-brand); font-weight: var(--fw-bold);
+  text-transform: uppercase; letter-spacing: var(--ls-caps); line-height: 1; white-space: nowrap;
+}
+
+/* --- Pagine legali: armonizza il testo incorporato da iubenda col brand --- */
+.legal-prose, .legal-prose p, .legal-prose li, .legal-prose div {
+  font-family: var(--font-body) !important;
+  font-size: var(--fs-sm) !important;
+  line-height: var(--lh-normal) !important;
+  color: var(--text-body) !important;
+}
+.legal-prose h1, .legal-prose h2, .legal-prose h3, .legal-prose h4,
+.legal-prose strong, .legal-prose b {
+  font-family: var(--font-brand) !important;
+  color: var(--text-strong) !important;
+}
+.legal-prose h1 { font-size: var(--fs-xl) !important; }
+.legal-prose h2 { font-size: var(--fs-lg) !important; }
+.legal-prose h3, .legal-prose h4 { font-size: var(--fs-base) !important; }
+.legal-prose a { color: var(--cra-red) !important; }
+
+/* --- Leaflet map pin (brand mark) --- */
+.cra-pin { width: 44px; height: 44px; background: #fff; border-radius: 50%; border: 2px solid var(--cra-charcoal); box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: center; transition: transform var(--dur-base) var(--ease-out); }
+.cra-pin img { width: 28px; height: 28px; object-fit: contain; }
+.cra-pin:hover { transform: scale(1.12); }
+.leaflet-popup-content-wrapper { border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); }
+.leaflet-container { font-family: var(--font-body); }

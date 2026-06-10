@@ -1,0 +1,10 @@
+# dipendenze
+node_modules/
+
+# build (rigenerabile con: npm run build)
+dist/
+
+# varie
+*.log
+.DS_Store
+Thumbs.db
