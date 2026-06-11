@@ -88,20 +88,108 @@ function ServiceCard({ icon, title, desc, tag }) {
   );
 }
 
-/* "Solo grandi marchi" — marquee continuo. Lista completa dei marchi trattati
-   (fornita dall'azienda, giugno 2026). I wordmark testuali verranno sostituiti
-   dai loghi ufficiali man mano che sono disponibili in assets/brands/. */
+/* "Solo grandi marchi" — marquee continuo con i loghi ufficiali dei marchi
+   trattati (lista fornita dall'azienda, giugno 2026). I file vivono in
+   assets/brands/<slug>.svg|png: per i marchi senza logo pubblicato il chip
+   ricade automaticamente sul wordmark testuale — basta aggiungere il file
+   con lo slug giusto perché il logo compaia. */
 const BRANDS = [
-  "L2F", "BOSCH", "XENERGY", "VALEO", "LuK", "SACHS", "BREMBO", "TRW", "KÜHNER",
-  "INA", "LIQUI MOLY", "JAPANPARTS", "VARTA", "PURFLUX", "NGK", "MANN-FILTER",
-  "EXIDE", "FEBI", "GATES", "UNIGOM", "AKRON MALÒ", "OCAP", "GRAF", "SALERI",
-  "CONTITECH", "MOOG", "MEAT & DORIA", "BLUE PRINT", "MONROE", "DENSO", "UFI",
-  "JRONE", "KYB", "DAYCO", "ELRING", "FASANO", "OSRAM", "PHILIPS", "ECOTECHNICS",
-  "METELLI", "PIERBURG", "WIX FILTERS", "CASTROL", "FAG", "MIRAGLIO", "CORTECO",
-  "FAI", "VICTOR REINZ", "REPSOL", "GSP", "ASSO MARMITTE", "MTS", "IMASAF",
-  "SNR", "KRIOS", "CTR", "SELENIA", "WYNN'S", "BERU", "TEXTAR", "LPR",
-  "ERRECOM", "YUASA",
+  { name: "L2F", slug: "l2f" },
+  { name: "Bosch", slug: "bosch" },
+  { name: "Xenergy", slug: "xenergy", dark: true /* il brand pubblica solo la versione bianca */ },
+  { name: "Valeo", slug: "valeo" },
+  { name: "LuK", slug: "luk" },
+  { name: "Sachs", slug: "sachs" },
+  { name: "Brembo", slug: "brembo" },
+  { name: "TRW", slug: "trw" },
+  { name: "Kühner", slug: "kuhner" },
+  { name: "INA", slug: "ina" },
+  { name: "Liqui Moly", slug: "liqui-moly" },
+  { name: "Japanparts", slug: "japanparts" },
+  { name: "Varta", slug: "varta" },
+  { name: "Purflux", slug: "purflux" },
+  { name: "NGK", slug: "ngk" },
+  { name: "MANN-FILTER", slug: "mann-filter" },
+  { name: "Exide", slug: "exide" },
+  { name: "febi", slug: "febi" },
+  { name: "Gates", slug: "gates" },
+  { name: "Unigom", slug: "unigom" },
+  { name: "Akron Malò", slug: "akron-malo" },
+  { name: "OCAP", slug: "ocap" },
+  { name: "Graf", slug: "graf" },
+  { name: "Saleri", slug: "saleri" },
+  { name: "ContiTech", slug: "contitech" },
+  { name: "MOOG", slug: "moog" },
+  { name: "Meat & Doria", slug: "meat-doria" },
+  { name: "Blue Print", slug: "blue-print" },
+  { name: "Monroe", slug: "monroe" },
+  { name: "Denso", slug: "denso" },
+  { name: "UFI", slug: "ufi" },
+  { name: "Jrone", slug: "jrone" },
+  { name: "KYB", slug: "kyb" },
+  { name: "Dayco", slug: "dayco" },
+  { name: "Elring", slug: "elring" },
+  { name: "Fasano", slug: "fasano" },
+  { name: "Osram", slug: "osram" },
+  { name: "Philips", slug: "philips" },
+  { name: "Ecotechnics", slug: "ecotechnics" },
+  { name: "Metelli", slug: "metelli" },
+  { name: "Pierburg", slug: "pierburg" },
+  { name: "WIX Filters", slug: "wix" },
+  { name: "Castrol", slug: "castrol" },
+  { name: "FAG", slug: "fag" },
+  { name: "Miraglio", slug: "miraglio" },
+  { name: "Corteco", slug: "corteco" },
+  { name: "FAI", slug: "fai" },
+  { name: "Victor Reinz", slug: "victor-reinz" },
+  { name: "Repsol", slug: "repsol" },
+  { name: "GSP", slug: "gsp" },
+  { name: "Asso Marmitte", slug: "asso-marmitte" },
+  { name: "MTS", slug: "mts" },
+  { name: "Imasaf", slug: "imasaf" },
+  { name: "SNR", slug: "snr" },
+  { name: "Krios", slug: "krios" },
+  { name: "CTR", slug: "ctr" },
+  { name: "Selenia", slug: "selenia" },
+  { name: "Wynn's", slug: "wynns" },
+  { name: "Beru", slug: "beru" },
+  { name: "Textar", slug: "textar" },
+  { name: "LPR", slug: "lpr" },
+  { name: "Errecom", slug: "errecom" },
+  { name: "Yuasa", slug: "yuasa" },
 ];
+
+const BRAND_LOGOS = Object.fromEntries(
+  Object.entries(import.meta.glob("../assets/brands/*.{svg,png}", { eager: true, query: "?url", import: "default" }))
+    .map(([path, url]) => [path.match(/([^/]+)\.(svg|png)$/)[1], url])
+);
+
+function BrandChip({ b }) {
+  const src = BRAND_LOGOS[b.slug];
+  const base = {
+    display: "inline-flex", alignItems: "center", justifyContent: "center",
+    height: "56px", padding: "10px 20px", marginRight: "14px",
+    background: b.dark ? "var(--char-800)" : "var(--surface-card)",
+    border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)",
+    whiteSpace: "nowrap",
+  };
+  if (src) {
+    return (
+      <span style={base}>
+        <img src={src} alt={b.name} title={b.name} loading="lazy"
+          style={{ height: "30px", width: "auto", maxWidth: "130px", objectFit: "contain", display: "block" }} />
+      </span>
+    );
+  }
+  return (
+    <span style={{
+      ...base,
+      fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "var(--fs-md)",
+      letterSpacing: "0.06em", color: "var(--char-500)", textTransform: "uppercase",
+    }}>{b.name}</span>
+  );
+}
+
 export function Brands() {
   return (
     <section style={{ background: "var(--surface-subtle)", padding: "var(--space-8) 0", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>
@@ -112,14 +200,7 @@ export function Brands() {
       </Container>
       <div className="brand-marquee">
         <div className="brand-track">
-          {[...BRANDS, ...BRANDS].map((b, i) => (
-            <span key={b + i} style={{
-              fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "var(--fs-md)",
-              letterSpacing: "0.06em", color: "var(--char-500)", background: "var(--surface-card)",
-              border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)", padding: "10px 18px",
-              marginRight: "14px", whiteSpace: "nowrap",
-            }}>{b}</span>
-          ))}
+          {[...BRANDS, ...BRANDS].map((b, i) => <BrandChip key={b.slug + i} b={b} />)}
         </div>
       </div>
     </section>
