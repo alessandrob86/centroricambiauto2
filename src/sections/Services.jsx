@@ -192,6 +192,48 @@ function BrandChip({ b }) {
 }
 
 export function Brands() {
+  const trackRef = React.useRef(null);
+  /* hover: posizione del mouse nella fascia, da -1 (bordo sinistro) a +1
+     (bordo destro); null quando il mouse è fuori. */
+  const stateRef = React.useRef({ offset: 0, hover: null, last: 0 });
+
+  /* Marquee guidato da rAF invece che da animazione CSS: così il mouse può
+     accelerare e invertire la corsa. Verso il bordo destro i loghi corrono
+     a destra, verso il sinistro a sinistra; al centro (o senza mouse) flusso
+     base verso sinistra. */
+  React.useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const track = trackRef.current;
+    if (!track) return;
+    const st = stateRef.current;
+    const BASE = -38;  /* px/s — corsa naturale */
+    const MAX = 480;   /* px/s — a fondo scala sul bordo */
+    let raf;
+    const step = (t) => {
+      if (!st.last) st.last = t;
+      const dt = Math.min(0.05, (t - st.last) / 1000); /* clamp: niente salti dopo un tab in background */
+      st.last = t;
+      let v = BASE;
+      if (st.hover != null) {
+        const f = st.hover;
+        v = BASE * (1 - Math.abs(f)) + f * MAX;
+      }
+      st.offset += v * dt;
+      const half = track.scrollWidth / 2; /* la lista è duplicata ×2: il loop avviene a metà */
+      if (half > 0) st.offset = ((st.offset % half) + half) % half - half;
+      track.style.transform = `translate3d(${st.offset.toFixed(1)}px, 0, 0)`;
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const onMove = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    stateRef.current.hover = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
+  };
+  const onLeave = () => { stateRef.current.hover = null; };
+
   return (
     <section style={{ background: "var(--surface-subtle)", padding: "var(--space-8) 0", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>
       <Container>
@@ -199,8 +241,8 @@ export function Brands() {
           <span className="cra-meta">Solo grandi marchi — i principali brand dell&rsquo;aftermarket</span>
         </div>
       </Container>
-      <div className="brand-marquee">
-        <div className="brand-track">
+      <div className="brand-marquee" onMouseMove={onMove} onMouseLeave={onLeave}>
+        <div ref={trackRef} className="brand-track">
           {[...BRANDS, ...BRANDS].map((b, i) => <BrandChip key={b.slug + i} b={b} />)}
         </div>
       </div>

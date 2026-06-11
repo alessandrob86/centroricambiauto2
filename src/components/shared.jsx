@@ -1,4 +1,5 @@
 import React from "react";
+import { Icon } from "./Icon.jsx";
 
 /* Shared layout helpers for the Centro Ricambi Auto website */
 
@@ -97,6 +98,37 @@ export function ScrollProgress() {
     <div aria-hidden="true" style={{ position: "fixed", top: 0, left: 0, right: 0, height: "3px", zIndex: 60, pointerEvents: "none" }}>
       <div ref={ref} style={{ height: "100%", background: "var(--keyline)", transform: "scaleX(0)", transformOrigin: "left" }} />
     </div>
+  );
+}
+
+/* Bottone "torna su": appare dopo il primo scroll, fisso in basso a destra. */
+export function BackToTop() {
+  const [show, setShow] = React.useState(false);
+  const [hover, setHover] = React.useState(false);
+  React.useEffect(() => {
+    const onScroll = () => setShow(window.scrollY > 600);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return (
+    <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Torna all'inizio della pagina"
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        position: "fixed", right: "20px", bottom: "20px", zIndex: 90,
+        width: "48px", height: "48px", borderRadius: "50%",
+        border: "1px solid " + (hover ? "var(--cra-gold)" : "var(--char-700)"),
+        background: hover ? "var(--cra-gold)" : "rgba(27,32,31,0.92)",
+        backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+        cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center",
+        boxShadow: "var(--shadow-lg)",
+        opacity: show ? 1 : 0,
+        transform: show ? "none" : "translateY(14px)",
+        pointerEvents: show ? "auto" : "none",
+        transition: "opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard), background var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard)",
+      }}>
+      <Icon name="arrow-up" size={20} color={hover ? "var(--char-900)" : "var(--cra-gold)"} />
+    </button>
   );
 }
 

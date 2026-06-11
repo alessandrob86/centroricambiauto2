@@ -5,7 +5,7 @@ import {
   Users, HeartHandshake, PackageCheck, PhoneCall, ReceiptText, Truck,
   Check, ArrowRight, MapPin, ChevronLeft, ChevronRight,
   PackageSearch, Timer, Handshake, ShieldCheck, Cookie,
-  Menu, X, Facebook, Instagram, Linkedin,
+  Menu, X, Facebook, Instagram, Linkedin, ArrowUp,
 } from "lucide-react";
 
 /* Lucide icons keyed by the kebab-case names used across the kit. */
@@ -43,6 +43,7 @@ const ICONS = {
   facebook: Facebook,
   instagram: Instagram,
   linkedin: Linkedin,
+  "arrow-up": ArrowUp,
 };
 
 export function Icon({ name, size = 18, color = "currentColor", strokeWidth = 2 }) {

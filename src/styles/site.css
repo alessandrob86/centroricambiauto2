@@ -117,14 +117,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   60% { box-shadow: 0 0 0 4px rgba(189,52,50,0.25); }
 }
 
-/* --- Brands marquee --- */
+/* --- Brands marquee ---
+   La corsa è guidata da JS (rAF) in Services.jsx, così il mouse può
+   accelerarla e invertirla; con prefers-reduced-motion resta statica. */
 .brand-marquee { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-.brand-track { display: flex; width: max-content; }
-@media (prefers-reduced-motion: no-preference) {
-  /* 110s: la lista marchi completa (60+) scorre a velocità leggibile */
-  .brand-track { animation: marquee 110s linear infinite; }
-  @keyframes marquee { to { transform: translateX(-50%); } }
-}
+.brand-track { display: flex; width: max-content; will-change: transform; }
 
 /* --- Chrome CTA (animated metallic border) --- */
 .chrome-btn { position: relative; border-radius: var(--radius-sm); padding: 2px; overflow: hidden; isolation: isolate; }

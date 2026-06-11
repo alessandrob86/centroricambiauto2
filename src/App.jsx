@@ -7,7 +7,7 @@ import { Locations, Footer } from "./sections/Locations.jsx";
 import { Contact } from "./sections/Contact.jsx";
 import { About } from "./sections/About.jsx";
 import { Privacy, Cookie } from "./sections/Legal.jsx";
-import { ScrollProgress } from "./components/shared.jsx";
+import { ScrollProgress, BackToTop } from "./components/shared.jsx";
 
 const { useState, useEffect } = React;
 
@@ -107,6 +107,7 @@ export default function App() {
       {page === "privacy" && <Privacy onNavigate={navigate} />}
       {page === "cookie" && <Cookie onNavigate={navigate} />}
       <Footer onNavigate={navigate} />
+      <BackToTop />
     </React.Fragment>
   );
 }
