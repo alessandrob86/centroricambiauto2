@@ -204,8 +204,7 @@ export function Hero({ onNavigate }) {
               Spedizioni precise e affidabili, risposta in meno di 10 minuti.
             </p>
             <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-7)", justifyContent: "center", flexWrap: "wrap" }}>
-              <Button variant="secondary" size="lg" onClick={() => onNavigate("sedi")}
-                style={{ color: "var(--cra-white)", borderColor: "rgba(255,255,255,0.4)" }}>Scopri le sedi</Button>
+              <Button variant="light" size="lg" onClick={() => onNavigate("sedi")}>Scopri le sedi</Button>
             </div>
           </div>
         </div>
@@ -222,9 +221,8 @@ export function Hero({ onNavigate }) {
                 italiano: un magazzino enorme, consegne rapide e persone che conoscono il mestiere.
               </p>
               <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-7)", flexWrap: "wrap" }}>
-                <Button variant="primary" size="lg" onClick={() => onNavigate("chisiamo")}>Scopri la nostra storia</Button>
-                <Button variant="secondary" size="lg" onClick={() => onNavigate("contatti")}
-                  style={{ color: "var(--cra-white)", borderColor: "rgba(255,255,255,0.4)" }}>Richiedi un preventivo</Button>
+                <Magnetic><Button variant="primary" size="lg" onClick={() => onNavigate("chisiamo")}>Scopri la nostra storia</Button></Magnetic>
+                <Magnetic><Button variant="light" size="lg" onClick={() => onNavigate("contatti")}>Richiedi un preventivo</Button></Magnetic>
               </div>
             </div>
           </Container>

@@ -44,6 +44,12 @@ export function Button({
       color: "var(--text-strong)",
       border: "var(--border-w-2) solid var(--border-strong)",
     },
+    /* outline per superfici scure: hover = inversione bianco/charcoal */
+    light: {
+      background: "transparent",
+      color: "var(--cra-white)",
+      border: "var(--border-w-2) solid rgba(255,255,255,0.4)",
+    },
     ghost: {
       background: "transparent",
       color: "var(--action-primary)",
@@ -65,7 +71,7 @@ export function Button({
     borderRadius: "var(--radius-sm)",
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.45 : 1,
-    transition: "background var(--dur-base) var(--ease-standard), transform var(--dur-fast) var(--ease-standard), border-color var(--dur-base) var(--ease-standard)",
+    transition: "background var(--dur-base) var(--ease-standard), transform var(--dur-fast) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard)",
     padding: sizes[size].padding,
     fontSize: sizes[size].fontSize,
     ...variants[variant],
@@ -78,6 +84,7 @@ export function Button({
     dark: "var(--char-900)",
     secondary: "var(--surface-subtle)",
     ghost: "var(--red-50)",
+    light: "var(--cra-white)",
   };
 
   const handleEnter = (e) => {
@@ -85,11 +92,13 @@ export function Button({
     e.currentTarget.style.background = hoverBg[variant];
     if (variant === "primary") e.currentTarget.style.borderColor = "var(--action-primary-hover)";
     if (variant === "accent") e.currentTarget.style.borderColor = "var(--action-accent-hover)";
+    if (variant === "light") { e.currentTarget.style.color = "var(--char-900)"; e.currentTarget.style.borderColor = "var(--cra-white)"; }
   };
   const handleLeave = (e) => {
     if (disabled) return;
     e.currentTarget.style.background = variants[variant].background;
     e.currentTarget.style.borderColor = variants[variant].border.split("solid ")[1];
+    e.currentTarget.style.color = variants[variant].color;
   };
   const handleDown = (e) => { if (!disabled) e.currentTarget.style.transform = "translateY(1px) scale(0.99)"; };
   const handleUp = (e) => { if (!disabled) e.currentTarget.style.transform = "none"; };
