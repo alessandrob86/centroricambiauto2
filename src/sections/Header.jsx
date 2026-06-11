@@ -49,16 +49,16 @@ export function Header({ current, onNavigate }) {
       {/* top utility bar */}
       <div style={{ background: "transparent", color: "var(--char-300)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <Container style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "var(--header-utility-h)", fontSize: "var(--fs-xs)" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "16px", fontWeight: "var(--fw-semibold)", letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+          <span className="hdr-utility-left" style={{ display: "inline-flex", alignItems: "center", gap: "16px", fontWeight: "var(--fw-semibold)", letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
             <a href="tel:+39081281732" title="Chiama il centralino" style={{ display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", color: "inherit", textDecoration: "none", transition: "color var(--dur-base) var(--ease-standard)" }}
               onMouseEnter={(e) => { e.currentTarget.style.color = "var(--cra-gold)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = "inherit"; }}>
-              <Icon name="phone" size={13} color="var(--cra-gold)" /> Centralino +39 081 281732
+              <Icon name="phone" size={13} color="var(--cra-gold)" /> <span className="hdr-label">Centralino&nbsp;</span>+39 081 281732
             </a>
             <a href="https://wa.me/39028463035" target="_blank" rel="noopener noreferrer" title="Scrivici su WhatsApp" style={{ display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", color: "inherit", textDecoration: "none", transition: "color var(--dur-base) var(--ease-standard)" }}
               onMouseEnter={(e) => { e.currentTarget.style.color = "var(--cra-gold)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = "inherit"; }}>
-              <Icon name="message-circle" size={13} color="var(--cra-gold)" /> WhatsApp +39 02 846 3035
+              <Icon name="message-circle" size={13} color="var(--cra-gold)" /> <span className="hdr-label">WhatsApp&nbsp;</span>+39 02 846 3035
             </a>
           </span>
           <span className="hdr-utility-extra" style={{ display: "inline-flex", alignItems: "center", gap: "16px", whiteSpace: "nowrap" }}>
@@ -69,8 +69,8 @@ export function Header({ current, onNavigate }) {
       </div>
       {/* main bar */}
       <Container style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "var(--header-h)" }}>
-        <button onClick={() => go("home")} aria-label="Centro Ricambi Auto — Home" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
-          <Logo variant="horizontal" onDark height={46} />
+        <button onClick={() => go("home")} aria-label="Centro Ricambi Auto — Home" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", flexShrink: 0 }}>
+          <Logo variant="horizontal" onDark height={46} className="hdr-logo" />
         </button>
 
         {/* nav desktop */}

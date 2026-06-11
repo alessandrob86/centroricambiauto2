@@ -168,7 +168,7 @@ export function Hero({ onNavigate }) {
                   Auto · Moto · Microcar · Elettrico
                 </Badge>
               </div>
-              <div className="hero-line" style={{ display: "flex", gap: "var(--space-6)", marginTop: "var(--space-8)", flexWrap: "wrap", animationDelay: "700ms" }}>
+              <div className="hero-line hero-ministats" style={{ display: "flex", gap: "var(--space-6)", marginTop: "var(--space-8)", flexWrap: "wrap", animationDelay: "700ms" }}>
                 <MiniStat n="65.000" l="Prodotti codificati" />
                 <Divider />
                 <MiniStat n="5" l="Sedi in Italia" />

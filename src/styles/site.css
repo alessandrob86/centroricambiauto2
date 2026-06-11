@@ -22,6 +22,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
    media query non possono vivere negli style inline.
    ============================================================ */
 
+/* Qualunque sbordamento residuo non deve mai creare scroll laterale */
+html, body { overflow-x: clip; }
+
 /* Header: nav desktop vs menu mobile */
 .hdr-mobile-controls { display: none; align-items: center; gap: 12px; }
 @media (max-width: 900px) {
@@ -29,12 +32,24 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   .hdr-mobile-controls { display: flex; }
   .hdr-utility-extra { display: none !important; }
 }
+/* Utility bar su schermi stretti: via le parole, restano icona + numero */
+@media (max-width: 640px) {
+  .hdr-label { display: none; }
+  .hdr-utility-left { gap: 12px !important; font-size: var(--fs-2xs); }
+}
+@media (max-width: 420px) {
+  .hdr-logo { height: 38px !important; }
+}
 
 /* Hero: binario intero su desktop, ridotto su mobile (tappe 2-3 nascoste) */
 .hero-rail { height: 520vh; }
 @media (max-width: 820px) {
   .hero-rail { height: 260vh; }
   .hero-stage-desktop { display: none !important; }
+  /* su mobile il contenuto riempie lo schermo: niente indicatore Scorri
+     (si sovrapporrebbe alle mini-statistiche) e spazi più compatti */
+  .hero-scroll-cue { display: none; }
+  .hero-ministats { margin-top: var(--space-6) !important; gap: var(--space-5) !important; }
 }
 
 /* Griglie di sezione */
