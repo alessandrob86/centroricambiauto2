@@ -60,15 +60,22 @@ export default function App() {
     return () => cancelAnimationFrame(raf);
   }, [page, pendingAnchor]);
 
-  /* Back/forward del browser */
+  /* Back/forward del browser (popstate copre anche le voci create con pushState) */
   useEffect(() => {
     const onHash = () => {
       setPage(pageFromHash());
       window.scrollTo({ top: 0, behavior: "auto" });
     };
     window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("popstate", onHash);
+    return () => { window.removeEventListener("hashchange", onHash); window.removeEventListener("popstate", onHash); };
   }, []);
+
+  /* Cambia hash creando una voce di cronologia: il tasto Indietro funziona
+     (l'evento hashchange al ritorno fa il resto). */
+  const setHash = (id) => {
+    if (window.location.hash !== "#/" + id) window.history.pushState(null, "", "#/" + id);
+  };
 
   const navigate = (id) => {
     if (!PAGES.includes(id)) {
@@ -78,13 +85,13 @@ export default function App() {
         requestAnimationFrame(() => scrollToAnchor(id));
       } else {
         window.scrollTo({ top: 0, behavior: "auto" });
-        window.history.replaceState(null, "", "#/home");
+        setHash("home");
         setPage("home");
         setPendingAnchor(id);
       }
       return;
     }
-    window.history.replaceState(null, "", "#/" + id);
+    setHash(id);
     setPage(id);
     setPendingAnchor(null);
     window.scrollTo({ top: 0, behavior: "auto" });

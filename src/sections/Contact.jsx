@@ -21,7 +21,7 @@ export function Contact() {
         </Container>
       </div>
       <Container style={{ padding: "var(--space-9) var(--space-5)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "var(--space-8)", alignItems: "start" }}>
+        <div className="contact-grid" style={{ display: "grid", gap: "var(--space-8)", alignItems: "start" }}>
           <Card keyline elevation="md" padding="var(--space-7)">
             {sent ? (
               <div style={{ textAlign: "center", padding: "var(--space-7) 0" }}>
@@ -43,7 +43,7 @@ export function Contact() {
                 window.location.href = "mailto:ordini@centroricambiautosrl.it?subject=" + subject + "&body=" + body;
                 setSent(true);
               }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
+                <div className="form-grid" style={{ display: "grid", gap: "var(--space-4)" }}>
                   <Input label="Nome e cognome" placeholder="Mario Rossi" value={form.nome} onChange={set("nome")} />
                   <Input label="Officina / azienda" placeholder="Autofficina Rossi" value={form.officina} onChange={set("officina")} />
                   <Input label="Email" type="email" placeholder="info@officina.it" value={form.email} onChange={set("email")} />
@@ -98,7 +98,7 @@ function CRow({ icon, label, value, href }) {
         <Icon name={icon} size={18} color="var(--cra-gold)" />
       </span>
       <div>
-        <div style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", fontWeight: "var(--fw-bold)" }}>{label}</div>
+        <div style={{ fontSize: "var(--fs-2xs)", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", fontWeight: "var(--fw-bold)" }}>{label}</div>
         {valueEl}
       </div>
     </div>

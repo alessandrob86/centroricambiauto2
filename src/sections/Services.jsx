@@ -2,7 +2,7 @@ import React from "react";
 import { Card } from "../components/ds/Card.jsx";
 import { Badge } from "../components/ds/Badge.jsx";
 import { Icon } from "../components/Icon.jsx";
-import { Container, Eyebrow, Reveal } from "../components/shared.jsx";
+import { Container, Reveal } from "../components/shared.jsx";
 
 const SERVICES = [
   { id: "srv-auto", icon: "car", title: "Ricambi auto", desc: "L'assortimento più ampio per ogni marca e modello, microcar comprese.", tag: null },
@@ -10,7 +10,7 @@ const SERVICES = [
   { id: "srv-noleggio", icon: "wrench", title: "Noleggio messa in fase", desc: "Strumenti professionali per le officine, quando e dove ti servono.", tag: null },
   { id: "srv-cortesia", icon: "key-round", title: "Auto di cortesia", desc: "La mobilità dei tuoi clienti garantita durante ogni intervento.", tag: null },
   { id: "srv-elettrica", icon: "plug-zap", title: "Divisione elettrica", desc: "Una divisione dedicata ai ricambi per auto elettriche.", tag: "In arrivo" },
-  { id: "srv-centralino", icon: "headset", title: "Centralino dedicato", desc: "1.500 conversazioni gestite al mese, risposta in meno di 10 minuti.", tag: null },
+  { id: "srv-centralino", icon: "headset", title: "Centralino dedicato", desc: "Oltre 2.000 conversazioni gestite al mese, risposta in meno di 10 minuti.", tag: null },
 ];
 
 export function Services() {
@@ -19,15 +19,14 @@ export function Services() {
       <Container>
         <Reveal>
           <div style={{ maxWidth: "640px", marginBottom: "var(--space-8)" }}>
-            <Eyebrow>Cosa facciamo</Eyebrow>
-            <h2 className="cra-h1" style={{ margin: 0 }}>Il vero specialista dei ricambi</h2>
+            <h2 className="cra-h1" style={{ margin: 0 }}>Cosa facciamo</h2>
             <p className="cra-lead" style={{ marginTop: "var(--space-4)" }}>
               Dai ricambi auto e moto ai servizi pensati per le autofficine: un partner unico,
               serio e attento alle tue esigenze.
             </p>
           </div>
         </Reveal>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-5)" }}>
+        <div className="grid-services" style={{ display: "grid", gap: "var(--space-5)" }}>
           {SERVICES.map((s, i) => (
             <Reveal key={s.title} delay={(i % 3) * 110}>
               <div id={s.id} style={{ scrollMarginTop: "120px", height: "100%" }}>
@@ -89,8 +88,20 @@ function ServiceCard({ icon, title, desc, tag }) {
   );
 }
 
-/* "Solo grandi marchi" — continuous marquee of aftermarket wordmark chips */
-const BRANDS = ["BOSCH", "VALEO", "BREMBO", "SACHS", "NGK", "FEBI", "MANN", "TRW", "SKF", "GATES"];
+/* "Solo grandi marchi" — marquee continuo. Lista completa dei marchi trattati
+   (fornita dall'azienda, giugno 2026). I wordmark testuali verranno sostituiti
+   dai loghi ufficiali man mano che sono disponibili in assets/brands/. */
+const BRANDS = [
+  "L2F", "BOSCH", "XENERGY", "VALEO", "LuK", "SACHS", "BREMBO", "TRW", "KÜHNER",
+  "INA", "LIQUI MOLY", "JAPANPARTS", "VARTA", "PURFLUX", "NGK", "MANN-FILTER",
+  "EXIDE", "FEBI", "GATES", "UNIGOM", "AKRON MALÒ", "OCAP", "GRAF", "SALERI",
+  "CONTITECH", "MOOG", "MEAT & DORIA", "BLUE PRINT", "MONROE", "DENSO", "UFI",
+  "JRONE", "KYB", "DAYCO", "ELRING", "FASANO", "OSRAM", "PHILIPS", "ECOTECHNICS",
+  "METELLI", "PIERBURG", "WIX FILTERS", "CASTROL", "FAG", "MIRAGLIO", "CORTECO",
+  "FAI", "VICTOR REINZ", "REPSOL", "GSP", "ASSO MARMITTE", "MTS", "IMASAF",
+  "SNR", "KRIOS", "CTR", "SELENIA", "WYNN'S", "BERU", "TEXTAR", "LPR",
+  "ERRECOM", "YUASA",
+];
 export function Brands() {
   return (
     <section style={{ background: "var(--surface-subtle)", padding: "var(--space-8) 0", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }}>

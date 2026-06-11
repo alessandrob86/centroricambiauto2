@@ -18,18 +18,19 @@
   --fw-black:     900;
 
   /* Type scale — 1.250 major-third, base 16px.
-     Geometric caps headlines run tight & heavy. */
+     Geometric caps headlines run tight & heavy.
+     Display sizes are fluid (clamp) so headlines never overflow on mobile. */
   --fs-2xs:  0.6875rem;  /* 11px — micro labels */
   --fs-xs:   0.75rem;    /* 12px — meta, eyebrow */
   --fs-sm:   0.875rem;   /* 14px — secondary text */
   --fs-base: 1rem;       /* 16px — body */
   --fs-md:   1.125rem;   /* 18px — lead body */
-  --fs-lg:   1.375rem;   /* 22px */
-  --fs-xl:   1.75rem;    /* 28px */
-  --fs-2xl:  2.25rem;    /* 36px */
-  --fs-3xl:  3rem;       /* 48px */
-  --fs-4xl:  3.75rem;    /* 60px */
-  --fs-5xl:  4.75rem;    /* 76px — hero display */
+  --fs-lg:   clamp(1.25rem, 1.1rem + 0.7vw, 1.375rem);   /* 20→22px */
+  --fs-xl:   clamp(1.4rem, 1.15rem + 1.2vw, 1.75rem);    /* 22→28px */
+  --fs-2xl:  clamp(1.6rem, 1.2rem + 2.2vw, 2.25rem);     /* 26→36px */
+  --fs-3xl:  clamp(1.9rem, 1.2rem + 3.5vw, 3rem);        /* 30→48px */
+  --fs-4xl:  clamp(2.2rem, 1rem + 5.5vw, 3.75rem);       /* 35→60px */
+  --fs-5xl:  clamp(2.6rem, 1rem + 7vw, 4.75rem);         /* 42→76px — hero display */
 
   /* Line heights */
   --lh-tight:   1.02;

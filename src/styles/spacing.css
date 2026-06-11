@@ -43,6 +43,9 @@
   --container-max: 1200px;
   --container-pad: var(--space-5);
   --header-h: 76px;
+  --header-utility-h: 36px;
+  /* altezza totale header (utility + nav + bordo): la hero la compensa col margine negativo */
+  --header-total: calc(var(--header-h) + var(--header-utility-h) + 1px);
 
   /* Motion — purposeful, mechanical. No bounces. */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);

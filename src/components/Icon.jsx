@@ -5,6 +5,7 @@ import {
   Users, HeartHandshake, PackageCheck, PhoneCall, ReceiptText, Truck,
   Check, ArrowRight, MapPin, ChevronLeft, ChevronRight,
   PackageSearch, Timer, Handshake, ShieldCheck, Cookie,
+  Menu, X, Facebook, Instagram, Linkedin,
 } from "lucide-react";
 
 /* Lucide icons keyed by the kebab-case names used across the kit. */
@@ -37,6 +38,11 @@ const ICONS = {
   handshake: Handshake,
   "shield-check": ShieldCheck,
   cookie: Cookie,
+  menu: Menu,
+  x: X,
+  facebook: Facebook,
+  instagram: Instagram,
+  linkedin: Linkedin,
 };
 
 export function Icon({ name, size = 18, color = "currentColor", strokeWidth = 2 }) {

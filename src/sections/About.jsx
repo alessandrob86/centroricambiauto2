@@ -48,7 +48,7 @@ function SedeSlider({ slides, height = 440 }) {
             <div aria-hidden="true" style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(20,23,22,0.82) 0%, rgba(20,23,22,0.10) 38%, rgba(20,23,22,0) 60%)" }}></div>
             <div style={{ position: "absolute", left: "var(--space-5)", right: "var(--space-5)", bottom: "var(--space-5)" }}>
               {s.tag && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--cra-red)", color: "#fff", fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "10px", letterSpacing: "0.12em", textTransform: "uppercase", padding: "4px 9px", borderRadius: "var(--radius-pill, 999px)", marginBottom: "var(--space-3)" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "var(--cra-red)", color: "#fff", fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-2xs)", letterSpacing: "0.12em", textTransform: "uppercase", padding: "4px 9px", borderRadius: "var(--radius-pill, 999px)", marginBottom: "var(--space-3)" }}>
                   <Icon name="map-pin" size={12} color="#fff" /> {s.tag}
                 </span>
               )}
@@ -129,7 +129,7 @@ export function About({ onNavigate }) {
       {/* —— Storia + slider —— */}
       <section style={{ background: "var(--surface-page)", padding: "var(--space-11) 0" }}>
         <Container>
-          <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: "var(--space-9)", alignItems: "center" }}>
+          <div className="about-story" style={{ display: "grid", gap: "var(--space-9)", alignItems: "center" }}>
             <Reveal>
               <Eyebrow>La nostra storia</Eyebrow>
               <h2 className="cra-h2" style={{ margin: 0 }}>Nati a Napoli, cresciuti in tutta Italia</h2>
@@ -170,7 +170,7 @@ export function About({ onNavigate }) {
               Insieme a te <span style={{ color: "var(--cra-gold)" }}>con i fatti</span>
             </h2>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-5)" }}>
+          <div className="about-stats" style={{ display: "grid", gap: "var(--space-5)" }}>
             {[
               { v: "65.000", l: "Prodotti codificati", tone: "gold" },
               { v: "4.500", u: "m²", l: "Di magazzino", tone: "red" },
@@ -192,7 +192,7 @@ export function About({ onNavigate }) {
             <Eyebrow>Cosa ci muove</Eyebrow>
             <h2 className="cra-h2" style={{ margin: "0 0 var(--space-7)" }}>Quattro principi, ogni giorno</h2>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "var(--space-5)" }}>
+          <div className="about-values" style={{ display: "grid", gap: "var(--space-5)" }}>
             {valori.map((v, i) => (
               <Reveal key={v.t} delay={i * 80}>
                 <div style={{ display: "flex", gap: "var(--space-4)", background: "var(--cra-white)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", padding: "var(--space-6)", boxShadow: "var(--shadow-sm)", height: "100%" }}>
@@ -217,7 +217,7 @@ export function About({ onNavigate }) {
             <Eyebrow>Il percorso</Eyebrow>
             <h2 className="cra-h2" style={{ margin: "0 0 var(--space-8)" }}>Le tappe che ci hanno portato qui</h2>
           </Reveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-5)" }}>
+          <div className="about-timeline" style={{ display: "grid", gap: "var(--space-5)" }}>
             {tappe.map((t, i) => (
               <Reveal key={t.y} delay={i * 80}>
                 <div style={{ borderTop: "3px solid var(--cra-gold)", paddingTop: "var(--space-4)" }}>

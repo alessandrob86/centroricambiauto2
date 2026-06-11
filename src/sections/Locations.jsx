@@ -72,18 +72,18 @@ export function Locations() {
 
     SEDI.forEach((s) => {
       const m = L.marker(s.coords, { icon }).addTo(map);
+      /* Il popup mostra subito telefono e link indicazioni: il click sul pin
+         NON dirotta più su Google Maps — l'utente sceglie. */
+      const tel = (CONTATTI[s.id] || [])[0];
       m.bindPopup(
         `<div style="font-family: var(--font-brand); min-width: 200px">
            <div style="font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:var(--char-800)">${s.name}</div>
            <div style="font-size:12px; color:var(--char-500); margin-top:4px">${s.addr}</div>
+           ${tel ? `<div style="margin-top:8px"><a href="${tel.href}" style="font-weight:800; font-size:13px; color:var(--cra-red); text-decoration:none">${tel.value}</a></div>` : ""}
            <a href="${s.gmaps}" target="_blank" rel="noopener noreferrer" style="display:inline-block; margin-top:10px; font-weight:800; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#fff; background:var(--cra-red); padding:7px 12px; border-radius:4px; text-decoration:none">Apri in Google Maps ↗</a>
          </div>`
       );
-      /* Click sul pin → apre direttamente Google Maps (nuova scheda) */
-      m.on("click", () => {
-        setActive(s.id);
-        window.open(s.gmaps, "_blank", "noopener");
-      });
+      m.on("click", () => setActive(s.id));
       markers.current[s.id] = m;
     });
 
@@ -126,43 +126,46 @@ export function Locations() {
           </div>
         </Reveal>
         <Reveal delay={120}>
-          <div style={{ display: "grid", gridTemplateColumns: "0.42fr 0.58fr", gap: "var(--space-5)", alignItems: "stretch" }}>
+          <div className="locations-grid" style={{ display: "grid", gap: "var(--space-5)", alignItems: "stretch" }}>
             {/* sede selector */}
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
               {SEDI.map((s) => {
                 const on = active === s.id;
                 return (
-                  <div key={s.id} role="button" tabIndex={0} onClick={() => select(s)}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") select(s); }}
+                  <div key={s.id}
                     style={{
-                    textAlign: "left", cursor: "pointer", padding: "var(--space-3) var(--space-4)",
+                    padding: "var(--space-3) var(--space-4)",
                     background: on ? "var(--surface-dark)" : "var(--surface-card)",
                     border: "1px solid " + (on ? "var(--surface-dark)" : "var(--border-subtle)"),
-                    borderLeft: "var(--border-w-bold) solid " + (on ? "var(--cra-gold)" : "var(--cra-red)"),
+                    boxShadow: on ? "inset 3px 0 0 var(--cra-gold)" : "none",
                     borderRadius: "var(--radius-sm)",
                     transition: "background var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard)",
                     display: "flex", flexDirection: "column", gap: "2px", flex: 1, justifyContent: "center",
                   }}
                   onMouseEnter={(e) => { if (!on) e.currentTarget.style.background = "var(--char-100)"; }}
                   onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "var(--surface-card)"; }}>
-                    <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                      <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "var(--fs-sm)", textTransform: "uppercase", letterSpacing: "var(--ls-caps)", color: on ? "var(--cra-white)" : "var(--text-strong)" }}>
-                        {s.name}
+                    {/* l'area cliccabile è un vero <button>: niente link annidati dentro un role=button */}
+                    <button onClick={() => select(s)} aria-expanded={on}
+                      style={{ background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0, display: "flex", flexDirection: "column", gap: "2px", width: "100%" }}>
+                      <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", width: "100%" }}>
+                        <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "var(--fs-sm)", textTransform: "uppercase", letterSpacing: "var(--ls-caps)", color: on ? "var(--cra-white)" : "var(--text-strong)" }}>
+                          {s.name}
+                        </span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                          {s.badge && (
+                            <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-2xs)", letterSpacing: "0.1em", textTransform: "uppercase", background: "var(--cra-gold)", color: "var(--char-900)", padding: "3px 8px", borderRadius: "999px" }}>{s.badge}</span>
+                          )}
+                        </span>
                       </span>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                        {s.badge && (
-                          <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", background: "var(--cra-gold)", color: "var(--char-900)", padding: "3px 8px", borderRadius: "999px" }}>{s.badge}</span>
-                        )}
+                      <span style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-xs)", color: on ? "var(--char-300)" : "var(--text-muted)" }}>
+                        {s.region} · {s.addr}
                       </span>
-                    </span>
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-xs)", color: on ? "var(--char-300)" : "var(--text-muted)" }}>
-                      {s.region} · {s.addr}
-                    </span>
+                    </button>
                     {on && (
                       <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid var(--char-700)", display: "grid", gap: "5px" }}>
                         {ORARI[s.id].map(([giorno, ore]) => (
                           <div key={giorno} style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "baseline" }}>
-                            <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--cra-gold)" }}>{giorno}</span>
+                            <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-2xs)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--cra-gold)" }}>{giorno}</span>
                             <span style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-xs)", color: ore === "Chiuso" ? "var(--red-300)" : "var(--char-200)", fontWeight: "var(--fw-semibold)" }}>{ore}</span>
                           </div>
                         ))}
@@ -171,12 +174,12 @@ export function Locations() {
                             <a key={c.value} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
                               style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
                               <Icon name={c.icon} size={14} color="var(--cra-gold)" />
-                              <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--char-400)" }}>{c.label}</span>
+                              <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-2xs)", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--char-400)" }}>{c.label}</span>
                               <span style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-xs)", fontWeight: "var(--fw-semibold)", color: "var(--cra-white)", whiteSpace: "nowrap" }}>{c.value}</span>
                             </a>
                           ))}
                           <a href={s.gmaps} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                            style={{ alignSelf: "flex-start", marginTop: "4px", fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", color: "var(--cra-white)", background: "var(--cra-red)", padding: "7px 12px", borderRadius: "var(--radius-sm)", whiteSpace: "nowrap" }}>
+                            style={{ alignSelf: "flex-start", marginTop: "4px", fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "var(--fs-2xs)", letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", color: "var(--cra-white)", background: "var(--cra-red)", padding: "8px 13px", borderRadius: "var(--radius-sm)", whiteSpace: "nowrap" }}>
                             Apri in Google Maps ↗
                           </a>
                         </div>
@@ -188,7 +191,7 @@ export function Locations() {
             </div>
             {/* map — zIndex:0 creates a stacking context that caps Leaflet's
                 internal z-indexes (400–800) so it never covers the sticky header */}
-            <div style={{ position: "relative", zIndex: 0, isolation: "isolate", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-md)", minHeight: "460px" }}>
+            <div className="locations-map" style={{ position: "relative", zIndex: 0, isolation: "isolate", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border-subtle)", boxShadow: "var(--shadow-md)", minHeight: "460px" }}>
               <div ref={mapRef} style={{ position: "absolute", inset: 0 }} />
             </div>
           </div>
@@ -218,7 +221,7 @@ export function Footer({ onNavigate }) {
   return (
     <footer style={{ background: "var(--surface-darker)", color: "var(--char-300)", paddingTop: "var(--space-10)" }}>
       <Container>
-        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1.2fr", gap: "var(--space-7)", paddingBottom: "var(--space-9)" }}>
+        <div className="footer-grid" style={{ display: "grid", gap: "var(--space-7)", paddingBottom: "var(--space-9)" }}>
           <div>
             <Logo variant="horizontal" onDark height={48} />
             <p className="cra-body" style={{ color: "var(--char-400)", marginTop: "var(--space-4)", maxWidth: "32ch" }}>
@@ -226,15 +229,15 @@ export function Footer({ onNavigate }) {
             </p>
             <div style={{ marginTop: "var(--space-4)", display: "flex", gap: "10px" }}>
               {[
-                { label: "FB", name: "Facebook", href: "https://www.facebook.com/centroricambiauto/?locale=it_IT" },
-                { label: "IG", name: "Instagram", href: "https://www.instagram.com/centro_ricambi_auto/" },
-                { label: "IN", name: "LinkedIn", href: "https://www.linkedin.com/company/centro-ricambi-auto-srl" },
+                { icon: "facebook", name: "Facebook", href: "https://www.facebook.com/centroricambiauto/?locale=it_IT" },
+                { icon: "instagram", name: "Instagram", href: "https://www.instagram.com/centro_ricambi_auto/" },
+                { icon: "linkedin", name: "LinkedIn", href: "https://www.linkedin.com/company/centro-ricambi-auto-srl" },
               ].map((s) => (
-                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.name} title={s.name}
-                  style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px", borderRadius: "var(--radius-sm)", background: "var(--char-800)", color: "var(--char-200)", textDecoration: "none", fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "11px", letterSpacing: "0.06em", transition: "background var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard)" }}
+                <a key={s.icon} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.name} title={s.name}
+                  style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "40px", height: "40px", borderRadius: "var(--radius-sm)", background: "var(--char-800)", color: "var(--char-200)", textDecoration: "none", transition: "background var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard)" }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "var(--cra-gold)"; e.currentTarget.style.color = "var(--char-900)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "var(--char-800)"; e.currentTarget.style.color = "var(--char-200)"; }}>
-                  {s.label}
+                  <Icon name={s.icon} size={18} />
                 </a>
               ))}
             </div>
@@ -263,11 +266,11 @@ export function Footer({ onNavigate }) {
             <Button variant="primary" size="sm" style={{ marginTop: "var(--space-4)" }} onClick={() => onNavigate("contatti")}>Richiedi preventivo</Button>
           </div>
         </div>
-        <div style={{ borderTop: "1px solid var(--char-800)", padding: "var(--space-4) 0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-4)", flexWrap: "wrap", fontSize: "var(--fs-xs)", color: "var(--char-500)" }}>
+        <div style={{ borderTop: "1px solid var(--char-800)", padding: "var(--space-4) 0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-4)", flexWrap: "wrap", fontSize: "var(--fs-xs)", color: "var(--char-400)" }}>
           <span>© {new Date().getFullYear()} Centro Ricambi Auto srl — centroricambiautosrl.it</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-4)" }}>
-            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate("privacy"); }} style={{ color: "var(--char-400)", textDecoration: "none" }}>Privacy Policy</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate("cookie"); }} style={{ color: "var(--char-400)", textDecoration: "none" }}>Cookie Policy</a>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-4)", flexWrap: "wrap" }}>
+            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate("privacy"); }} style={{ color: "var(--char-300)", textDecoration: "none" }}>Privacy Policy</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate("cookie"); }} style={{ color: "var(--char-300)", textDecoration: "none" }}>Cookie Policy</a>
             <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", letterSpacing: "0.06em", color: "var(--char-400)" }}>#AndiamoInsiemeOltre</span>
           </span>
         </div>
@@ -287,7 +290,7 @@ function Row({ icon, label, value, href }) {
     <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
       <span style={{ display: "inline-flex", color: "var(--cra-gold)", marginTop: "2px" }}><Icon name={icon} size={15} color="var(--cra-gold)" /></span>
       <div>
-        <div style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--char-500)" }}>{label}</div>
+        <div style={{ fontSize: "var(--fs-2xs)", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--char-400)" }}>{label}</div>
         {valueEl}
       </div>
     </div>

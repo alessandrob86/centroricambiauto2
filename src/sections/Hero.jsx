@@ -5,15 +5,16 @@ import { Container, Eyebrow, CountUp, Magnetic } from "../components/shared.jsx"
 
 /* ============================================================
    HERO video-scrub "scrollytelling": 48 frame (assets/hero-seq/)
-   su canvas, binario 520vh. Mentre il video avanza, quattro tappe
-   di contenuto si alternano in dissolvenza:
-     1. Il vero specialista · 2. Solo grandi marchi · 3. Le sedi
-     4. Chi siamo
+   su canvas. Desktop: binario 520vh con quattro tappe.
+   Mobile (≤820px): binario 260vh, solo tappa 1 + tappa finale —
+   l'utente raggiunge i contenuti reali molto prima.
    ============================================================ */
 const FRAME_URLS = Object.entries(
   import.meta.glob("../assets/hero-seq/frame-*.jpg", { eager: true, query: "?url", import: "default" })
 ).sort(([a], [b]) => a.localeCompare(b)).map(([, url]) => url);
 const FRAME_COUNT = FRAME_URLS.length;
+
+const MOBILE_MQ = "(max-width: 820px)";
 
 export function Hero({ onNavigate }) {
   const wrapRef = React.useRef(null);
@@ -51,25 +52,43 @@ export function Hero({ onNavigate }) {
     stateRef.current.frame = idx;
   }, []);
 
-  /* Preload dei frame; appena pronto il primo, disegnalo */
+  /* Caricamento frame: il primo subito, il resto dopo il load della pagina
+     (non compete con font/foto su connessioni lente). Ogni frame, appena
+     pronto, ridisegna se è quello corrente — così un refresh a metà binario
+     non lascia mai il canvas vuoto. */
   React.useEffect(() => {
     let alive = true;
-    const imgs = [];
-    for (let i = 0; i < FRAME_COUNT; i++) {
-      const im = new Image();
-      im.src = FRAME_URLS[i];
-      if (i === 0) im.onload = () => { if (alive) draw(0); };
-      imgs.push(im);
-    }
+    const imgs = new Array(FRAME_COUNT);
     imagesRef.current = imgs;
+
+    const load = (i) => {
+      const im = new Image();
+      im.onload = () => {
+        if (!alive) return;
+        const cur = stateRef.current.frame;
+        if (cur === i || (cur === -1 && i === 0)) { stateRef.current.frame = -1; draw(i); }
+      };
+      im.src = FRAME_URLS[i];
+      imgs[i] = im;
+    };
+
+    load(0);
+    const loadRest = () => { if (!alive) return; for (let i = 1; i < FRAME_COUNT; i++) load(i); };
+    if (document.readyState === "complete") {
+      loadRest();
+    } else {
+      window.addEventListener("load", loadRest, { once: true });
+    }
+
     const onResize = () => { const cur = Math.max(0, stateRef.current.frame); stateRef.current.frame = -1; draw(cur); };
     window.addEventListener("resize", onResize);
-    return () => { alive = false; window.removeEventListener("resize", onResize); };
+    return () => { alive = false; window.removeEventListener("resize", onResize); window.removeEventListener("load", loadRest); };
   }, [draw]);
 
-  /* Scrub con lo scroll + regia delle quattro tappe di contenuto */
+  /* Scrub con lo scroll + regia delle tappe di contenuto */
   React.useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mobileMq = window.matchMedia(MOBILE_MQ);
     /* opacità a campana: sale tra a→b, piena tra b→c, scende tra c→d */
     const stage = (el, p, a, b, c, d) => {
       if (!el) return;
@@ -77,8 +96,10 @@ export function Hero({ onNavigate }) {
       if (p < a) op = 0; else if (p < b) op = (p - a) / (b - a); else if (p < c) op = 1; else if (p < d) op = 1 - (p - c) / (d - c); else op = 0;
       el.style.opacity = String(op);
       el.style.pointerEvents = op > 0.5 ? "auto" : "none";
-      const dir = p < b ? 1 : -1;
-      el.style.transform = "translateY(" + ((1 - op) * 46 * dir) + "px)";
+      if (!reduced) {
+        const dir = p < b ? 1 : -1;
+        el.style.transform = "translateY(" + ((1 - op) * 46 * dir) + "px)";
+      }
     };
     const compute = () => {
       const wrap = wrapRef.current;
@@ -91,21 +112,28 @@ export function Hero({ onNavigate }) {
         const idx = Math.min(FRAME_COUNT - 1, Math.round(progress * (FRAME_COUNT - 1)));
         if (idx !== stateRef.current.frame) draw(idx);
       }
-      stage(s1Ref.current, progress, -1, 0, 0.16, 0.24);
-      stage(s2Ref.current, progress, 0.28, 0.37, 0.47, 0.55);
-      stage(s3Ref.current, progress, 0.57, 0.65, 0.72, 0.79);
-      stage(s4Ref.current, progress, 0.81, 0.89, 2, 3); /* Chi siamo — resta fino alla fine */
+      if (mobileMq.matches) {
+        /* binario corto: tappa 1 → video → tappa finale */
+        stage(s1Ref.current, progress, -1, 0, 0.3, 0.45);
+        stage(s4Ref.current, progress, 0.55, 0.7, 2, 3);
+      } else {
+        stage(s1Ref.current, progress, -1, 0, 0.16, 0.24);
+        stage(s2Ref.current, progress, 0.28, 0.37, 0.47, 0.55);
+        stage(s3Ref.current, progress, 0.57, 0.65, 0.72, 0.79);
+        stage(s4Ref.current, progress, 0.81, 0.89, 2, 3); /* Chi siamo — resta fino alla fine */
+      }
       if (cueRef.current) cueRef.current.style.opacity = progress < 0.04 ? "1" : "0";
     };
     const onScroll = () => compute();
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
     compute();
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); };
   }, [draw]);
 
   return (
-    <section ref={wrapRef} className={play ? "hero-play" : ""}
-      style={{ position: "relative", height: "520vh", background: "var(--surface-dark)", color: "var(--cra-white)", marginTop: "-113px" }}>
+    <section ref={wrapRef} className={"hero-rail" + (play ? " hero-play" : "")}
+      style={{ position: "relative", background: "var(--surface-dark)", color: "var(--cra-white)", marginTop: "calc(-1 * var(--header-total))" }}>
       {/* pannello sticky: canvas + contenuto */}
       <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden" }}>
         <canvas ref={canvasRef} aria-hidden="true"
@@ -140,7 +168,7 @@ export function Hero({ onNavigate }) {
                   Auto · Moto · Microcar · Elettrico
                 </Badge>
               </div>
-              <div className="hero-line" style={{ display: "flex", gap: "var(--space-6)", marginTop: "var(--space-8)", animationDelay: "700ms" }}>
+              <div className="hero-line" style={{ display: "flex", gap: "var(--space-6)", marginTop: "var(--space-8)", flexWrap: "wrap", animationDelay: "700ms" }}>
                 <MiniStat n="65.000" l="Prodotti codificati" />
                 <Divider />
                 <MiniStat n="5" l="Sedi in Italia" />
@@ -151,30 +179,23 @@ export function Hero({ onNavigate }) {
           </Container>
         </div>
 
-        {/* —— Tappa 2: Solo grandi marchi —— */}
-        <div ref={s2Ref} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", opacity: 0, pointerEvents: "none", willChange: "transform, opacity" }}>
+        {/* —— Tappa 2: Solo grandi marchi (solo desktop) —— */}
+        <div ref={s2Ref} className="hero-stage-desktop" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", opacity: 0, pointerEvents: "none", willChange: "transform, opacity" }}>
           <Container style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}>
             <div style={{ maxWidth: "560px", paddingTop: "56px" }}>
-              <Eyebrow onDark>Solo grandi marchi</Eyebrow>
               <h2 className="cra-display" style={{ color: "var(--cra-white)", fontSize: "var(--fs-4xl)", margin: 0, textShadow: "0 2px 24px rgba(0,0,0,0.45)" }}>
                 65.000 prodotti<br /><span style={{ color: "var(--cra-gold)" }}>codificati</span>
               </h2>
               <p className="cra-lead" style={{ color: "var(--char-200)", marginTop: "var(--space-5)", textShadow: "0 1px 12px rgba(0,0,0,0.5)" }}>
                 La più ampia offerta e la migliore convenienza, solo dai leader dell&rsquo;aftermarket.
               </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "var(--space-5)" }}>
-                {["BOSCH", "VALEO", "BREMBO", "SACHS", "NGK", "MANN", "SKF"].map((b) => (
-                  <span key={b} style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "var(--fs-sm)", letterSpacing: "0.06em", color: "var(--char-200)", border: "1px solid rgba(255,255,255,0.28)", borderRadius: "var(--radius-sm)", padding: "8px 14px", background: "rgba(20,24,23,0.45)", backdropFilter: "blur(4px)" }}>{b}</span>
-                ))}
-              </div>
             </div>
           </Container>
         </div>
 
-        {/* —— Tappa 3: Le sedi / arrivo —— */}
-        <div ref={s3Ref} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, pointerEvents: "none", willChange: "transform, opacity" }}>
+        {/* —— Tappa 3: Le sedi / arrivo (solo desktop) —— */}
+        <div ref={s3Ref} className="hero-stage-desktop" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, pointerEvents: "none", willChange: "transform, opacity" }}>
           <div style={{ maxWidth: "680px", textAlign: "center", paddingTop: "56px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <Eyebrow onDark>Da Milano a Napoli</Eyebrow>
             <h2 className="cra-display" style={{ color: "var(--cra-white)", fontSize: "var(--fs-4xl)", margin: 0, textShadow: "0 2px 24px rgba(0,0,0,0.45)" }}>
               5 sedi <span style={{ color: "var(--cra-gold)" }}>al tuo fianco</span>
             </h2>
@@ -189,11 +210,10 @@ export function Hero({ onNavigate }) {
           </div>
         </div>
 
-        {/* —— Tappa 4: Chi siamo —— */}
+        {/* —— Tappa finale: Chi siamo —— */}
         <div ref={s4Ref} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", opacity: 0, pointerEvents: "none", willChange: "transform, opacity" }}>
           <Container style={{ width: "100%" }}>
             <div style={{ maxWidth: "600px", paddingTop: "56px" }}>
-              <Eyebrow onDark>Chi siamo</Eyebrow>
               <h2 className="cra-display" style={{ color: "var(--cra-white)", fontSize: "var(--fs-4xl)", margin: 0, textShadow: "0 2px 24px rgba(0,0,0,0.45)" }}>
                 Insieme a te <span style={{ color: "var(--cra-gold)" }}>con i fatti</span>
               </h2>
@@ -213,7 +233,7 @@ export function Hero({ onNavigate }) {
         {/* scroll cue */}
         <div ref={cueRef} className="hero-scroll-cue" aria-hidden="true" style={{ transition: "opacity 400ms var(--ease-standard)" }}>
           <span className="hero-scroll-track"><span className="hero-scroll-dot" /></span>
-          <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--char-400)" }}>Scorri</span>
+          <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-2xs)", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--char-400)" }}>Scorri</span>
         </div>
       </div>
     </section>
@@ -226,7 +246,7 @@ function MiniStat({ n, l }) {
       <div style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-black)", fontSize: "var(--fs-2xl)", color: "var(--cra-gold)", lineHeight: 1, textShadow: "0 1px 12px rgba(0,0,0,0.5)" }}>
         <CountUp value={n} duration={1600} />
       </div>
-      <div style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "10px", letterSpacing: "var(--ls-eyebrow)", textTransform: "uppercase", color: "var(--char-300)", marginTop: "6px" }}>{l}</div>
+      <div style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-2xs)", letterSpacing: "var(--ls-eyebrow)", textTransform: "uppercase", color: "var(--char-300)", marginTop: "6px" }}>{l}</div>
     </div>
   );
 }

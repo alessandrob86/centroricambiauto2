@@ -17,7 +17,7 @@ const SECONDARY = [
   { icon: "heart-handshake", value: "600", label: "Clienti fidelizzati" },
   { icon: "file-text", value: "700", unit: "/ giorno", label: "Preventivi" },
   { icon: "package-check", value: "450", unit: "/ giorno", label: "Ordini evasi" },
-  { icon: "phone-call", value: "1.500", unit: "/ mese", label: "Conversazioni gestite" },
+  { icon: "phone-call", value: "2.000", unit: "/ mese", label: "Conversazioni gestite" },
 ];
 
 export function StatsBand() {
@@ -77,7 +77,7 @@ export function StatsBand() {
         </Reveal>
 
         {/* featured trio */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-8)", marginBottom: "var(--space-10)" }}>
+        <div className="stats-featured" style={{ display: "grid", gap: "var(--space-8)", marginBottom: "var(--space-10)" }}>
           {FEATURED.map((f, i) => (
             <Reveal key={f.label} delay={i * 140}>
               <div>
@@ -95,10 +95,11 @@ export function StatsBand() {
           ))}
         </div>
 
-        {/* machined secondary strip */}
+        {/* machined secondary strip — gap 1px su fondo char-700 = divisori
+            hairline che funzionano anche quando le celle vanno a capo */}
         <Reveal delay={250}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", border: "1px solid var(--char-700)", borderRadius: "var(--radius-md)", overflow: "hidden", background: "rgba(255,255,255,0.02)" }}>
-            {SECONDARY.map((s, i) => <StatCell key={s.label} s={s} first={i === 0} />)}
+          <div className="stats-strip" style={{ display: "grid", gap: "1px", border: "1px solid var(--char-700)", borderRadius: "var(--radius-md)", overflow: "hidden", background: "var(--char-700)" }}>
+            {SECONDARY.map((s) => <StatCell key={s.label} s={s} />)}
           </div>
         </Reveal>
       </Container>
@@ -106,7 +107,7 @@ export function StatsBand() {
   );
 }
 
-function StatCell({ s, first }) {
+function StatCell({ s }) {
   const [hover, setHover] = React.useState(false);
   return (
     <div
@@ -114,8 +115,7 @@ function StatCell({ s, first }) {
       onMouseLeave={() => setHover(false)}
       style={{
         padding: "var(--space-5) var(--space-5) var(--space-4)",
-        borderLeft: first ? "none" : "1px solid var(--char-700)",
-        background: hover ? "rgba(253,197,67,0.05)" : "transparent",
+        background: hover ? "#232622" : "var(--char-900)",
         boxShadow: hover ? "inset 0 3px 0 var(--cra-gold)" : "inset 0 3px 0 transparent",
         transition: "background var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard)",
         display: "flex", flexDirection: "column", gap: "var(--space-3)",
@@ -128,7 +128,7 @@ function StatCell({ s, first }) {
         <CountUp value={s.value} duration={1300} />
         {s.unit && <span style={{ fontSize: "var(--fs-xs)", fontWeight: "var(--fw-bold)", whiteSpace: "nowrap", color: "var(--char-400)", letterSpacing: "0.04em" }}>{s.unit}</span>}
       </div>
-      <div style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "var(--ls-eyebrow)", color: "var(--char-400)" }}>
+      <div style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-2xs)", textTransform: "uppercase", letterSpacing: "var(--ls-eyebrow)", color: "var(--char-400)" }}>
         {s.label}
       </div>
     </div>
@@ -136,7 +136,7 @@ function StatCell({ s, first }) {
 }
 
 const STRENGTHS = [
-  { icon: "phone-call", title: "Centralino sempre pronto", desc: "Rispondiamo a ogni richiesta, con oltre 10.000 conversazioni processate al mese." },
+  { icon: "phone-call", title: "Centralino sempre pronto", desc: "Rispondiamo a ogni richiesta, con oltre 2.000 conversazioni gestite ogni mese." },
   { icon: "receipt-text", title: "Preventivi chiari", desc: "Assoluta chiarezza dei prezzi: nessuna sorpresa, solo trasparenza." },
   { icon: "truck", title: "Spedizioni affidabili", desc: "Consegne precise e puntuali, perché il tuo tempo in officina vale." },
 ];
@@ -145,10 +145,9 @@ export function Strengths() {
   return (
     <section style={{ background: "var(--surface-page)", padding: "var(--space-11) 0" }}>
       <Container>
-        <div style={{ display: "grid", gridTemplateColumns: "0.9fr 1.1fr", gap: "var(--space-9)", alignItems: "center" }}>
+        <div className="strengths-grid" style={{ display: "grid", gap: "var(--space-9)", alignItems: "center" }}>
           <Reveal>
             <div>
-              <Eyebrow>I nostri punti di forza</Eyebrow>
               <h2 className="cra-h1" style={{ margin: 0 }}>Un partner serio, ogni giorno</h2>
               <p className="cra-lead" style={{ marginTop: "var(--space-4)" }}>
                 Ogni giorno Centro Ricambi Auto è insieme a te con i fatti, non a parole.
@@ -162,8 +161,8 @@ export function Strengths() {
                 <div style={{
                   display: "flex", gap: "var(--space-4)", alignItems: "flex-start",
                   background: "var(--surface-card)", border: "1px solid var(--border-subtle)",
-                  borderLeft: "var(--border-w-bold) solid var(--cra-red)",
                   borderRadius: "var(--radius-sm)", padding: "var(--space-4) var(--space-5)",
+                  boxShadow: "var(--shadow-xs)",
                 }}>
                   <span style={{ display: "inline-flex", color: "var(--cra-red)", marginTop: "2px" }}>
                     <Icon name={s.icon} size={24} color="var(--cra-red)" />
