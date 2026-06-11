@@ -96,7 +96,8 @@ function ServiceCard({ icon, title, desc, tag }) {
 const BRANDS = [
   { name: "L2F", slug: "l2f" },
   { name: "Bosch", slug: "bosch" },
-  { name: "Xenergy", slug: "xenergy", dark: true /* il brand pubblica solo la versione bianca */ },
+  /* dark: true → chip charcoal, per i loghi pubblicati solo in versione bianca */
+  { name: "Xenergy", slug: "xenergy", dark: true },
   { name: "Valeo", slug: "valeo" },
   { name: "LuK", slug: "luk" },
   { name: "Sachs", slug: "sachs" },
@@ -111,7 +112,7 @@ const BRANDS = [
   { name: "NGK", slug: "ngk" },
   { name: "MANN-FILTER", slug: "mann-filter" },
   { name: "Exide", slug: "exide" },
-  { name: "febi", slug: "febi" },
+  { name: "febi", slug: "febi", dark: true },
   { name: "Gates", slug: "gates" },
   { name: "Unigom", slug: "unigom" },
   { name: "Akron Malò", slug: "akron-malo" },
@@ -121,7 +122,7 @@ const BRANDS = [
   { name: "ContiTech", slug: "contitech" },
   { name: "MOOG", slug: "moog" },
   { name: "Meat & Doria", slug: "meat-doria" },
-  { name: "Blue Print", slug: "blue-print" },
+  { name: "Blue Print", slug: "blue-print", dark: true },
   { name: "Monroe", slug: "monroe" },
   { name: "Denso", slug: "denso" },
   { name: "UFI", slug: "ufi" },
@@ -155,8 +156,8 @@ const BRANDS = [
   { name: "Beru", slug: "beru" },
   { name: "Textar", slug: "textar" },
   { name: "LPR", slug: "lpr" },
-  { name: "Errecom", slug: "errecom" },
-  { name: "Yuasa", slug: "yuasa" },
+  { name: "Errecom", slug: "errecom", dark: true },
+  { name: "Yuasa", slug: "yuasa", dark: true },
 ];
 
 const BRAND_LOGOS = Object.fromEntries(
