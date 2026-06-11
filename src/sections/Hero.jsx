@@ -96,6 +96,9 @@ export function Hero({ onNavigate }) {
       if (p < a) op = 0; else if (p < b) op = (p - a) / (b - a); else if (p < c) op = 1; else if (p < d) op = 1 - (p - c) / (d - c); else op = 0;
       el.style.opacity = String(op);
       el.style.pointerEvents = op > 0.5 ? "auto" : "none";
+      /* le tappe invisibili escono dal tab order e dall'albero accessibilità */
+      el.style.visibility = op === 0 ? "hidden" : "visible";
+      el.setAttribute("aria-hidden", op === 0 ? "true" : "false");
       if (!reduced) {
         const dir = p < b ? 1 : -1;
         el.style.transform = "translateY(" + ((1 - op) * 46 * dir) + "px)";
@@ -151,7 +154,7 @@ export function Hero({ onNavigate }) {
               <div className="hero-line" style={{ animationDelay: "60ms" }}>
                 <Eyebrow onDark>Da oltre 30 anni al tuo fianco</Eyebrow>
               </div>
-              <h1 className="cra-display" style={{ color: "var(--cra-white)", fontSize: "var(--fs-5xl)", margin: 0, textShadow: "0 2px 24px rgba(0,0,0,0.45)" }}>
+              <h1 className="cra-display" aria-label="Il vero specialista dei ricambi" style={{ color: "var(--cra-white)", fontSize: "var(--fs-5xl)", margin: 0, textShadow: "0 2px 24px rgba(0,0,0,0.45)" }}>
                 <span className="hero-line" style={{ display: "block", animationDelay: "140ms" }}>Il vero</span>
                 <span className="hero-line" style={{ display: "block", animationDelay: "240ms" }}>specialista</span>
                 <span className="hero-line" style={{ display: "block", animationDelay: "340ms", color: "var(--cra-gold)" }}>dei ricambi</span>
@@ -180,7 +183,7 @@ export function Hero({ onNavigate }) {
         </div>
 
         {/* —— Tappa 2: Solo grandi marchi (solo desktop) —— */}
-        <div ref={s2Ref} className="hero-stage-desktop" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", opacity: 0, pointerEvents: "none", willChange: "transform, opacity" }}>
+        <div ref={s2Ref} className="hero-stage-desktop" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", opacity: 0, visibility: "hidden", pointerEvents: "none", willChange: "transform, opacity" }}>
           <Container style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}>
             <div style={{ maxWidth: "560px", paddingTop: "56px" }}>
               <h2 className="cra-display" style={{ color: "var(--cra-white)", fontSize: "var(--fs-4xl)", margin: 0, textShadow: "0 2px 24px rgba(0,0,0,0.45)" }}>
@@ -194,7 +197,7 @@ export function Hero({ onNavigate }) {
         </div>
 
         {/* —— Tappa 3: Le sedi / arrivo (solo desktop) —— */}
-        <div ref={s3Ref} className="hero-stage-desktop" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, pointerEvents: "none", willChange: "transform, opacity" }}>
+        <div ref={s3Ref} className="hero-stage-desktop" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, visibility: "hidden", pointerEvents: "none", willChange: "transform, opacity" }}>
           <div style={{ maxWidth: "680px", textAlign: "center", paddingTop: "56px", display: "flex", flexDirection: "column", alignItems: "center" }}>
             <h2 className="cra-display" style={{ color: "var(--cra-white)", fontSize: "var(--fs-4xl)", margin: 0, textShadow: "0 2px 24px rgba(0,0,0,0.45)" }}>
               5 sedi <span style={{ color: "var(--cra-gold)" }}>al tuo fianco</span>
@@ -210,7 +213,7 @@ export function Hero({ onNavigate }) {
         </div>
 
         {/* —— Tappa finale: Chi siamo —— */}
-        <div ref={s4Ref} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", opacity: 0, pointerEvents: "none", willChange: "transform, opacity" }}>
+        <div ref={s4Ref} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", opacity: 0, visibility: "hidden", pointerEvents: "none", willChange: "transform, opacity" }}>
           <Container style={{ width: "100%" }}>
             <div style={{ maxWidth: "600px", paddingTop: "56px" }}>
               <h2 className="cra-display" style={{ color: "var(--cra-white)", fontSize: "var(--fs-4xl)", margin: 0, textShadow: "0 2px 24px rgba(0,0,0,0.45)" }}>

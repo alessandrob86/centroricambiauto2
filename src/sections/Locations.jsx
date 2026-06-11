@@ -33,7 +33,7 @@ const ORARI = {
 const CONTATTI = {
   rozzano: [
     { icon: "message-circle", label: "WhatsApp Business", value: "+39 02 846 3035", href: "https://wa.me/39028463035" },
-    { icon: "phone", label: "Centralino", value: "+39 081 281732", href: "tel:+39081281732" },
+    { icon: "phone", label: "Centralino (tutte le sedi)", value: "+39 081 281732", href: "tel:+39081281732" },
   ],
   collecchio: [
     { icon: "phone", label: "Telefono", value: "+39 0521 179 4079", href: "tel:+3905211794079" },
@@ -42,10 +42,10 @@ const CONTATTI = {
     { icon: "phone", label: "Telefono", value: "+39 0523 155 9993", href: "tel:+3905231559993" },
   ],
   poggioreale: [
-    { icon: "phone", label: "Centralino", value: "+39 081 281732", href: "tel:+39081281732" },
+    { icon: "phone", label: "Centralino (vale anche per questa sede)", value: "+39 081 281732", href: "tel:+39081281732" },
   ],
   vomero: [
-    { icon: "phone", label: "Centralino", value: "+39 081 281732", href: "tel:+39081281732" },
+    { icon: "phone", label: "Centralino (vale anche per questa sede)", value: "+39 081 281732", href: "tel:+39081281732" },
   ],
 };
 
@@ -172,14 +172,14 @@ export function Locations() {
                         <div style={{ marginTop: "6px", paddingTop: "8px", borderTop: "1px solid var(--char-700)", display: "flex", flexDirection: "column", gap: "6px" }}>
                           {(CONTATTI[s.id] || []).map((c) => (
                             <a key={c.value} href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                              style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-                              <Icon name={c.icon} size={14} color="var(--cra-gold)" />
+                              style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", textDecoration: "none", minHeight: "44px" }}>
+                              <Icon name={c.icon} size={15} color="var(--cra-gold)" />
                               <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-2xs)", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--char-400)" }}>{c.label}</span>
-                              <span style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-xs)", fontWeight: "var(--fw-semibold)", color: "var(--cra-white)", whiteSpace: "nowrap" }}>{c.value}</span>
+                              <span style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-sm)", fontWeight: "var(--fw-semibold)", color: "var(--cra-white)", whiteSpace: "nowrap" }}>{c.value}</span>
                             </a>
                           ))}
                           <a href={s.gmaps} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                            style={{ alignSelf: "flex-start", marginTop: "4px", fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "var(--fs-2xs)", letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", color: "var(--cra-white)", background: "var(--cra-red)", padding: "8px 13px", borderRadius: "var(--radius-sm)", whiteSpace: "nowrap" }}>
+                            style={{ alignSelf: "flex-start", marginTop: "4px", display: "inline-flex", alignItems: "center", minHeight: "44px", fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "var(--fs-2xs)", letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", color: "var(--cra-white)", background: "var(--cra-red)", padding: "10px 16px", borderRadius: "var(--radius-sm)", whiteSpace: "nowrap" }}>
                             Apri in Google Maps ↗
                           </a>
                         </div>
@@ -248,8 +248,8 @@ export function Footer({ onNavigate }) {
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
                 {c.items.map((i) => (
                   <li key={i.t}>
-                    <a href="#" onClick={(e) => { e.preventDefault(); if (i.go) onNavigate(i.go); }}
-                      style={{ color: "var(--char-300)", textDecoration: "none", fontSize: "var(--fs-sm)" }}>{i.t}</a>
+                    <button onClick={() => { if (i.go) onNavigate(i.go); }}
+                      style={{ background: "none", border: "none", padding: "4px 0", cursor: "pointer", fontFamily: "var(--font-body)", color: "var(--char-300)", fontSize: "var(--fs-sm)", textAlign: "left" }}>{i.t}</button>
                   </li>
                 ))}
               </ul>
@@ -267,10 +267,12 @@ export function Footer({ onNavigate }) {
           </div>
         </div>
         <div style={{ borderTop: "1px solid var(--char-800)", padding: "var(--space-4) 0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-4)", flexWrap: "wrap", fontSize: "var(--fs-xs)", color: "var(--char-400)" }}>
-          <span>© {new Date().getFullYear()} Centro Ricambi Auto srl — centroricambiautosrl.it</span>
+          <span>
+            © {new Date().getFullYear()} Centro Ricambi Auto srl — Via Nuova Poggioreale 48/a, 80143 Napoli · P.IVA IT 06795941217
+          </span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-4)", flexWrap: "wrap" }}>
-            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate("privacy"); }} style={{ color: "var(--char-300)", textDecoration: "none" }}>Privacy Policy</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); onNavigate("cookie"); }} style={{ color: "var(--char-300)", textDecoration: "none" }}>Cookie Policy</a>
+            <button onClick={() => onNavigate("privacy")} style={{ background: "none", border: "none", padding: "4px 0", cursor: "pointer", fontFamily: "var(--font-body)", color: "var(--char-300)", fontSize: "var(--fs-xs)" }}>Privacy Policy</button>
+            <button onClick={() => onNavigate("cookie")} style={{ background: "none", border: "none", padding: "4px 0", cursor: "pointer", fontFamily: "var(--font-body)", color: "var(--char-300)", fontSize: "var(--fs-xs)" }}>Cookie Policy</button>
             <span style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", letterSpacing: "0.06em", color: "var(--char-400)" }}>#AndiamoInsiemeOltre</span>
           </span>
         </div>

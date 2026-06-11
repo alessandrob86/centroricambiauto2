@@ -38,12 +38,18 @@ export default function App() {
   const scrollToAnchor = (id) => {
     const el = document.getElementById(id);
     if (!el) return false;
-    const top = window.scrollY + el.getBoundingClientRect().top - 110;
+    /* offset = altezza reale dell'header sticky, non un numero fisso */
+    const header = document.querySelector("header");
+    const offset = (header ? header.offsetHeight : 113) + 8;
+    const top = window.scrollY + el.getBoundingClientRect().top - offset;
     window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     el.classList.add("anchor-flash");
     setTimeout(() => el.classList.remove("anchor-flash"), 1400);
     return true;
   };
+
+  /* Posizioni di scroll per pagina: il tasto Indietro riporta dov'eri. */
+  const scrollPos = React.useRef({});
 
   /* Esegue lo scroll all'ancora SOLO dopo che la home è montata e impaginata. */
   useEffect(() => {
@@ -60,11 +66,16 @@ export default function App() {
     return () => cancelAnimationFrame(raf);
   }, [page, pendingAnchor]);
 
-  /* Back/forward del browser (popstate copre anche le voci create con pushState) */
+  /* Back/forward del browser (popstate copre anche le voci create con pushState):
+     ripristina la posizione di scroll salvata per la pagina di destinazione. */
   useEffect(() => {
     const onHash = () => {
-      setPage(pageFromHash());
-      window.scrollTo({ top: 0, behavior: "auto" });
+      const target = pageFromHash();
+      setPage(target);
+      const saved = scrollPos.current[target] || 0;
+      requestAnimationFrame(() => requestAnimationFrame(() =>
+        window.scrollTo({ top: saved, behavior: "auto" })
+      ));
     };
     window.addEventListener("hashchange", onHash);
     window.addEventListener("popstate", onHash);
@@ -78,6 +89,7 @@ export default function App() {
   };
 
   const navigate = (id) => {
+    scrollPos.current[page] = window.scrollY;
     if (!PAGES.includes(id)) {
       /* ancora sulla home: se siamo già in home scrolla subito, altrimenti
          passa in home e lascia che l'effetto esegua lo scroll dopo il mount */
@@ -99,13 +111,16 @@ export default function App() {
 
   return (
     <React.Fragment>
+      <a href="#contenuto" className="skip-link">Salta al contenuto</a>
       <ScrollProgress />
       <Header current={page === "contatti" ? "" : page} onNavigate={navigate} />
-      {page === "home" && <Home onNavigate={navigate} />}
-      {page === "contatti" && <Contact />}
-      {page === "chisiamo" && <About onNavigate={navigate} />}
-      {page === "privacy" && <Privacy onNavigate={navigate} />}
-      {page === "cookie" && <Cookie onNavigate={navigate} />}
+      <main id="contenuto">
+        {page === "home" && <Home onNavigate={navigate} />}
+        {page === "contatti" && <Contact />}
+        {page === "chisiamo" && <About onNavigate={navigate} />}
+        {page === "privacy" && <Privacy onNavigate={navigate} />}
+        {page === "cookie" && <Cookie onNavigate={navigate} />}
+      </main>
       <Footer onNavigate={navigate} />
       <BackToTop />
     </React.Fragment>

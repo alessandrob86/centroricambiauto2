@@ -9,6 +9,17 @@ body { font-family: var(--font-body); color: var(--text-body); background: var(-
 a { color: var(--cra-red); }
 ::selection { background: var(--cra-gold); color: var(--char-900); }
 
+/* Skip link: invisibile finché non riceve focus da tastiera */
+.skip-link {
+  position: fixed; top: 8px; left: 8px; z-index: 100;
+  background: var(--cra-gold); color: var(--char-900);
+  font-family: var(--font-brand); font-weight: var(--fw-bold);
+  font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: var(--ls-caps);
+  text-decoration: none; padding: 12px 18px; border-radius: var(--radius-sm);
+  transform: translateY(-200%);
+}
+.skip-link:focus { transform: none; }
+
 /* Focus visibile (anello oro del design system) su tutti gli interattivi */
 button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
 input:focus-visible, select:focus-visible, textarea:focus-visible {
@@ -137,6 +148,11 @@ html, body { overflow-x: clip; }
    accelerarla e invertirla; con prefers-reduced-motion resta statica. */
 .brand-marquee { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
 .brand-track { display: flex; width: max-content; will-change: transform; }
+/* Con riduzione movimento la corsa è ferma: la fascia diventa scorribile
+   a mano, senza maschera ai bordi — tutti i marchi restano raggiungibili */
+@media (prefers-reduced-motion: reduce) {
+  .brand-marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+}
 
 /* --- Chrome CTA (animated metallic border) --- */
 .chrome-btn { position: relative; border-radius: var(--radius-sm); padding: 2px; overflow: hidden; isolation: isolate; }

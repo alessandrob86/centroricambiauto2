@@ -22,6 +22,14 @@ export function Header({ current, onNavigate }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  /* Esc chiude il menu mobile */
+  React.useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
   /* Trasparente sopra la hero (solo in home, in cima); solido altrove, scrollando o a menu aperto */
   const solid = scrolled || current !== "home" || menuOpen;
 
@@ -50,12 +58,13 @@ export function Header({ current, onNavigate }) {
       <div style={{ background: "transparent", color: "var(--char-300)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <Container style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "var(--header-utility-h)", fontSize: "var(--fs-xs)" }}>
           <span className="hdr-utility-left" style={{ display: "inline-flex", alignItems: "center", gap: "16px", fontWeight: "var(--fw-semibold)", letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
-            <a href="tel:+39081281732" title="Chiama il centralino" style={{ display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", color: "inherit", textDecoration: "none", transition: "color var(--dur-base) var(--ease-standard)" }}
+            {/* padding + margine negativo: area di tocco ≥44px senza alzare la barra */}
+            <a href="tel:+39081281732" title="Chiama il centralino" style={{ display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", color: "inherit", textDecoration: "none", transition: "color var(--dur-base) var(--ease-standard)", padding: "14px 6px", margin: "-14px -6px" }}
               onMouseEnter={(e) => { e.currentTarget.style.color = "var(--cra-gold)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = "inherit"; }}>
               <Icon name="phone" size={13} color="var(--cra-gold)" /> <span className="hdr-label">Centralino&nbsp;</span>+39 081 281732
             </a>
-            <a href="https://wa.me/39028463035" target="_blank" rel="noopener noreferrer" title="Scrivici su WhatsApp" style={{ display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", color: "inherit", textDecoration: "none", transition: "color var(--dur-base) var(--ease-standard)" }}
+            <a href="https://wa.me/39028463035" target="_blank" rel="noopener noreferrer" title="Scrivici su WhatsApp" style={{ display: "inline-flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap", color: "inherit", textDecoration: "none", transition: "color var(--dur-base) var(--ease-standard)", padding: "14px 6px", margin: "-14px -6px" }}
               onMouseEnter={(e) => { e.currentTarget.style.color = "var(--cra-gold)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = "inherit"; }}>
               <Icon name="message-circle" size={13} color="var(--cra-gold)" /> <span className="hdr-label">WhatsApp&nbsp;</span>+39 02 846 3035
@@ -92,9 +101,9 @@ export function Header({ current, onNavigate }) {
 
         {/* controlli mobile: CTA primaria sempre visibile + hamburger */}
         <div className="hdr-mobile-controls">
-          <Button variant="primary" size="sm" onClick={() => go("contatti")}>Preventivo</Button>
+          <Button variant="primary" size="sm" style={{ minHeight: "44px" }} onClick={() => go("contatti")}>Preventivo</Button>
           <button onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Chiudi menu" : "Apri menu"} aria-expanded={menuOpen}
-            style={{ background: "none", border: "1px solid rgba(255,255,255,0.25)", borderRadius: "var(--radius-sm)", cursor: "pointer", padding: "9px 10px", display: "inline-flex", color: "var(--cra-white)" }}>
+            style={{ background: "none", border: "1px solid rgba(255,255,255,0.25)", borderRadius: "var(--radius-sm)", cursor: "pointer", minWidth: "44px", minHeight: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--cra-white)" }}>
             <Icon name={menuOpen ? "x" : "menu"} size={20} color="var(--cra-white)" />
           </button>
         </div>
