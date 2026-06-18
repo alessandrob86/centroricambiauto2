@@ -148,9 +148,9 @@ export function Hero({ onNavigate }) {
         }}></div>
 
         {/* —— Tappa 1: Il vero specialista —— */}
-        <div ref={s1Ref} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", willChange: "transform, opacity" }}>
+        <div ref={s1Ref} className="hero-mstage" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", willChange: "transform, opacity" }}>
           <Container style={{ width: "100%" }}>
-            <div style={{ maxWidth: "640px", paddingTop: "56px" }}>
+            <div className="hero-mbody" style={{ maxWidth: "640px", paddingTop: "56px" }}>
               <div className="hero-line" style={{ animationDelay: "60ms" }}>
                 <Eyebrow onDark>Da oltre 30 anni al tuo fianco</Eyebrow>
               </div>
@@ -213,9 +213,9 @@ export function Hero({ onNavigate }) {
         </div>
 
         {/* —— Tappa finale: Chi siamo —— */}
-        <div ref={s4Ref} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", opacity: 0, visibility: "hidden", pointerEvents: "none", willChange: "transform, opacity" }}>
+        <div ref={s4Ref} className="hero-mstage" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", opacity: 0, visibility: "hidden", pointerEvents: "none", willChange: "transform, opacity" }}>
           <Container style={{ width: "100%" }}>
-            <div style={{ maxWidth: "600px", paddingTop: "56px" }}>
+            <div className="hero-mbody" style={{ maxWidth: "600px", paddingTop: "56px" }}>
               <h2 className="cra-display" style={{ color: "var(--cra-white)", fontSize: "var(--fs-4xl)", margin: 0, textShadow: "0 2px 24px rgba(0,0,0,0.45)" }}>
                 Insieme a te <span style={{ color: "var(--cra-gold)" }}>con i fatti</span>
               </h2>

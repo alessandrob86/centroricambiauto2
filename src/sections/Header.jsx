@@ -3,6 +3,31 @@ import { Logo } from "../components/ds/Logo.jsx";
 import { Button } from "../components/ds/Button.jsx";
 import { Icon } from "../components/Icon.jsx";
 import { Container, ChromeButton } from "../components/shared.jsx";
+import l2fLogo from "../assets/brands/l2f.png";
+
+/* Bottone L2F dedicato: logo del marchio su fondo trasparente (l'argento + il
+   rosso si leggono bene sull'header scuro), con bagliore rosso sul logo al
+   passaggio. Volutamente diverso dal cromato "E-Com". */
+function L2FNavButton({ logoHeight = 24 }) {
+  const [hover, setHover] = React.useState(false);
+  return (
+    <a href="https://www.l2f.it" target="_blank" rel="noopener noreferrer" title="Scopri L2F — la nostra linea premium"
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        background: hover ? "rgba(255,255,255,0.07)" : "transparent",
+        borderRadius: "var(--radius-sm)", padding: "8px 14px", textDecoration: "none",
+        transform: hover ? "translateY(-1px)" : "none",
+        transition: "background var(--dur-base) var(--ease-standard), transform var(--dur-fast) var(--ease-standard)",
+      }}>
+      <img src={l2fLogo} alt="L2F" style={{
+        height: `${logoHeight}px`, width: "auto", display: "block",
+        filter: hover ? "drop-shadow(0 0 9px rgba(195,35,39,0.75))" : "none",
+        transition: "filter var(--dur-base) var(--ease-standard)",
+      }} />
+    </a>
+  );
+}
 
 const NAV = [
   { id: "home", label: "Home" },
@@ -94,6 +119,7 @@ export function Header({ current, onNavigate }) {
           <Button variant="primary" size="sm" iconLeft={<Icon name="file-text" size={15} />} onClick={() => go("contatti")}>
             Preventivo
           </Button>
+          <L2FNavButton logoHeight={24} />
           <ChromeButton href="https://centroricambiautosrl.blusys.it/" size="sm">
             <Icon name="cog" size={15} color="var(--cra-gold)" /> E-Com
           </ChromeButton>
@@ -124,7 +150,8 @@ export function Header({ current, onNavigate }) {
                 {n.label}
               </button>
             ))}
-            <div style={{ display: "flex", gap: "var(--space-3)", marginTop: "var(--space-4)", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", marginTop: "var(--space-4)", flexWrap: "wrap" }}>
+              <L2FNavButton logoHeight={26} />
               <ChromeButton href="https://centroricambiautosrl.blusys.it/" size="sm">
                 <Icon name="cog" size={15} color="var(--cra-gold)" /> E-Com
               </ChromeButton>

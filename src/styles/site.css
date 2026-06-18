@@ -38,9 +38,14 @@ html, body { overflow-x: clip; }
 
 /* Header: nav desktop vs menu mobile */
 .hdr-mobile-controls { display: none; align-items: center; gap: 12px; }
-@media (max-width: 900px) {
+/* La nav desktop ospita 4 voci + 3 bottoni (Preventivo · E-Com · L2F): sotto
+   ~1024px non c'è più spazio e l'ultimo bottone verrebbe tagliato, quindi
+   passiamo al menu hamburger (che contiene gli stessi pulsanti). */
+@media (max-width: 1024px) {
   .hdr-nav { display: none !important; }
   .hdr-mobile-controls { display: flex; }
+}
+@media (max-width: 900px) {
   .hdr-utility-extra { display: none !important; }
 }
 /* Utility bar su schermi stretti: via le parole, restano icona + numero */
@@ -61,6 +66,10 @@ html, body { overflow-x: clip; }
      (si sovrapporrebbe alle mini-statistiche) e spazi più compatti */
   .hero-scroll-cue { display: none; }
   .hero-ministats { margin-top: var(--space-6) !important; gap: var(--space-5) !important; }
+  /* il pannello hero è centrato verticalmente: su mobile, con la viewport più
+     corta, il top finiva sotto l'header sticky. Allineo in alto e libero l'header. */
+  .hero-mstage { align-items: flex-start !important; }
+  .hero-mbody { padding-top: calc(var(--header-total) + 1rem) !important; }
 }
 
 /* Griglie di sezione */
@@ -152,6 +161,36 @@ html, body { overflow-x: clip; }
    a mano, senza maschera ai bordi — tutti i marchi restano raggiungibili */
 @media (prefers-reduced-motion: reduce) {
   .brand-marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+}
+
+/* --- Fascia "Il nostro marchio" (L2F) ---
+   Sfondo foto officina full-bleed + scrim scuro pesato a sinistra (dove vive
+   il testo) così il meccanico resta visibile a destra. Ken Burns lento. */
+.l2f-band { position: relative; overflow: hidden; background: var(--char-900); }
+.l2f-band-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background-size: cover; background-position: center right; background-repeat: no-repeat;
+  transform: scale(1.04);
+}
+.l2f-band-scrim {
+  position: absolute; inset: 0; z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(15,18,17,0.95) 0%, rgba(15,18,17,0.88) 30%, rgba(15,18,17,0.46) 62%, rgba(15,18,17,0.18) 100%),
+    linear-gradient(0deg, rgba(15,18,17,0.55), rgba(15,18,17,0) 45%);
+}
+.l2f-band-content { position: relative; z-index: 2; max-width: 600px; padding: var(--space-11) 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .l2f-band-bg { animation: l2fKenBurns 26s var(--ease-standard) infinite alternate; }
+  @keyframes l2fKenBurns {
+    from { transform: scale(1.04); }
+    to   { transform: scale(1.14); }
+  }
+}
+@media (max-width: 760px) {
+  .l2f-band-bg { background-position: 72% center; }
+  /* su mobile il testo copre tutta la larghezza: scrim uniforme più scuro */
+  .l2f-band-scrim { background: linear-gradient(180deg, rgba(15,18,17,0.86) 0%, rgba(15,18,17,0.92) 100%); }
+  .l2f-band-content { max-width: 100%; }
 }
 
 /* --- Chrome CTA (animated metallic border) --- */

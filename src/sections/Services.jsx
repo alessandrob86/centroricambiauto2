@@ -94,7 +94,8 @@ function ServiceCard({ icon, title, desc, tag }) {
    ricade automaticamente sul wordmark testuale — basta aggiungere il file
    con lo slug giusto perché il logo compaia. */
 const BRANDS = [
-  { name: "L2F", slug: "l2f" },
+  /* L2F è il nostro marchio: l'unico chip cliccabile della fascia → www.l2f.it */
+  { name: "L2F", slug: "l2f", href: "https://www.l2f.it" },
   { name: "Bosch", slug: "bosch" },
   /* dark: true → chip charcoal, per i loghi pubblicati solo in versione bianca */
   { name: "Xenergy", slug: "xenergy", dark: true },
@@ -167,28 +168,34 @@ const BRAND_LOGOS = Object.fromEntries(
 
 function BrandChip({ b }) {
   const src = BRAND_LOGOS[b.slug];
+  const linked = !!b.href;
   const base = {
     display: "inline-flex", alignItems: "center", justifyContent: "center",
     height: "56px", padding: "10px 20px", marginRight: "14px",
     background: b.dark ? "var(--char-800)" : "var(--surface-card)",
-    border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-sm)",
-    whiteSpace: "nowrap",
+    /* il chip cliccabile (L2F) si distingue con bordo oro */
+    border: linked ? "1px solid var(--cra-gold)" : "1px solid var(--border-subtle)",
+    borderRadius: "var(--radius-sm)", whiteSpace: "nowrap",
   };
-  if (src) {
+  const content = src
+    ? <img src={src} alt={b.name} title={b.name} loading="lazy"
+        style={{ height: "30px", width: "auto", maxWidth: "130px", objectFit: "contain", display: "block" }} />
+    : <span style={{
+        fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "var(--fs-md)",
+        letterSpacing: "0.06em", color: "var(--char-500)", textTransform: "uppercase",
+      }}>{b.name}</span>;
+
+  if (linked) {
     return (
-      <span style={base}>
-        <img src={src} alt={b.name} title={b.name} loading="lazy"
-          style={{ height: "30px", width: "auto", maxWidth: "130px", objectFit: "contain", display: "block" }} />
-      </span>
+      <a href={b.href} target="_blank" rel="noopener noreferrer" title={`${b.name} — scopri il marchio`}
+        style={{ ...base, cursor: "pointer", textDecoration: "none", transition: "box-shadow var(--dur-base) var(--ease-standard)" }}
+        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 0 18px rgba(253,197,67,0.45)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; }}>
+        {content}
+      </a>
     );
   }
-  return (
-    <span style={{
-      ...base,
-      fontFamily: "var(--font-brand)", fontWeight: "var(--fw-extrabold)", fontSize: "var(--fs-md)",
-      letterSpacing: "0.06em", color: "var(--char-500)", textTransform: "uppercase",
-    }}>{b.name}</span>
-  );
+  return <span style={base}>{content}</span>;
 }
 
 export function Brands() {

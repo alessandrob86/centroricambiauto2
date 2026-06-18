@@ -9,8 +9,45 @@ import { Container, Eyebrow } from "../components/shared.jsx";
 
 export function Contact() {
   const [sent, setSent] = React.useState(false);
+  const [sending, setSending] = React.useState(false);
+  /* "server" = inviata via Resend; "mailto" = fallback al programma di posta */
+  const [mode, setMode] = React.useState("server");
+  const [hp, setHp] = React.useState(""); // honeypot anti-spam
   const [form, setForm] = React.useState({ nome: "", officina: "", email: "", tel: "", cat: "", msg: "" });
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  const openMailto = () => {
+    const subject = encodeURIComponent("Richiesta preventivo — " + (form.officina || form.nome || "officina"));
+    const body = encodeURIComponent(
+      "Nome: " + form.nome + "\nOfficina: " + form.officina + "\nEmail: " + form.email +
+      "\nTelefono: " + form.tel + "\nCategoria: " + form.cat + "\n\nDettagli:\n" + form.msg
+    );
+    window.location.href = "mailto:ordini@centroricambiautosrl.it?subject=" + subject + "&body=" + body;
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (sending) return;
+    setSending(true);
+    try {
+      const res = await fetch("/.netlify/functions/send-preventivo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, website: hp }),
+      });
+      if (res.ok) {
+        setMode("server");
+      } else {
+        openMailto(); setMode("mailto");
+      }
+    } catch {
+      /* function non raggiungibile (es. dominio non ancora verificato): fallback */
+      openMailto(); setMode("mailto");
+    } finally {
+      setSending(false);
+      setSent(true);
+    }
+  };
 
   return (
     <div style={{ background: "var(--surface-subtle)" }}>
@@ -28,21 +65,25 @@ export function Contact() {
                 <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "64px", height: "64px", borderRadius: "999px", background: "var(--red-50)", color: "var(--cra-red)", marginBottom: "var(--space-4)" }}>
                   <Icon name="check" size={32} color="var(--cra-red)" />
                 </span>
-                <h2 className="cra-h2" style={{ margin: 0 }}>Richiesta pronta</h2>
-                <p className="cra-lead" style={{ marginTop: "var(--space-3)" }}>Si aprirà il tuo programma di posta: la richiesta è indirizzata a <b>ordini@centroricambiautosrl.it</b>.</p>
+                {mode === "server" ? (
+                  <React.Fragment>
+                    <h2 className="cra-h2" style={{ margin: 0 }}>Richiesta inviata!</h2>
+                    <p className="cra-lead" style={{ marginTop: "var(--space-3)" }}>Grazie! Ti rispondiamo in <b>meno di 10 minuti</b> negli orari di apertura. Una conferma è stata inviata a <b>{form.email}</b>.</p>
+                  </React.Fragment>
+                ) : (
+                  <React.Fragment>
+                    <h2 className="cra-h2" style={{ margin: 0 }}>Richiesta pronta</h2>
+                    <p className="cra-lead" style={{ marginTop: "var(--space-3)" }}>Si aprirà il tuo programma di posta: la richiesta è indirizzata a <b>ordini@centroricambiautosrl.it</b>.</p>
+                  </React.Fragment>
+                )}
                 <Button variant="secondary" style={{ marginTop: "var(--space-5)" }} onClick={() => setSent(false)}>Invia un&rsquo;altra richiesta</Button>
               </div>
             ) : (
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const subject = encodeURIComponent("Richiesta preventivo — " + (form.officina || form.nome || "officina"));
-                const body = encodeURIComponent(
-                  "Nome: " + form.nome + "\nOfficina: " + form.officina + "\nEmail: " + form.email +
-                  "\nTelefono: " + form.tel + "\nCategoria: " + form.cat + "\n\nDettagli:\n" + form.msg
-                );
-                window.location.href = "mailto:ordini@centroricambiautosrl.it?subject=" + subject + "&body=" + body;
-                setSent(true);
-              }}>
+              <form onSubmit={submit}>
+                {/* honeypot anti-spam: invisibile agli utenti, i bot lo compilano */}
+                <input type="text" name="website" value={hp} onChange={(e) => setHp(e.target.value)}
+                  tabIndex={-1} autoComplete="off" aria-hidden="true"
+                  style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", opacity: 0 }} />
                 <div className="form-grid" style={{ display: "grid", gap: "var(--space-4)" }}>
                   <Input label="Nome e cognome" placeholder="Mario Rossi" value={form.nome} onChange={set("nome")} />
                   <Input label="Officina / azienda" placeholder="Autofficina Rossi" value={form.officina} onChange={set("officina")} />
@@ -58,8 +99,8 @@ export function Contact() {
                   <textarea value={form.msg} onChange={set("msg")} rows={4} placeholder="Marca, modello, targa o codice OE del ricambio…"
                     style={{ fontFamily: "var(--font-body)", fontSize: "var(--fs-base)", color: "var(--text-strong)", border: "var(--border-w-2) solid var(--border-strong)", borderRadius: "var(--radius-sm)", padding: "11px 14px", resize: "vertical", outline: "none" }} />
                 </div>
-                <Button type="submit" variant="primary" size="lg" fullWidth style={{ marginTop: "var(--space-5)" }}
-                  iconRight={<Icon name="arrow-right" size={18} />}>Invia richiesta</Button>
+                <Button type="submit" variant="primary" size="lg" fullWidth disabled={sending} style={{ marginTop: "var(--space-5)" }}
+                  iconRight={sending ? null : <Icon name="arrow-right" size={18} />}>{sending ? "Invio in corso…" : "Invia richiesta"}</Button>
               </form>
             )}
           </Card>

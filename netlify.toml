@@ -1,0 +1,11 @@
+# Configurazione Netlify per il sito Centro Ricambi Auto (Vite + Functions).
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Le Netlify Functions v2 (export default) vivono in netlify/functions/.
+# Endpoint del form preventivi: /.netlify/functions/send-preventivo

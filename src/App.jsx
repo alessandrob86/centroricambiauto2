@@ -3,6 +3,7 @@ import { Header } from "./sections/Header.jsx";
 import { Hero } from "./sections/Hero.jsx";
 import { Services, Brands } from "./sections/Services.jsx";
 import { StatsBand, Strengths } from "./sections/Stats.jsx";
+import { L2FBrand } from "./sections/L2F.jsx";
 import { Locations, Footer } from "./sections/Locations.jsx";
 import { Contact } from "./sections/Contact.jsx";
 import { About } from "./sections/About.jsx";
@@ -26,6 +27,7 @@ function Home({ onNavigate }) {
       <Services />
       <StatsBand />
       <Strengths />
+      <L2FBrand />
       <Locations />
     </React.Fragment>
   );
