@@ -10,7 +10,7 @@ import {
 import * as api from "../lib/internoApi.js";
 import * as push from "../lib/push.js";
 
-const { useState, useEffect, useCallback, useMemo } = React;
+const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
 /* ============================================================
    MODULO INTERNO — #/interno
@@ -608,6 +608,32 @@ function FotoMini({ path }) {
         variants={FOTOMINI_SU} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} />
     </span>
   );
+}
+
+/* Una tabella che sul telefono si scompone in schede.
+ *
+ * L'etichetta la copia dall'intestazione invece di farsela scrivere cella
+ * per cella: sette tabelle per una media di cinque colonne sono trentacinque
+ * attributi da tenere allineati a mano, e il primo che si sfila mente.
+ * La prima colonna resta senza: fa da titolo della scheda.
+ */
+function TabellaSchede({ children, ...resto }) {
+  const rif = useRef(null);
+  useEffect(() => {
+    const t = rif.current;
+    // Su schermo grande le etichette non le legge nessuno: farle comunque
+    // sarebbero settecento scritture inutili a ogni battuta nel campo di
+    // ricerca di una tabella da cento righe.
+    if (!t || !window.matchMedia(SOGLIA_MOBILE).matches) return;
+    const teste = [...t.querySelectorAll("thead th")].map((h) => h.textContent.trim());
+    for (const tr of t.querySelectorAll("tbody tr")) {
+      [...tr.children].forEach((td, i) => {
+        if (i > 0 && teste[i]) td.setAttribute("data-etichetta", teste[i]);
+        else td.removeAttribute("data-etichetta");
+      });
+    }
+  });
+  return <table ref={rif} className="dip-tabella a-schede" {...resto}>{children}</table>;
 }
 
 /** Una voce cliccabile dentro un riquadro della home. */
@@ -2463,7 +2489,7 @@ function Statistiche({ setErr }) {
           <details className="dip-dettaglio">
             <summary>Tutti i numeri per agente</summary>
             <div className="dip-tab-scroll">
-              <table className="dip-tabella">
+              <TabellaSchede>
                 <thead><tr>
                   <th>Agente</th><th>Filiale</th><th className="dip-num">In carico</th>
                   <th className="dip-num">Sì</th><th className="dip-num">No</th>
@@ -2493,7 +2519,7 @@ function Statistiche({ setErr }) {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </TabellaSchede>
             </div>
             <Paginatore p={pgAgenti} nome="agenti" />
             <p className="dip-sub" style={{ marginTop: "8px" }}>
@@ -2508,7 +2534,7 @@ function Statistiche({ setErr }) {
             <Icon name="tag" size={14} color="var(--cra-red)" /> Riepilogo promozioni
           </h2>
           <div className="dip-tab-scroll">
-            <table className="dip-tabella">
+            <TabellaSchede>
               <thead><tr>
                 <th>Promozione</th><th className="dip-num">Clienti</th>
                 <th className="dip-num">Sì</th><th className="dip-num">No</th>
@@ -2536,7 +2562,7 @@ function Statistiche({ setErr }) {
                   </motion.tr>
                 ))}
               </tbody>
-            </table>
+            </TabellaSchede>
           </div>
           <Paginatore p={pgPromo} nome="promozioni" />
           <p className="dip-sub" style={{ marginTop: "8px" }}>
@@ -2549,7 +2575,7 @@ function Statistiche({ setErr }) {
             <Icon name="building-2" size={14} color="var(--cra-red)" /> I clienti che comprano di più
           </h2>
           <div className="dip-tab-scroll">
-            <table className="dip-tabella">
+            <TabellaSchede>
               <thead><tr>
                 <th>Cliente</th><th className="dip-num">Sì</th><th className="dip-num">No</th>
                 <th className="dip-num">Pezzi</th><th className="dip-num">Fatturato</th>
@@ -2571,7 +2597,7 @@ function Statistiche({ setErr }) {
                   </motion.tr>
                 ))}
               </tbody>
-            </table>
+            </TabellaSchede>
           </div>
           <Paginatore p={pgClienti} nome="clienti" />
 
@@ -2581,7 +2607,7 @@ function Statistiche({ setErr }) {
             <span className="dip-sub" style={{ marginLeft: "8px" }}>{numero(mov.totale)}</span>
           </h2>
           <div className="dip-tab-scroll">
-            <table className="dip-tabella">
+            <TabellaSchede>
               <thead><tr>
                 <th>Data</th><th>Cliente</th><th>Promozione</th><th>Agente</th>
                 <th className="dip-num">Q.tà</th><th className="dip-num">Valore</th><th>Esito</th>
@@ -2602,7 +2628,7 @@ function Statistiche({ setErr }) {
                   </motion.tr>
                 ))}
               </tbody>
-            </table>
+            </TabellaSchede>
           </div>
           <Paginatore p={pgMov} nome="movimenti" />
         </React.Fragment>
@@ -2835,7 +2861,7 @@ function Profilo({ dipendente, ruolo, setErr }) {
             <Icon name="users" size={14} color="var(--cra-red)" /> La squadra
           </h2>
           <div className="dip-tab-scroll">
-            <table className="dip-tabella">
+            <TabellaSchede>
               <thead><tr>
                 <th>Persona</th><th>Filiale</th>
                 <th className="dip-num">Traguardi</th><th>Ultimo</th><th>Quando</th>
@@ -2851,7 +2877,7 @@ function Profilo({ dipendente, ruolo, setErr }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </TabellaSchede>
           </div>
         </React.Fragment>
       )}
@@ -3105,7 +3131,7 @@ function Notifiche({ setErr }) {
 
       {dispositivi.length > 0 && (
         <div className="dip-tab-scroll" style={{ marginTop: "var(--space-4)" }}>
-          <table className="dip-tabella">
+          <TabellaSchede>
             <thead><tr><th>Dispositivo</th><th>Iscritto</th><th>Ultima notifica</th></tr></thead>
             <tbody>
               {dispositivi.map((d) => (
@@ -3119,7 +3145,7 @@ function Notifiche({ setErr }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </TabellaSchede>
         </div>
       )}
     </React.Fragment>
@@ -3230,7 +3256,7 @@ function Gestione({ isAdmin, zone, setErr }) {
           </div>
 
           <div className="dip-tab-scroll">
-            <table className="dip-tabella">
+            <TabellaSchede>
               <thead><tr><th>Persona</th><th>Ruolo</th><th>Filiale</th><th>Accesso</th><th /></tr></thead>
               <tbody>
                 {dip.map((d, i) => (
@@ -3252,7 +3278,7 @@ function Gestione({ isAdmin, zone, setErr }) {
                   </motion.tr>
                 ))}
               </tbody>
-            </table>
+            </TabellaSchede>
           </div>
           <p className="dip-sub" style={{ marginTop: "10px" }}>
             Chi risulta <b>da invitare</b> non ha ancora le credenziali: si creano da
