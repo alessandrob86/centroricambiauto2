@@ -879,8 +879,46 @@ function PrezziCliente({ officina, righe, categoriaNome, prezzoCorrente, onCambi
   );
 }
 
+/* Il cancello sta in un componente suo, e il pannello in un altro.
+ *
+ * Non è pignoleria: prima le due uscite anticipate stavano in mezzo, con
+ * ventitré hook dopo. Al primo disegno `loading` è vero e la funzione esce
+ * subito, quindi quegli hook non vengono chiamati; appena l'accesso si
+ * risolve vengono chiamati tutti. React conta gli hook a ogni disegno e
+ * pretende lo stesso numero: ne trovava ventitré in più e si fermava.
+ *
+ * Succedeva solo ricaricando la pagina direttamente su #/admin, quando il
+ * controllo dell'accesso finiva dopo il download del codice — una corsa,
+ * cioè un difetto che si presenta a caso e a qualcun altro. Separando i due
+ * componenti gli hook del pannello girano solo quando il cancello è già
+ * passato: è la stessa condizione di prima, ma senza rami dentro. */
 export function Admin({ onNavigate }) {
-  const { loading, isAdmin, officina: mia, refreshOfficina } = useAuth();
+  const { loading, isAdmin } = useAuth();
+  if (loading) {
+    return <section className="adm-page"><div className="adm-wrap"><p className="adm-state">Caricamento…</p></div></section>;
+  }
+  if (!isAdmin) {
+    return (
+      <section className="adm-page">
+        <div className="adm-wrap">
+          <div className="adm-state">
+            <Icon name="shield-check" size={40} color="var(--cra-gold)" />
+            <h1 className="adm-title" style={{ margin: "12px 0 6px" }}>Area riservata</h1>
+            <p style={{ margin: 0 }}>Questa sezione è accessibile solo agli amministratori.</p>
+            <button className="adm-btn" style={{ marginTop: "16px" }} onClick={() => onNavigate("home")}>Torna alla home</button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return <PannelloAdmin />;
+}
+
+/* Il pannello vero. Qui dentro `loading` è per forza finito e `isAdmin` per
+   forza vero: se li ricontrollasse sarebbe un dubbio senza motivo. */
+function PannelloAdmin() {
+  const { isAdmin, officina: mia, refreshOfficina } = useAuth();
   const [tab, setTab] = useState("prezzi");
   const [err, setErr] = useState(null);
 
@@ -1036,23 +1074,6 @@ export function Admin({ onNavigate }) {
       .catch(() => setErr("Caricamento del catalogo non riuscito."));
   }, [isAdmin, l2fRighe]);
 
-  if (loading) {
-    return <section className="adm-page"><div className="adm-wrap"><p className="adm-state">Caricamento…</p></div></section>;
-  }
-  if (!isAdmin) {
-    return (
-      <section className="adm-page">
-        <div className="adm-wrap">
-          <div className="adm-state">
-            <Icon name="shield-check" size={40} color="var(--cra-gold)" />
-            <h1 className="adm-title" style={{ margin: "12px 0 6px" }}>Area riservata</h1>
-            <p style={{ margin: 0 }}>Questa sezione è accessibile solo agli amministratori.</p>
-            <button className="adm-btn" style={{ marginTop: "16px" }} onClick={() => onNavigate("home")}>Torna alla home</button>
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   /* ---------- officine ---------- */
   const patchOfficina = (id, patch) =>
@@ -1451,7 +1472,11 @@ export function Admin({ onNavigate }) {
       dalFoglio: categorieDalFoglio.has(c.id),
       sottotitolo: `${(contaCat[c.id]?.conAccesso ?? 0) + (contaCat[c.id]?.anagrafiche ?? 0)} officine`,
     })),
-  ]), [categorieCli, contenitoreDi, categorieDalFoglio, officine]);
+  /* `contaCat` c'era nel corpo ma non fra le dipendenze: i conteggi
+     «N officine» accanto a ogni categoria restavano quelli del caricamento
+     precedente. `officine` invece qui non si legge: c'era come sostituto di
+     quello che mancava davvero. */
+  ]), [categorieCli, contenitoreDi, categorieDalFoglio, contaCat]);
 
   /** Righe della matrice: un solo catalogo, la vetrina è un filtro.
    *  Prodotti e varianti insieme; le varianti restano sotto il loro padre. */

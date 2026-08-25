@@ -709,7 +709,6 @@ function StoreInner({ onNavigate }) {
       count: (countByCat[m.id] ?? 0) + m.subs.reduce((sum, s) => sum + (countByCat[s.id] ?? 0), 0),
     }))
     .filter((m) => m.count > 0);
-  const activeMacro = macro !== "tutti" ? tree.find((m) => m.id === macro) : null;
 
   const pickMacro = (id) => { setMacro(id); setSub(null); setFacetVals({}); };
   const pickSub = (id) => { setSub(id); setFacetVals({}); };
@@ -767,7 +766,6 @@ function StoreInner({ onNavigate }) {
   const catalogoGenerico = activeCount === 0 && !query.trim();
   const inGriglia = useMemo(
     () => disponi(prodotti, catalogoGenerico, scaduti, adesso()),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [prodotti, catalogoGenerico, scaduti],
   );
   const showSidebar = !narrow || filtersOpen;

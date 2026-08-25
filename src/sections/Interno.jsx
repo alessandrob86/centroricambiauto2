@@ -1903,7 +1903,7 @@ function DettaglioScheda({ scheda, dipendente, puoGestire, setErr, onChiudi, onM
 /* ============================================================
    I MIEI CLIENTI — quello che l'agente ha in mano.
    ============================================================ */
-function MieiClienti({ dipendente, setErr }) {
+function MieiClienti({ setErr }) {
   const [righe, setRighe] = useState(null);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(null);

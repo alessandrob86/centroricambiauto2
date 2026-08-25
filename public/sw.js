@@ -6,7 +6,7 @@ self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
 self.addEventListener("push", (e) => {
-  let d = {};
+  let d;
   try { d = e.data ? e.data.json() : {}; } catch { d = { titolo: e.data && e.data.text() }; }
 
   const titolo = d.titolo || "Centro Ricambi Auto";
