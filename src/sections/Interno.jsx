@@ -2012,22 +2012,25 @@ function MieiClienti({ setErr }) {
               {cerca.trim() && trovate.length === 0 && (
                 <p className="dip-sub" style={{ marginTop: "8px" }}>Nessun cliente trovato.</p>
               )}
-              {trovate.map((o) => (
-                <div key={o.id} className="adm-row-head" style={{ gap: "10px", padding: "7px 0" }}>
-                  <span style={{ flex: 1, minWidth: "200px" }}>
-                    {o.ragione_sociale}
-                    <br /><span className="dip-sub">
+              {/* Un risultato per riga, col pulsante che sul telefono prende
+                  tutta la larghezza: prendere un cliente è il gesto che si fa
+                  in piedi davanti a un'officina, non seduti alla scrivania. */}
+              {trovate.map((o, i) => (
+                <motion.div key={o.id} className="dip-trovato" {...entra(i)}>
+                  <span className="dip-trovato-chi">
+                    <b>{o.ragione_sociale}</b>
+                    <span className="dip-sub">
                       {o.codice_cliente ?? "—"}{o.citta ? ` · ${o.citta}` : ""}{o.provincia ? ` (${o.provincia})` : ""}
                     </span>
                   </span>
                   {gia.has(o.id)
                     ? <span className="dip-esito accettata">già tuo</span>
                     : (
-                      <button className="adm-btn mini" disabled={busy === o.id} onClick={() => prendi(o)}>
-                        <Icon name="plus" size={12} /> {busy === o.id ? "…" : "Prendi in carico"}
+                      <button className="adm-btn" disabled={busy === o.id} onClick={() => prendi(o)}>
+                        <Icon name="plus" size={14} /> {busy === o.id ? "Prendo…" : "Prendi in carico"}
                       </button>
                     )}
-                </div>
+                </motion.div>
               ))}
             </motion.div>
           )}
