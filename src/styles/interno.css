@@ -865,3 +865,266 @@
 @media (prefers-reduced-motion: reduce) {
   .dip-page *, .dip-barra * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* ============================================================
+   TELEFONO — non lo schermo grande più stretto.
+
+   Due cose non si risolvono col foglio di stile e stanno nel codice:
+   la bacheca personalizzabile diventa un riepilogo fisso, e la striscia
+   di schede in alto diventa una barra in basso. Qui c'è il resto.
+   ============================================================ */
+@media (max-width: 760px) {
+  /* spazio per la barra in basso, più quello della tacca sugli iPhone */
+  .dip-page { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .dip-wrap { padding-left: 14px; padding-right: 14px; }
+
+  .dip-title { font-size: clamp(1.4rem, 7vw, 2rem); }
+  .dip-head { gap: 10px; }
+  .dip-chi span { display: none; }          /* il nome sta nel Profilo, non qui */
+
+  /* Bersagli da dito: sotto i 44 px si sbaglia riga. */
+  .dip-mini-annuncio { min-height: 56px; padding-top: 12px; padding-bottom: 12px; }
+  .adm-btn { min-height: 44px; }
+  .dip-mini-freccia { opacity: 1; }         /* niente hover: la freccia si vede sempre */
+}
+
+/* La home del telefono: una colonna, blocchi in ordine deciso. */
+.dip-tel-home { display: flex; flex-direction: column; gap: 14px; }
+
+.dip-tel-blocco {
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle, #e2e0da);
+  padding: 14px 14px 10px;
+}
+
+.dip-tel-titolo {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 10px;
+  font-family: var(--font-brand); font-weight: var(--fw-bold);
+  font-size: var(--fs-xs); text-transform: uppercase;
+  letter-spacing: var(--ls-caps); color: var(--text-strong);
+}
+
+/* ── La barra in basso ────────────────────────────────────────────────── */
+.dip-giu {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  display: flex; align-items: stretch;
+  background: var(--cra-charcoal, #272d2b);
+  border-top: 2px solid var(--cra-gold, #fdc543);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.dip-giu-voce {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 9px 4px 7px;
+  background: none; border: none; cursor: pointer;
+  color: var(--char-200, #c9cccb);
+  font-family: var(--font-brand); font-size: 10px; font-weight: var(--fw-bold);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  transition: color .16s ease;
+}
+.dip-giu-voce.on { color: var(--cra-gold, #fdc543); }
+.dip-giu-voce:active { transform: scale(.96); }
+
+.dip-giu-icona { position: relative; display: inline-flex; }
+.dip-giu-nome {
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.dip-giu-bollo {
+  position: absolute; top: -4px; right: -7px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--cra-red); color: #fff;
+  font-size: 9px; font-weight: var(--fw-bold); line-height: 1;
+}
+
+/* ── Il foglio di «Altro» ─────────────────────────────────────────────── */
+.dip-velo {
+  position: fixed; inset: 0; z-index: 61;
+  background: rgba(0, 0, 0, .45);
+}
+
+.dip-foglio {
+  position: fixed; left: 0; right: 0; z-index: 62;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column;
+  background: var(--cra-charcoal, #272d2b);
+  border-top: 2px solid var(--cra-gold, #fdc543);
+  padding: 6px 0 10px;
+}
+.dip-foglio .dip-giu-voce {
+  flex: 0 0 auto; flex-direction: row; justify-content: flex-start;
+  gap: 12px; padding: 14px 20px; font-size: var(--fs-xs);
+}
+.dip-foglio-presa {
+  width: 40px; height: 4px; margin: 2px auto 8px;
+  background: var(--char-500, #6e7678); border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dip-giu-voce:active { transform: none; }
+}
+
+/* I due pulsanti tondi vivono in fondo a destra, dove ora c'è la barra.
+   Si alzano solo quando la barra esiste davvero — `:has()` la cerca nella
+   pagina — così sul sito pubblico e su desktop nulla si muove.
+   L'`!important` sul torna-su serve perché quel pulsante porta lo stile
+   scritto addosso: senza, il foglio di stile non lo può spostare. */
+@media (max-width: 760px) {
+  body:has(.dip-giu) .cra-su {
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  body:has(.dip-giu) .dip-camp {
+    bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ============================================================
+   FINESTRA D'INVIO — al centro su schermo grande, dal basso sul telefono.
+   ============================================================ */
+.dip-finestra {
+  position: fixed; z-index: 70;
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  display: flex; flex-direction: column;
+  background: var(--surface-card, #fff);
+  border: var(--border-w-2) solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+}
+
+.dip-fin-testa {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 16px 18px; border-bottom: 1px solid var(--border-subtle, #e2e0da);
+}
+.dip-fin-testa h2 {
+  margin: 2px 0; font-family: var(--font-brand); font-weight: var(--fw-bold);
+  font-size: var(--fs-md); color: var(--text-strong); line-height: 1.2;
+}
+
+.dip-fin-corpo {
+  padding: 16px 18px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 18px;
+}
+
+.dip-fin-piede {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 14px 18px; border-top: 1px solid var(--border-subtle, #e2e0da);
+  background: var(--surface-page, #f7f6f3);
+}
+
+.dip-campo { display: flex; flex-direction: column; gap: 8px; }
+.dip-campo-nome {
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-xs);
+  text-transform: uppercase; letter-spacing: var(--ls-caps); color: var(--text-strong);
+}
+.dip-campo textarea {
+  width: 100%; padding: 10px 12px; font: inherit; font-size: var(--fs-sm);
+  border: 1px solid var(--border-strong); background: var(--surface-page, #fff);
+  resize: vertical; min-height: 72px;
+}
+
+/* Quantità: due pulsanti veri. Le frecce di un campo numerico su un telefono
+   sono alte sei pixel e non si azzeccano. */
+.dip-quantita { display: inline-flex; align-items: stretch; border: var(--border-w-2) solid var(--border-strong); width: fit-content; }
+.dip-quantita button {
+  min-width: 48px; min-height: 48px; border: none; background: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.dip-quantita button:active { background: var(--dip-velo, rgba(0, 0, 0, .08)); }
+.dip-quantita input {
+  width: 84px; border: none; border-left: 1px solid var(--border-subtle, #e2e0da);
+  border-right: 1px solid var(--border-subtle, #e2e0da);
+  text-align: center; font: inherit; font-size: var(--fs-md);
+  font-weight: var(--fw-bold); font-variant-numeric: tabular-nums;
+  background: var(--surface-page, #fff);
+}
+/* Le frecciette native non servono più e rubano spazio. */
+.dip-quantita input::-webkit-outer-spin-button,
+.dip-quantita input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.dip-quantita input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+/* Le quattro scelte del documento: bersagli grandi, non un menu a tendina —
+   su un telefono una tendina nasconde le opzioni dietro un secondo gesto. */
+.dip-scelte { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.dip-scelta {
+  display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
+  min-height: 58px; padding: 10px 12px; cursor: pointer; text-align: left;
+  background: var(--surface-page, #fff);
+  border: var(--border-w-2) solid var(--border-subtle, #e2e0da);
+  transition: border-color .14s ease, background .14s ease;
+}
+.dip-scelta b {
+  font-family: var(--font-brand); font-size: var(--fs-sm); color: var(--text-strong);
+}
+.dip-scelta span { font-size: var(--fs-2xs); color: var(--text-muted); line-height: 1.3; }
+.dip-scelta:hover { border-color: var(--border-strong); }
+.dip-scelta.on { border-color: var(--cra-red); background: #faf0ef; }
+.dip-scelta.on b { color: var(--cra-red); }
+
+@media (max-width: 760px) {
+  /* Dal basso, come un foglio: è dove sta il pollice e non copre la tastiera. */
+  .dip-finestra {
+    left: 0; right: 0; bottom: 0; top: auto; transform: none;
+    width: auto; max-height: 88vh;
+    border-left: none; border-right: none; border-bottom: none;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .dip-scelte { grid-template-columns: minmax(0, 1fr); }
+  .dip-fin-piede { position: sticky; bottom: 0; }
+  .dip-fin-piede .adm-btn { flex: 1 1 0; justify-content: center; }
+}
+
+/* ============================================================
+   TABELLE CHE DIVENTANO SCHEDE
+
+   Cinque colonne su 390 pixel non si leggono, e scorrere di lato per vedere
+   il telefono di un cliente è un lavoro, non una consultazione. Le celle
+   portano l'etichetta addosso (`data-etichetta`), così scomponendo la riga
+   il significato non si perde: l'intestazione della tabella sparisce ma
+   ogni valore resta accompagnato dal suo nome.
+   ============================================================ */
+@media (max-width: 760px) {
+  .dip-tab-scroll:has(.a-schede) { overflow-x: visible; }
+
+  .a-schede thead { display: none; }
+  .a-schede, .a-schede tbody, .a-schede tr, .a-schede td { display: block; width: 100%; }
+
+  .a-schede tr {
+    margin-bottom: 10px; padding: 12px 14px;
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle, #e2e0da);
+    border-left: 3px solid var(--cra-red);
+  }
+
+  .a-schede td { border: none; padding: 3px 0; text-align: left !important; white-space: normal !important; }
+
+  /* La prima cella è il nome: fa da titolo della scheda. */
+  .a-schede td:first-child {
+    font-family: var(--font-brand); font-weight: var(--fw-bold);
+    font-size: var(--fs-sm); color: var(--text-strong);
+    padding-bottom: 7px;
+  }
+
+  .a-schede td[data-etichetta]::before {
+    content: attr(data-etichetta);
+    display: inline-block; min-width: 78px;
+    font-family: var(--font-brand); font-size: var(--fs-2xs); font-weight: var(--fw-bold);
+    text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted);
+  }
+
+  /* I contatti si toccano: da un telefono un numero è un pulsante. */
+  .a-schede a[href^="tel:"], .a-schede a[href^="mailto:"] {
+    color: var(--cra-red); text-decoration: none; font-weight: var(--fw-semibold);
+  }
+
+  .a-schede .dip-tab-azioni {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    padding-top: 10px; margin-top: 8px;
+    border-top: 1px solid var(--border-subtle, #e2e0da);
+  }
+  .a-schede .dip-tab-azioni .adm-btn { flex: 1 1 auto; justify-content: center; min-height: 44px; }
+  .a-schede .dip-tab-azioni .adm-btn + .adm-btn { margin-left: 0 !important; }
+}

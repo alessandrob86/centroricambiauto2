@@ -41,6 +41,26 @@ const entra = (i = 0) => ({
 
 const dataIt = (s) => (s ? new Date(s).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 
+/* Telefono o schermo grande.
+   Non è un punto di rottura del foglio di stile: alcune cose non si possono
+   sistemare col CSS. Sul telefono la bacheca personalizzabile non ha senso —
+   nessuno trascina riquadri con un dito su 390 pixel — quindi lì si disegna
+   un'altra cosa, non la stessa cosa più stretta. */
+const SOGLIA_MOBILE = "(max-width: 760px)";
+
+function useMobile() {
+  const [mobile, setMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(SOGLIA_MOBILE).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(SOGLIA_MOBILE);
+    const cambia = (e) => setMobile(e.matches);
+    mq.addEventListener("change", cambia);
+    setMobile(mq.matches);
+    return () => mq.removeEventListener("change", cambia);
+  }, []);
+  return mobile;
+}
+
 /** Etichetta del tipo scheda, sempre leggibile qualunque colore abbia
  *  (il colore lo sceglie l'admin: vedi lib/contrasto.js). */
 /* L'etichetta del tipo porta anche l'icona: il colore da solo non basta a
@@ -199,6 +219,7 @@ function InternoInner({ onNavigate }) {
     setTab(destinazione);
   };
 
+  const mobile = useMobile();
   const comuni = { dipendente, ruolo, isAdmin, puoGestire, zone, setErr, onNavigate, vaiA };
 
   return (
@@ -222,16 +243,18 @@ function InternoInner({ onNavigate }) {
 
           {err && <div className="adm-err"><Icon name="alert-circle" size={15} /> {err}</div>}
 
-          <nav className="dip-tabs">
-            {moduli.schede.map((m) => (
-              <button key={m.codice} className={`dip-tab ${tab === m.codice ? "on" : ""}`}
-                onClick={() => setTab(m.codice)} aria-current={tab === m.codice ? "page" : undefined}>
-                <Icon name={m.icona || "chevron-right"} size={15} />
-                {m.nome}
-                {m.codice === "bacheca" && daLeggere > 0 && <span className="dip-tab-badge">{daLeggere}</span>}
-              </button>
-            ))}
-          </nav>
+          {!mobile && (
+            <nav className="dip-tabs">
+              {moduli.schede.map((m) => (
+                <button key={m.codice} className={`dip-tab ${tab === m.codice ? "on" : ""}`}
+                  onClick={() => setTab(m.codice)} aria-current={tab === m.codice ? "page" : undefined}>
+                  <Icon name={m.icona || "chevron-right"} size={15} />
+                  {m.nome}
+                  {m.codice === "bacheca" && daLeggere > 0 && <span className="dip-tab-badge">{daLeggere}</span>}
+                </button>
+              ))}
+            </nav>
+          )}
 
           <AnimatePresence mode="wait">
             <motion.div key={tab}
@@ -249,8 +272,69 @@ function InternoInner({ onNavigate }) {
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {mobile && (
+          <BarraInBasso schede={moduli.schede} attiva={tab} vai={setTab} daLeggere={daLeggere} />
+        )}
       </div>
     </MotionConfig>
+  );
+}
+
+/* ============================================================
+   BARRA IN BASSO — la navigazione del telefono.
+
+   In basso e non in alto perché è dove arriva il pollice. Al massimo cinque
+   voci: oltre, i bersagli diventano troppo stretti per un dito, quindi le
+   rimanenti finiscono dietro «Altro».
+   ============================================================ */
+function BarraInBasso({ schede, attiva, vai, daLeggere }) {
+  const [altro, setAltro] = useState(false);
+  const dirette = schede.length <= 5 ? schede : schede.slice(0, 4);
+  const nascoste = schede.length <= 5 ? [] : schede.slice(4);
+  const inAltro = nascoste.some((m) => m.codice === attiva);
+
+  const voce = (m) => (
+    <button key={m.codice} type="button"
+      className={`dip-giu-voce ${attiva === m.codice ? "on" : ""}`}
+      onClick={() => { vai(m.codice); setAltro(false); }}
+      aria-current={attiva === m.codice ? "page" : undefined}>
+      <span className="dip-giu-icona">
+        <Icon name={m.icona || "chevron-right"} size={20} />
+        {m.codice === "bacheca" && daLeggere > 0 && <span className="dip-giu-bollo">{daLeggere}</span>}
+      </span>
+      <span className="dip-giu-nome">{m.nome}</span>
+    </button>
+  );
+
+  return (
+    <React.Fragment>
+      <AnimatePresence>
+        {altro && (
+          <React.Fragment>
+            <motion.div className="dip-velo" onClick={() => setAltro(false)}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+            <motion.div className="dip-foglio"
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}>
+              <span className="dip-foglio-presa" />
+              {nascoste.map(voce)}
+            </motion.div>
+          </React.Fragment>
+        )}
+      </AnimatePresence>
+
+      <nav className="dip-giu" aria-label="Sezioni">
+        {dirette.map(voce)}
+        {nascoste.length > 0 && (
+          <button type="button" className={`dip-giu-voce ${inAltro ? "on" : ""}`}
+            onClick={() => setAltro((v) => !v)} aria-expanded={altro}>
+            <span className="dip-giu-icona"><Icon name="menu" size={20} /></span>
+            <span className="dip-giu-nome">Altro</span>
+          </button>
+        )}
+      </nav>
+    </React.Fragment>
   );
 }
 
@@ -261,6 +345,7 @@ function InternoInner({ onNavigate }) {
    decadono a una colonna.
    ============================================================ */
 function Home({ dipendente, riquadri: iniziali, setErr, zone, vaiA }) {
+  const mobile = useMobile();
   const [lista, setLista] = useState(iniziali);
   const [modifica, setModifica] = useState(false);
   const [salvato, setSalvato] = useState(false);
@@ -370,6 +455,11 @@ function Home({ dipendente, riquadri: iniziali, setErr, zone, vaiA }) {
   };
 
   if (!lista.length) return <p className="dip-vuoto">Nessun riquadro abilitato per te.</p>;
+
+  /* Sul telefono la bacheca non si compone: si legge. Stesso caricamento
+     dati, disegno completamente diverso — trascinare riquadri con un dito
+     su 390 pixel non serve a nessuno. */
+  if (mobile) return <HomeTelefono dati={dati} zone={zone} vaiA={vaiA} />;
 
   return (
     <React.Fragment>
@@ -570,6 +660,40 @@ function densita(taglia, config) {
     quanti: Number.isFinite(q) && q > 0 ? q : base.quanti,
     foto: config?.foto === "si" ? true : config?.foto === "no" ? false : base.foto,
   };
+}
+
+/* ============================================================
+   HOME DEL TELEFONO — un riepilogo fisso, uguale per tutti.
+
+   Niente trascinamento, niente misure, niente riquadri da togliere: su un
+   telefono quella libertà è un costo, non un servizio. L'ordine è deciso e
+   segue cosa serve davvero a chi è in giro — prima cosa c'è di nuovo, poi
+   cosa si può girare a un cliente, poi i propri numeri.
+
+   Il contenuto lo disegna `ContenutoRiquadro`, lo stesso della versione
+   grande: le regole di filtro restano scritte in un posto solo. */
+const HOME_TELEFONO = [
+  { codice: "r_annunci",    nome: "Annunci",       icona: "megaphone",     taglia: "2x2" },
+  { codice: "r_promozioni", nome: "Promozioni",    icona: "tag",           taglia: "2x2" },
+  { codice: "r_schede",     nome: "Card Center",   icona: "file-text",     taglia: "2x1" },
+  { codice: "r_clienti",    nome: "I miei clienti", icona: "building-2",   taglia: "1x1" },
+  { codice: "r_filiale",    nome: "La mia filiale", icona: "users",        taglia: "1x1" },
+];
+
+function HomeTelefono({ dati, zone, vaiA }) {
+  return (
+    <div className="dip-tel-home">
+      {HOME_TELEFONO.map((r, i) => (
+        <motion.section key={r.codice} className="dip-tel-blocco" {...entra(i)}>
+          <h2 className="dip-tel-titolo">
+            <Icon name={r.icona} size={15} color="var(--cra-red)" /> {r.nome}
+          </h2>
+          <ContenutoRiquadro codice={r.codice} dati={dati} zone={zone}
+            taglia={r.taglia} config={null} vaiA={vaiA} />
+        </motion.section>
+      ))}
+    </div>
+  );
 }
 
 function ContenutoRiquadro({ codice, dati, taglia, config, vaiA }) {
@@ -1546,19 +1670,27 @@ function DettaglioScheda({ scheda, dipendente, puoGestire, setErr, onChiudi, onM
   }, [scheda]);
   useEffect(() => { carica(); }, [carica]);
 
+  /* I documenti si chiedono una volta sola: sono tre righe che non cambiano
+     mentre si lavora, e rileggerle a ogni apertura della finestra sarebbe
+     un'attesa in mezzo a un gesto. */
+  const [tipiDoc, setTipiDoc] = useState([]);
+  useEffect(() => { api.getTipiDocumento().then(setTipiDoc).catch(() => setTipiDoc([])); }, []);
+
   /* Quantità e note si scrivono nella riga, non in una finestrella del
      browser: il prompt di sistema non si può stilare, non si vede su mobile
      e cancella tutto se sfiori Esc. */
   const apriModulo = (c, tipo) =>
     setModulo({ id: c.officina_id, tipo, q: String(c.quantita || 1), note: c.note ?? "" });
 
-  const invia = async () => {
+  const invia = async (valori) => {
     const m = modulo;
     setBusy(m.id);
     try {
       const r = await api.inviaProposta({
         schedaId: scheda.id, officinaId: m.id,
-        quantita: Number(m.q) || 1, note: m.note || null,
+        quantita: valori?.quantita ?? (Number(m.q) || 1),
+        note: valori?.note ?? (m.note || null),
+        documento: valori?.documento ?? null,
       });
       setErr(r?.emailed === false
         ? "Proposta registrata, ma l'email non è partita (Resend non configurata)."
@@ -1641,9 +1773,21 @@ function DettaglioScheda({ scheda, dipendente, puoGestire, setErr, onChiudi, onM
               <Icon name="building-2" size={14} color="var(--cra-red)" /> I tuoi clienti
             </h3>
             <p className="dip-sub" style={{ marginBottom: "10px" }}>
-              <b>Invia proposta</b> manda l'ordine su ordini@centroricambiautosrl.it e segna il
-              cliente come <b>accettata</b>. Il rifiuto è l'unica cosa che si dichiara a mano.
+              <b>Invia proposta</b> manda l'ordine su ordini@centroricambiautosrl.it con quantità,
+              documento e note. L'invio vale accettazione — sei tu col cliente quando lo premi;
+              il rifiuto è l'unica cosa che si dichiara a mano.
             </p>
+
+            <AnimatePresence>
+              {modulo?.tipo === "invio" && (() => {
+                const c = (clienti ?? []).find((x) => x.officina_id === modulo.id);
+                return c ? (
+                  <FinestraInvio key="invio" cliente={c} scheda={scheda} tipi={tipiDoc}
+                    busy={busy === modulo.id}
+                    onAnnulla={() => setModulo(null)} onInvia={invia} />
+                ) : null;
+              })()}
+            </AnimatePresence>
 
             {clienti === null ? <p className="dip-sub">Caricamento…</p>
               : clienti.length === 0 ? (
@@ -1658,7 +1802,7 @@ function DettaglioScheda({ scheda, dipendente, puoGestire, setErr, onChiudi, onM
                       onChange={(e) => setQ(e.target.value)} />
                   </label>
                   <div className="dip-tab-scroll">
-                    <table className="dip-tabella">
+                    <table className="dip-tabella a-schede">
                       <thead><tr><th>Cliente</th><th>Stato</th><th /></tr></thead>
                       <tbody>
                         {clienti
@@ -1675,39 +1819,29 @@ function DettaglioScheda({ scheda, dipendente, puoGestire, setErr, onChiudi, onM
                                   {c.telefono ? ` · ${c.telefono}` : ""}
                                 </span>
                               </td>
-                              <td>
+                              <td data-etichetta="Stato">
                                 <span className={`dip-esito ${c.esito ?? ""}`}>{ETICHETTA_ESITO(c.esito)}</span>
                                 {c.esito === "accettata" && c.quantita
                                   ? <span className="dip-sub"> · {c.quantita} pz</span> : null}
+                                {c.esito === "accettata" && c.documento
+                                  ? <span className="dip-sub"> · {c.documento}</span> : null}
                                 {c.note ? <><br /><span className="dip-sub">{c.note}</span></> : null}
                               </td>
-                              <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                                {modulo?.id === c.officina_id ? (
+                              <td className="dip-tab-azioni" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                                {modulo?.id === c.officina_id && modulo.tipo === "rifiuto" ? (
                                   <div className="dip-modulo">
-                                    {modulo.tipo === "invio" && (
-                                      <label>
-                                        <span>Q.tà</span>
-                                        <input type="number" min="1" step="1" autoFocus
-                                          value={modulo.q}
-                                          onChange={(e) => setModulo((m) => ({ ...m, q: e.target.value }))} />
-                                      </label>
-                                    )}
                                     <label className="cresce">
-                                      <span>{modulo.tipo === "invio" ? "Note (facoltative)" : "Perché ha detto no?"}</span>
-                                      <input type="text" value={modulo.note}
-                                        autoFocus={modulo.tipo !== "invio"}
-                                        placeholder={modulo.tipo === "invio" ? "consegna, taglia, riferimenti…" : "facoltativo"}
+                                      <span>Perché ha detto no?</span>
+                                      <input type="text" value={modulo.note} autoFocus placeholder="facoltativo"
                                         onChange={(e) => setModulo((m) => ({ ...m, note: e.target.value }))}
                                         onKeyDown={(e) => {
-                                          if (e.key === "Enter") (modulo.tipo === "invio" ? invia : rifiuta)();
+                                          if (e.key === "Enter") rifiuta();
                                           if (e.key === "Escape") setModulo(null);
                                         }} />
                                     </label>
-                                    <button className={`adm-btn mini ${modulo.tipo === "invio" ? "" : "rosso"}`}
-                                      disabled={busy === c.officina_id}
-                                      onClick={() => (modulo.tipo === "invio" ? invia() : rifiuta())}>
-                                      {busy === c.officina_id ? "…"
-                                        : modulo.tipo === "invio" ? "Conferma e invia" : "Registra il no"}
+                                    <button className="adm-btn mini rosso" disabled={busy === c.officina_id}
+                                      onClick={() => rifiuta()}>
+                                      {busy === c.officina_id ? "…" : "Registra il no"}
                                     </button>
                                     <button className="adm-btn ghost mini" onClick={() => setModulo(null)}>
                                       <Icon name="x" size={12} />
@@ -1865,20 +1999,28 @@ function MieiClienti({ dipendente, setErr }) {
             </span>
           </div>
           <div className="dip-tab-scroll">
-            <table className="dip-tabella">
+            {/* `a-schede`: sul telefono ogni riga diventa una scheda con le
+                etichette accanto ai valori. Cinque colonne su 390 pixel non
+                si leggono, e scorrere di lato per vedere il telefono di un
+                cliente è un lavoro, non una consultazione. */}
+            <table className="dip-tabella a-schede">
               <thead><tr><th>Cliente</th><th>Codice</th><th>Dove</th><th>Contatti</th><th /></tr></thead>
               <tbody>
                 {viste.map((r, i) => (
                   <motion.tr key={r.officina_id} {...entra(i)}>
                     <td>{r.ragione_sociale}</td>
-                    <td className="dip-sub">{r.codice_cliente || "—"}</td>
-                    <td className="dip-sub">
+                    <td className="dip-sub" data-etichetta="Codice">{r.codice_cliente || "—"}</td>
+                    <td className="dip-sub" data-etichetta="Dove">
                       {r.citta || "—"}{r.provincia ? ` (${r.provincia})` : ""}
                     </td>
-                    <td className="dip-sub">
-                      {r.telefono || "—"}{r.email ? <br /> : null}{r.email || ""}
+                    <td className="dip-sub" data-etichetta="Contatti">
+                      {r.telefono
+                        ? <a href={`tel:${String(r.telefono).replace(/\s+/g, "")}`}>{r.telefono}</a>
+                        : "—"}
+                      {r.email ? <br /> : null}
+                      {r.email ? <a href={`mailto:${r.email}`}>{r.email}</a> : ""}
                     </td>
-                    <td style={{ textAlign: "right" }}>
+                    <td className="dip-tab-azioni" style={{ textAlign: "right" }}>
                       <button className="adm-btn rosso mini" disabled={busy === r.officina_id}
                         onClick={() => lascia(r)} aria-label={`Lascia ${r.ragione_sociale}`}>
                         <Icon name="x" size={12} /> Lascia
@@ -2692,6 +2834,110 @@ function Profilo({ dipendente, ruolo, setErr }) {
           </div>
         </React.Fragment>
       )}
+    </React.Fragment>
+  );
+}
+
+/* ============================================================
+   FINESTRA D'INVIO — quantità, documento, note.
+
+   Sostituisce il modulo che stava schiacciato dentro la cella della tabella:
+   là i campi erano larghi due centimetri e sul telefono non si toccavano.
+   Su schermo grande è una finestra al centro, sul telefono un foglio che
+   sale dal basso — stesso codice, perché è lo stesso gesto.
+
+   Il documento ha quattro scelte: la prima è quella abituale del cliente,
+   già selezionata. Chi non ha niente da cambiare preme invia e basta.
+   ============================================================ */
+function FinestraInvio({ cliente, scheda, tipi, busy, onAnnulla, onInvia }) {
+  const [q, setQ] = useState(String(cliente.quantita || 1));
+  const [note, setNote] = useState(cliente.note ?? "");
+  /* Parte già sul documento del cliente: quasi sempre è quello giusto e non
+     serve toccare niente. È un tipo vero come gli altri — «predefinito»
+     significa «quello che il gestionale ha su questo cliente», che noi non
+     abbiamo importato e quindi non fingiamo di sapere. */
+  const [doc, setDoc] = useState(cliente.documento_predefinito || "");
+
+  /* Esc chiude, come ci si aspetta da qualunque finestra. */
+  useEffect(() => {
+    const tasto = (e) => { if (e.key === "Escape") onAnnulla(); };
+    window.addEventListener("keydown", tasto);
+    return () => window.removeEventListener("keydown", tasto);
+  }, [onAnnulla]);
+
+  const passo = (d) => setQ((v) => String(Math.max(1, (Number(v) || 1) + d)));
+
+  return (
+    <React.Fragment>
+      <motion.div className="dip-velo" onClick={onAnnulla}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+      <motion.div className="dip-finestra" role="dialog" aria-modal="true"
+        aria-label={`Proposta a ${cliente.ragione_sociale}`}
+        initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}>
+
+        <header className="dip-fin-testa">
+          <div>
+            <span className="dip-sub">Proposta d'ordine</span>
+            <h2>{cliente.ragione_sociale}</h2>
+            <span className="dip-sub">
+              {cliente.codice_cliente ? `${cliente.codice_cliente} · ` : ""}{scheda.titolo}
+            </span>
+          </div>
+          <button type="button" className="adm-btn ghost mini" onClick={onAnnulla} aria-label="Chiudi">
+            <Icon name="x" size={14} />
+          </button>
+        </header>
+
+        <div className="dip-fin-corpo">
+          <div className="dip-campo">
+            <span className="dip-campo-nome">Quantità</span>
+            {/* I due pulsanti non sono un vezzo: su un telefono azzeccare
+                le frecciette di un campo numerico è impossibile. */}
+            <div className="dip-quantita">
+              <button type="button" onClick={() => passo(-1)} aria-label="Diminuisci">
+                <Icon name="minus" size={16} />
+              </button>
+              <input type="number" inputMode="numeric" min="1" step="1" value={q}
+                onChange={(e) => setQ(e.target.value)} aria-label="Quantità" />
+              <button type="button" onClick={() => passo(1)} aria-label="Aumenta">
+                <Icon name="plus" size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div className="dip-campo">
+            <span className="dip-campo-nome">Documento da emettere</span>
+            <div className="dip-scelte">
+              {tipi.map((t) => (
+                <button key={t.codice} type="button"
+                  className={`dip-scelta ${doc === t.codice ? "on" : ""}`}
+                  onClick={() => setDoc(t.codice)}>
+                  <b>{t.nome}</b>
+                  <span>
+                    {t.codice}
+                    {t.codice === cliente.documento_predefinito ? " · abituale di questo cliente" : ""}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="dip-campo">
+            <span className="dip-campo-nome">Note <span className="dip-sub">(facoltative)</span></span>
+            <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)}
+              placeholder="consegna, riferimenti, accordi presi…" />
+          </div>
+        </div>
+
+        <footer className="dip-fin-piede">
+          <button type="button" className="adm-btn ghost" onClick={onAnnulla}>Annulla</button>
+          <button type="button" className="adm-btn" disabled={busy}
+            onClick={() => onInvia({ quantita: Number(q) || 1, note: note || null, documento: doc || null })}>
+            <Icon name="mail" size={15} /> {busy ? "Invio…" : "Conferma e invia"}
+          </button>
+        </footer>
+      </motion.div>
     </React.Fragment>
   );
 }

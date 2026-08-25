@@ -480,13 +480,22 @@ export async function getDestinatariStorici(dipendenteId) {
 
 /** Manda la proposta d'ordine al magazzino. Il controllo che il tipo sia
  *  inoltrabile lo rifà la edge function: qui è solo interfaccia. */
-export async function inviaProposta({ schedaId, officinaId, quantita, note }) {
+export async function inviaProposta({ schedaId, officinaId, quantita, note, documento }) {
   const { data, error } = await supabase.functions.invoke("invia-proposta-scheda", {
-    body: { scheda_id: schedaId, officina_id: officinaId, quantita, note },
+    // `documento` vuoto non è un errore: significa «quello abituale del
+    // cliente», e a risolverlo è il database, non il browser.
+    body: { scheda_id: schedaId, officina_id: officinaId, quantita, note, documento: documento || null },
   });
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
   return data;
+}
+
+/** I documenti che possono accompagnare la merce. */
+export async function getTipiDocumento() {
+  const { data, error } = await supabase.rpc("tipi_documento_attivi");
+  if (error) throw error;
+  return data ?? [];
 }
 
 /* ============ Persone e filiali ============ */

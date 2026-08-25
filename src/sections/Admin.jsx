@@ -16,7 +16,7 @@ import {
   getAttivita,
   contaEtichetteLocali, caricaEtichette, spostaEtichette, baseEtichette,
   contaDocumentiLocali, caricaDocumenti, spostaDocumenti, baseDocumenti,
-  rinominaMedia,
+  rinominaMedia, getTipiDocumento,
 } from "../lib/adminApi.js";
 
 /* ============================================================
@@ -947,6 +947,9 @@ export function Admin({ onNavigate }) {
 
   // categorie cliente + contenitori prezzi
   const [categorieCli, setCategorieCli] = useState([]);
+  /* I tre documenti non cambiano mentre si lavora: si leggono una volta. */
+  const [tipiDoc, setTipiDoc] = useState([]);
+  useEffect(() => { getTipiDocumento().then(setTipiDoc).catch(() => setTipiDoc([])); }, []);
   const [listini, setListini] = useState([]);
   const [catForm, setCatForm] = useState({ nome: "", colore: "#bd3432" });
   const [listForm, setListForm] = useState({ nome: "", priorita: 0 });
@@ -2150,6 +2153,22 @@ export function Admin({ onNavigate }) {
                                 {o.categoria_cliente
                                   ? `vede i prezzi della categoria ${(cat?.nome ?? o.categoria_cliente).toUpperCase()}`
                                   : "nessuna categoria: vede il prezzo base"}
+                              </span>
+                            </label>
+                            <label className="adm-fld">
+                              <span>Documento abituale</span>
+                              <select value={o.documento_predefinito ?? ""}
+                                onChange={(e) => patchOfficina(o.id, { documento_predefinito: e.target.value || null })}>
+                                <option value="">— Nessuno</option>
+                                {tipiDoc.map((t) => (
+                                  <option key={t.codice} value={t.codice}>{t.codice} — {t.nome}</option>
+                                ))}
+                              </select>
+                              {/* La conseguenza, non solo l'impostazione */}
+                              <span className="adm-sub" style={{ textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>
+                                {o.documento_predefinito
+                                  ? "proposto all'agente a ogni proposta d'ordine"
+                                  : "l'agente dovrà sceglierlo ogni volta"}
                               </span>
                             </label>
                             <div className="adm-fld">

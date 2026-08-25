@@ -6,6 +6,20 @@
     <title>Centro Ricambi Auto — Il vero specialista dei ricambi</title>
     <meta name="description" content="Centro Ricambi Auto srl — da oltre 30 anni al tuo fianco. 65.000 prodotti codificati per auto, moto e microcar. 5 sedi da Milano a Napoli." />
     <link rel="icon" href="/favicon.png" />
+
+    <!-- Aggiunta alla schermata Home.
+         iOS non guarda il `manifest` per l'icona e ignora `rel="icon"`: senza
+         `apple-touch-icon` mette uno screenshot della pagina. E appiattisce la
+         trasparenza sul nero, per questo l'icona ha un fondo pieno.
+         Il manifest serve ad Android e, su iPhone, a far aprire il sito come
+         applicazione — condizione perché arrivino le notifiche push. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#272d2b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="CRA" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   </head>
   <body>
     <div id="cra-root"></div>

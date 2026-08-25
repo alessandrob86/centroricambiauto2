@@ -92,6 +92,11 @@ export async function updateOfficina(id, patch) {
     is_admin: !!patch.is_admin,
     categoria_cliente: patch.categoria_cliente || null,
   };
+  // Il documento abituale si tocca solo se il pannello lo manda: le schermate
+  // che non lo mostrano non devono azzerarlo passando undefined.
+  if (patch.documento_predefinito !== undefined) {
+    campi.documento_predefinito = patch.documento_predefinito || null;
+  }
   // Anagrafica: si tocca solo se il pannello la manda, così le schermate che
   // non la mostrano non rischiano di svuotarla passando undefined.
   for (const k of ["ragione_sociale", "piva", "email", "telefono", "citta", "indirizzo", "provincia", "cap"]) {
@@ -653,6 +658,13 @@ export async function spostaEtichette() {
   if (error) throw error;
   const r = data?.[0] ?? {};
   return { principali: Number(r.immagini_principali ?? 0), galleria: Number(r.in_galleria ?? 0) };
+}
+
+/** I documenti che accompagnano la merce, per la scheda officina. */
+export async function getTipiDocumento() {
+  const { data, error } = await supabase.rpc("tipi_documento_attivi");
+  if (error) throw error;
+  return data ?? [];
 }
 
 /* ============ Attività — chi entra, cosa guarda, cosa compra ============ */

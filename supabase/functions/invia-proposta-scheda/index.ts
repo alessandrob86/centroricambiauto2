@@ -76,7 +76,7 @@ const riga = (etichetta: string, valore: string) =>
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
-    const { scheda_id, officina_id, quantita, note } = await req.json();
+    const { scheda_id, officina_id, quantita, note, documento } = await req.json();
     if (!scheda_id || !officina_id) return json({ error: "scheda_id e officina_id sono obbligatori" }, 400);
 
     const url = Deno.env.get("SUPABASE_URL")!;
@@ -107,7 +107,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: off } = await admin
       .from("officine")
-      .select("id, ragione_sociale, codice_cliente, piva, citta, provincia, telefono, email")
+      .select("id, ragione_sociale, codice_cliente, piva, citta, provincia, telefono, email, documento_predefinito")
       .eq("id", officina_id).maybeSingle();
     if (!off) return json({ error: "cliente non trovato" }, 404);
 
@@ -118,6 +118,20 @@ Deno.serve(async (req: Request) => {
     const agente = `${dip.nome ?? ""} ${dip.cognome ?? ""}`.trim() || dip.email || "—";
     const filiale = (dip as any).zone?.nome ?? "—";
     const q = Number(quantita) > 0 ? Number(quantita) : 1;
+
+    /* Il documento che accompagna la merce. Se l'agente non ne sceglie uno
+       vale il predefinito del cliente — che è quello giusto quasi sempre, e
+       che nessuno deve ricordarsi a memoria. Si verifica contro la tabella e
+       non contro un elenco scritto qui: se domani se ne aggiunge uno, questa
+       funzione non va toccata. Un codice inventato viene rifiutato. */
+    const codiceDoc = documento || (off as any).documento_predefinito || null;
+    let doc: { codice: string; nome: string } | null = null;
+    if (codiceDoc) {
+      const { data } = await admin.from("tipi_documento")
+        .select("codice, nome").eq("codice", codiceDoc).eq("attivo", true).maybeSingle();
+      if (!data) return json({ error: `documento non riconosciuto: ${codiceDoc}` }, 400);
+      doc = data;
+    }
 
     /* La locandina della promozione viaggia DENTRO la mail, allegata e
        mostrata in linea. Il bucket è privato: un link firmato scadrebbe e
@@ -178,6 +192,18 @@ Deno.serve(async (req: Request) => {
       `<div style="color:#111827;font-size:16px;font-weight:700">${esc(scheda.titolo)}</div>` +
       `<div style="color:#111827;font-size:14px;margin-top:6px">Quantità richiesta: <b>${q}</b></div>` +
       `</div>` +
+      /* Il documento sta in un riquadro suo, col codice in grande: è la cosa
+         che in magazzino determina cosa si stampa, e una riga in mezzo alle
+         altre si legge solo quando si è già sbagliato. */
+      (doc
+        ? `<div style="border:2px solid ${CHARCOAL};margin:0 0 18px">` +
+          `<div style="background:${CHARCOAL};color:${GOLD};font-size:12px;font-weight:700;` +
+          `text-transform:uppercase;letter-spacing:.12em;padding:9px 16px">Documento da emettere</div>` +
+          `<div style="padding:14px 16px">` +
+          `<div style="color:#111827;font-size:28px;font-weight:800;letter-spacing:.03em;line-height:1">${esc(doc.codice)}</div>` +
+          `<div style="color:#374151;font-size:14px;margin-top:5px">${esc(doc.nome)}</div>` +
+          `</div></div>`
+        : "") +
       (note ? `<p style="margin:0 0 18px;color:#374151;font-size:14px"><b>Note:</b> ${esc(note)}</p>` : "") +
       `<table cellpadding="0" cellspacing="0" style="border-collapse:collapse">` +
       riga("Inviata da", agente) + riga("Filiale", filiale) + `</table>`;
@@ -196,19 +222,23 @@ Deno.serve(async (req: Request) => {
         from: FROM,
         to: [NOTIFY_TO],
         reply_to: dip.email ? [dip.email] : undefined,
-        subject: `Proposta — ${off.ragione_sociale}${off.codice_cliente ? ` (${off.codice_cliente})` : ""} · ${scheda.titolo}`,
+        subject: `Proposta ${doc ? `${doc.codice} ` : ""}— ${off.ragione_sociale}` +
+          `${off.codice_cliente ? ` (${off.codice_cliente})` : ""} · ${scheda.titolo}`,
         html,
         attachments: attachments.length ? attachments : undefined,
       }),
     });
 
-    // L'invio vale per accettazione: il rifiuto è l'unica cosa che si
-    // dichiara a mano. Si registra comunque anche se la mail non parte — il
-    // lavoro su quel cliente è stato fatto e il conteggio non deve perderlo.
-    // `inviata_il` è un'altra cosa dall'esito: dice QUANDO è partita.
+    /* L'invio vale accettazione, e non è una scorciatoia: l'agente è col
+       cliente quando preme invia, e questa mail parte su ordini@ perché il
+       cliente ha già detto sì. Il rifiuto è l'unica cosa che si dichiara a
+       mano, perché è l'unica che non lascia traccia da sola.
+       Si registra anche se la mail non parte: il lavoro su quel cliente è
+       stato fatto e il conteggio non deve perderlo.
+       `inviata_il` è un'altra cosa dall'esito: dice QUANDO è partita. */
     await admin.from("scheda_esiti").upsert({
       scheda_id, officina_id, esito: "accettata", quantita: q,
-      note: note ?? null, aggiornato_da: dip.id,
+      note: note ?? null, aggiornato_da: dip.id, documento: doc?.codice ?? null,
       inviata_il: new Date().toISOString(), aggiornato_il: new Date().toISOString(),
     }, { onConflict: "scheda_id,officina_id" });
 
@@ -220,6 +250,7 @@ Deno.serve(async (req: Request) => {
       prezzo_unitario: (scheda as any).prezzo_unitario ?? null,
       costo_unitario: (scheda as any).costo_unitario ?? null,
       esito: "accettata", note: note ?? null, origine: "portale",
+      documento: doc?.codice ?? null,
     });
 
     return json({ ok: true, emailed: resp.ok, foto: attachments.length > 1 });

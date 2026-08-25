@@ -112,7 +112,7 @@ export function BackToTop() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   return (
-    <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Torna all'inizio della pagina"
+    <button className="cra-su" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Torna all'inizio della pagina"
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
         position: "fixed", right: "20px", bottom: "20px", zIndex: 90,
