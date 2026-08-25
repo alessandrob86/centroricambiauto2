@@ -8,15 +8,49 @@ import { Locations, Footer } from "./sections/Locations.jsx";
 import { Contact } from "./sections/Contact.jsx";
 import { About } from "./sections/About.jsx";
 import { Privacy, Cookie } from "./sections/Legal.jsx";
-import { ScrollProgress, BackToTop } from "./components/shared.jsx";
+import { Accedi } from "./sections/Accedi.jsx";
+import { ScrollProgress, BackToTop, Container } from "./components/shared.jsx";
+import { BarraAnnunci } from "./components/BarraAnnunci.jsx";
+import { Campanella } from "./components/Campanella.jsx";
+import { tracciaVisita } from "./lib/traccia.js";
+
+/* Sezioni ecommerce e back-office: lazy per non appesantire la vetrina. */
+const Store = React.lazy(() => import("./sections/Store.jsx").then((m) => ({ default: m.Store })));
+const StoreProduct = React.lazy(() => import("./sections/StoreProduct.jsx").then((m) => ({ default: m.StoreProduct })));
+const Admin = React.lazy(() => import("./sections/Admin.jsx").then((m) => ({ default: m.Admin })));
+const Interno = React.lazy(() => import("./sections/Interno.jsx").then((m) => ({ default: m.Interno })));
 
 const { useState, useEffect } = React;
 
-const PAGES = ["home", "contatti", "chisiamo", "privacy", "cookie"];
+const PAGES = ["home", "contatti", "chisiamo", "privacy", "cookie", "login", "store", "admin", "interno"];
 
-function pageFromHash() {
+/* Route = { page, param }: "store" supporta un segmento parametro
+   (#/store/<codice> → dettaglio prodotto). Un hash non-rotta (es. il
+   callback auth di Supabase "#access_token=…") ricade su home: innocuo,
+   supabase-js consuma i token dal fragment per conto suo. */
+function routeFromHash() {
   const h = window.location.hash.replace(/^#\/?/, "");
-  return PAGES.includes(h) ? h : "home";
+  const [base, ...rest] = h.split("/");
+  if (base === "store" && rest.length) {
+    return { page: "store", param: decodeURIComponent(rest.join("/")) };
+  }
+  return { page: PAGES.includes(base) ? base : "home", param: null };
+}
+
+const routeKey = (r) => r.page + (r.param ? "/" + r.param : "");
+
+/* Placeholder: fallback dei lazy-load e sezioni non ancora costruite. */
+function ComingSoon({ title, loading = false }) {
+  return (
+    <section style={{ padding: "var(--space-10) 0", minHeight: "40vh" }}>
+      <Container>
+        <h1 className="cra-h2">{title}</h1>
+        <p className="cra-body" style={{ color: "var(--text-muted)" }}>
+          {loading ? "Caricamento…" : "Sezione in costruzione."}
+        </p>
+      </Container>
+    </section>
+  );
 }
 
 function Home({ onNavigate }) {
@@ -34,8 +68,9 @@ function Home({ onNavigate }) {
 }
 
 export default function App() {
-  const [page, setPage] = useState(pageFromHash);
+  const [route, setRoute] = useState(routeFromHash);
   const [pendingAnchor, setPendingAnchor] = useState(null);
+  const page = route.page;
 
   const scrollToAnchor = (id) => {
     const el = document.getElementById(id);
@@ -52,6 +87,14 @@ export default function App() {
 
   /* Posizioni di scroll per pagina: il tasto Indietro riporta dov'eri. */
   const scrollPos = React.useRef({});
+
+  /* Traccia la pagina, ma solo per chi è loggato: la funzione sul database
+     scarta chi non ha un token. Store, area interna e vetrina si distinguono,
+     perché rispondono a domande diverse. */
+  useEffect(() => {
+    const dove = page === "store" ? "cra" : page === "interno" ? "interno" : "vetrina";
+    tracciaVisita(dove, routeKey(route));
+  }, [route, page]);
 
   /* Esegue lo scroll all'ancora SOLO dopo che la home è montata e impaginata. */
   useEffect(() => {
@@ -72,9 +115,9 @@ export default function App() {
      ripristina la posizione di scroll salvata per la pagina di destinazione. */
   useEffect(() => {
     const onHash = () => {
-      const target = pageFromHash();
-      setPage(target);
-      const saved = scrollPos.current[target] || 0;
+      const target = routeFromHash();
+      setRoute(target);
+      const saved = scrollPos.current[routeKey(target)] || 0;
       requestAnimationFrame(() => requestAnimationFrame(() =>
         window.scrollTo({ top: saved, behavior: "auto" })
       ));
@@ -91,8 +134,9 @@ export default function App() {
   };
 
   const navigate = (id) => {
-    scrollPos.current[page] = window.scrollY;
-    if (!PAGES.includes(id)) {
+    scrollPos.current[routeKey(route)] = window.scrollY;
+    const [base, ...rest] = id.split("/");
+    if (!PAGES.includes(base)) {
       /* ancora sulla home: se siamo già in home scrolla subito, altrimenti
          passa in home e lascia che l'effetto esegua lo scroll dopo il mount */
       if (page === "home") {
@@ -100,13 +144,13 @@ export default function App() {
       } else {
         window.scrollTo({ top: 0, behavior: "auto" });
         setHash("home");
-        setPage("home");
+        setRoute({ page: "home", param: null });
         setPendingAnchor(id);
       }
       return;
     }
     setHash(id);
-    setPage(id);
+    setRoute({ page: base, param: rest.length ? decodeURIComponent(rest.join("/")) : null });
     setPendingAnchor(null);
     window.scrollTo({ top: 0, behavior: "auto" });
   };
@@ -115,6 +159,9 @@ export default function App() {
     <React.Fragment>
       <a href="#contenuto" className="skip-link">Salta al contenuto</a>
       <ScrollProgress />
+      {/* Sopra l'header, su ogni pagina: gli avvisi al personale devono
+          arrivare anche a chi in quel momento sta guardando la vetrina. */}
+      <BarraAnnunci onNavigate={navigate} />
       <Header current={page === "contatti" ? "" : page} onNavigate={navigate} />
       <main id="contenuto">
         {page === "home" && <Home onNavigate={navigate} />}
@@ -122,8 +169,30 @@ export default function App() {
         {page === "chisiamo" && <About onNavigate={navigate} />}
         {page === "privacy" && <Privacy onNavigate={navigate} />}
         {page === "cookie" && <Cookie onNavigate={navigate} />}
+        {page === "login" && <Accedi onNavigate={navigate} />}
+        {page === "store" && (
+          <React.Suspense fallback={<ComingSoon title="CRA Store" loading />}>
+            {route.param
+              ? <StoreProduct codice={route.param} onNavigate={navigate} />
+              : <Store onNavigate={navigate} />}
+          </React.Suspense>
+        )}
+        {page === "admin" && (
+          <React.Suspense fallback={<ComingSoon title="Back-office" loading />}>
+            <Admin onNavigate={navigate} />
+          </React.Suspense>
+        )}
+        {page === "interno" && (
+          <React.Suspense fallback={<ComingSoon title="Area interna" loading />}>
+            <Interno onNavigate={navigate} />
+          </React.Suspense>
+        )}
       </main>
       <Footer onNavigate={navigate} />
+      {/* Campanella flottante, fuori dal menu: è uno strumento del personale
+          e non deve sporcare la navigazione pubblica. Si nasconde da sola
+          per chi non è staff. */}
+      <Campanella onNavigate={navigate} />
       <BackToTop />
     </React.Fragment>
   );

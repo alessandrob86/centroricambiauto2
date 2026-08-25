@@ -152,24 +152,40 @@ export function Magnetic({ children, strength = 0.22, style = {} }) {
   );
 }
 
-/* Scenic chrome-border CTA — rotating metallic sheen, links out (e.g. catalogo blusys). */
-export function ChromeButton({ href, children, size = "md", style = {} }) {
+/* Scenic chrome-border CTA — rotating metallic sheen.
+   Con `href` è un link (target _blank, es. catalogo blusys); con `onClick`
+   e senza href diventa un <button> per azioni interne (login, menu Ecom). */
+export function ChromeButton({ href, onClick, children, size = "md", style = {}, ...rest }) {
   const pads = { sm: "10px 18px", md: "13px 26px", lg: "17px 34px" };
   const fs = { sm: "var(--fs-xs)", md: "var(--fs-sm)", lg: "var(--fs-base)" };
   const [hover, setHover] = React.useState(false);
+  const visual = {
+    textDecoration: "none", display: "inline-block",
+    boxShadow: hover ? "0 0 26px rgba(253,197,67,0.38)" : "0 0 0 rgba(0,0,0,0)",
+    transform: hover ? "translateY(-1px)" : "none",
+    transition: "box-shadow var(--dur-slow) var(--ease-standard), transform var(--dur-fast) var(--ease-standard)",
+    ...style,
+  };
+  const inner = (
+    <span className="chrome-btn-inner" style={{ padding: pads[size], fontSize: fs[size], gap: "10px" }}>
+      {children}
+    </span>
+  );
+  if (!href) {
+    return (
+      <button type="button" onClick={onClick} className="chrome-btn"
+        onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+        style={{ ...visual, background: "none", border: "none", cursor: "pointer", padding: "2px" }}
+        {...rest}>
+        {inner}
+      </button>
+    );
+  }
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className="chrome-btn"
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{
-        textDecoration: "none", display: "inline-block",
-        boxShadow: hover ? "0 0 26px rgba(253,197,67,0.38)" : "0 0 0 rgba(0,0,0,0)",
-        transform: hover ? "translateY(-1px)" : "none",
-        transition: "box-shadow var(--dur-slow) var(--ease-standard), transform var(--dur-fast) var(--ease-standard)",
-        ...style,
-      }}>
-      <span className="chrome-btn-inner" style={{ padding: pads[size], fontSize: fs[size], gap: "10px" }}>
-        {children}
-      </span>
+      style={visual} {...rest}>
+      {inner}
     </a>
   );
 }

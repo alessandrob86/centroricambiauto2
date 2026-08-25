@@ -1,0 +1,235 @@
+/* ============================================================
+   ECOM CRA — stili del CRA Store (#/store).
+   Le classi adm-* del back-office sono state spostate in admin.css:
+   il pannello ha un layout tutto suo (a tutta larghezza) e tenerle
+   qui costringeva a leggere due mondi diversi nello stesso file.
+   ============================================================ */
+
+/* ============================================================
+   CRA STORE — layout catalogo con sidebar filtri a sinistra
+   ============================================================ */
+/* Contenitore più largo del sito (1200): la sidebar occupa lo spazio
+   vuoto ai lati e la griglia prodotti resta ampia. */
+.store-wrap { width: 100%; max-width: 1580px; margin: 0 auto; padding-inline: 24px; box-sizing: border-box; }
+.store-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 32px; align-items: start; }
+.store-sidebar { position: sticky; top: 124px; max-height: calc(100vh - 144px); overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+
+.store-panel { border: 1px solid var(--border-subtle, #e2e0da); background: var(--surface-card); }
+.store-panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--cra-charcoal); color: var(--cra-white);
+  padding: 11px 14px; font-family: var(--font-brand); font-weight: var(--fw-black);
+  font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+}
+.store-panel-head .store-reset {
+  background: none; border: none; cursor: pointer; color: var(--cra-gold);
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .06em; display: inline-flex; align-items: center; gap: 4px;
+}
+
+/* colonna categorie */
+.store-cat {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; text-align: left; cursor: pointer; background: none;
+  border: none; border-top: 1px solid var(--border-subtle, #e2e0da);
+  padding: 11px 14px; font-family: var(--font-brand); font-weight: var(--fw-bold);
+  font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--text-strong);
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+.store-cat:first-child { border-top: none; }
+.store-cat:hover { background: var(--surface-subtle, #f2f1ed); }
+.store-cat.active { color: var(--cra-red); box-shadow: inset 3px 0 0 var(--cra-red); }
+.store-cat-n { font-family: var(--font-body); font-weight: 600; font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.store-subs { background: var(--surface-subtle, #f6f5f2); border-top: 1px solid var(--border-subtle, #e2e0da); padding: 4px 0; }
+.store-sub {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  text-align: left; cursor: pointer; background: none; border: none;
+  padding: 8px 14px 8px 26px; font-family: var(--font-body); font-size: 13px; color: var(--text-body);
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+.store-sub:hover { color: var(--cra-red); }
+.store-sub.active { color: var(--cra-red); font-weight: 700; }
+.store-sub-n { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* faccette */
+.store-facet { padding: 12px 14px; border-top: 1px solid var(--border-subtle, #e2e0da); }
+.store-facet:first-child { border-top: none; }
+.store-facet-label { font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); margin-bottom: 8px; }
+.store-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.store-pill {
+  cursor: pointer; padding: 5px 11px; font-family: var(--font-body); font-weight: 600;
+  font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-strong);
+  background: transparent; border: 1px solid var(--border-strong);
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+.store-pill:hover { border-color: var(--cra-charcoal); }
+.store-pill.active { background: var(--cra-charcoal); color: var(--cra-white); border-color: var(--cra-charcoal); }
+
+/* toolbar area prodotti */
+.store-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.store-search { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 220px; border: var(--border-w-2) solid var(--border-strong); background: var(--surface-card); padding: 0 12px; }
+.store-search input { flex: 1; padding: 11px 0; border: none; outline: none; background: transparent; font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-strong); }
+.store-count { font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); white-space: nowrap; }
+.store-filters-toggle { display: none; }
+
+/* chip filtri attivi (rimovibili) */
+.store-active { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.store-active-chip {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  background: var(--red-50, #faf0ef); color: var(--cra-red); border: 1px solid #f0cfce;
+  padding: 5px 10px; font-family: var(--font-body); font-weight: 600; font-size: 12px;
+}
+
+.store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 22px; }
+
+/* ============================================================
+   VETRINA — griglia modulare: alcune schede occupano più caselle.
+   Si attiva SOLO nel catalogo generico (nessun filtro, nessuna ricerca):
+   appena si filtra, la griglia qui sopra torna uniforme e tutto questo
+   blocco smette di applicarsi.
+   ============================================================ */
+.store-grid--modulare {
+  --cra-cols: 5;
+  --cra-riga: 23rem;
+  --w-grande: 2;  --h-grande: 1;
+  --w-vetrina: 3; --h-vetrina: 2;
+  --w-xl: 3;      --h-xl: 3;
+  grid-template-columns: repeat(var(--cra-cols), minmax(0, 1fr));
+  /* Righe elastiche, non fisse: gli span contano RIGHE, non pixel, quindi la
+     piastrellatura resta esatta anche se una scheda cresce (zoom al 125%,
+     font di sistema diverso, una riga di testo in più). */
+  grid-auto-rows: minmax(var(--cra-riga), auto);
+}
+/* `span var(--x)` funziona perché è sostituzione di token; `span calc(...)` no. */
+.store-grid--modulare > .store-card--grande     { grid-column: span var(--w-grande);  grid-row: span var(--h-grande); }
+.store-grid--modulare > .store-card--vetrina    { grid-column: span var(--w-vetrina); grid-row: span var(--h-vetrina); }
+.store-grid--modulare > .store-card--vetrina-xl { grid-column: span var(--w-xl);      grid-row: span var(--h-xl); }
+
+@media (max-width: 1399px) { .store-grid--modulare { --cra-cols: 4; --w-vetrina: 2; --w-xl: 2; } }
+@media (max-width: 1099px) { .store-grid--modulare { --cra-cols: 3; --w-grande: 1; --w-vetrina: 2; --w-xl: 2; } }
+@media (max-width: 720px)  { .store-grid--modulare { --cra-cols: 2; --w-grande: 1; --w-vetrina: 2; --h-vetrina: 1; --w-xl: 2; --h-xl: 2; } }
+@media (max-width: 470px)  { .store-grid--modulare { --cra-cols: 1; --w-grande: 1; --w-vetrina: 1; --h-vetrina: 2; --w-xl: 1; --h-xl: 2; } }
+
+/* Riquadro foto: stessi valori di prima, ora in classe così le taglie
+   grandi possono sovrascriverli. */
+.store-fig {
+  background: var(--surface-subtle, #f2f1ed); min-height: var(--cra-foto, 150px);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px; overflow: hidden;
+}
+.store-fig-img { max-width: 100%; max-height: var(--cra-foto, 150px); object-fit: contain; display: block; }
+
+/* Ritmo verticale delle schede: senza altezze riservate, un reparto dal nome
+   lungo ("Olio cambio e trasmissione") va a capo e sfasa nome, codice e prezzo
+   rispetto alle schede accanto. */
+.store-card-eyebrow {
+  display: block;
+  font-family: var(--font-brand); font-weight: var(--fw-bold);
+  text-transform: uppercase; font-size: var(--fs-2xs);
+  letter-spacing: var(--ls-eyebrow); color: var(--cra-red);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.store-card-titolo {
+  margin: 7px 0;
+  font-family: var(--font-brand); font-weight: var(--fw-bold);
+  line-height: 1.3; color: var(--text-strong);
+  /* due righe piene, sempre: le schede restano allineate anche con nomi corti */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; min-height: 2.6em;
+}
+/* Nelle schede ingrandite il titolo può respirare di più. */
+.store-grid--modulare .store-card--big .store-card-titolo { -webkit-line-clamp: 3; min-height: 0; }
+
+/* La scala della scheda passa da variabili: gli stili inline le leggono con
+   default identici a oggi, quindi il caso normale non cambia di un pixel. */
+.store-card          { --cra-pad: 18px; --cra-foto: 150px; --cra-titolo: var(--fs-sm); --cra-prezzo: var(--fs-lg); --cra-btn: 44px; }
+.store-card--grande     { --cra-pad: 22px; --cra-titolo: var(--fs-md); --cra-prezzo: var(--fs-xl); --cra-btn: 50px; }
+.store-card--vetrina    { --cra-pad: 26px; --cra-titolo: var(--fs-lg); --cra-prezzo: var(--fs-2xl); --cra-btn: 56px; }
+.store-card--vetrina-xl { --cra-pad: 30px; --cra-titolo: var(--fs-xl); --cra-prezzo: var(--fs-2xl); --cra-btn: 56px; }
+/* clampata a una colonna, la Grande torna anche di scala normale */
+@media (max-width: 1099px) {
+  .store-card--grande { --cra-pad: 18px; --cra-titolo: var(--fs-sm); --cra-prezzo: var(--fs-lg); --cra-btn: 44px; }
+}
+
+/* Nelle celle alte la foto assorbe lo spazio in eccesso: è ciò che toglie il
+   buco bianco fra immagine e prezzo. La foto NON viene mai ingrandita oltre i
+   suoi pixel reali: meglio piccola e nitida che sgranata a tutto schermo. */
+.store-grid--modulare .store-fig { flex: 1 1 auto; }
+.store-grid--modulare .store-fig-img { max-height: 100%; width: auto; height: auto; }
+.store-grid--modulare .store-card { overflow: hidden; }
+
+/* ---- nastro dell'offerta a tempo ----
+   NON dentro il riquadro foto: quello ha overflow:hidden e lo taglierebbe. */
+.store-nastro {
+  position: relative; overflow: hidden;
+  margin: 0 0 14px;
+  padding: 9px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--cra-charcoal); color: var(--cra-gold);
+  font-family: var(--font-brand); font-weight: var(--fw-bold);
+  font-size: 11px; text-transform: uppercase; letter-spacing: var(--ls-caps);
+}
+/* Dentro una scheda esce a filo dei bordi: i margini negativi valgono SOLO lì,
+   altrimenti nella pagina prodotto si mangia la riga del codice articolo. */
+.store-card > .store-nastro {
+  margin: calc(var(--cra-pad, 18px) * -1) calc(var(--cra-pad, 18px) * -1) 14px;
+}
+.store-nastro--urgente { background: var(--cra-red); color: var(--cra-white); }
+.store-nastro--conclusa { background: var(--surface-subtle, #f2f1ed); color: var(--text-muted); border: 1px solid var(--border-subtle, #e2e0da); }
+.store-nastro time { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.store-nastro-eyebrow { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- countdown meccanico: cifre in cassetti che scattano ---- */
+.store-timer { display: inline-flex; align-items: flex-end; gap: 8px; flex: 0 0 auto; }
+.store-timer-gruppo { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
+.store-timer-cifre { display: inline-flex; gap: 2px; }
+.store-timer-cassetto {
+  position: relative; overflow: hidden;
+  width: 1.05em; height: 1.5em; line-height: 1.5em;
+  display: inline-block; text-align: center;
+  background: rgba(255, 255, 255, .1);
+  font-variant-numeric: tabular-nums; font-size: 15px; font-weight: var(--fw-black);
+}
+.store-nastro--conclusa .store-timer-cassetto { background: rgba(0, 0, 0, .06); }
+.store-timer-cifra { position: absolute; inset: 0; }
+.store-timer-eti { font-size: 8px; opacity: .72; letter-spacing: .12em; }
+.store-timer-sep { align-self: center; opacity: .5; font-size: 13px; padding-bottom: 11px; }
+
+/* barra che si svuota: quanto resta della finestra d'offerta */
+.store-nastro-barra { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, .16); }
+.store-nastro-barra i { display: block; height: 100%; background: var(--cra-gold); transition: width 1s linear; }
+.store-nastro--urgente .store-nastro-barra i { background: var(--cra-white); }
+
+/* negli ultimi minuti i secondi respirano */
+@media (prefers-reduced-motion: no-preference) {
+  .store-nastro--urgente .store-timer-gruppo:last-child .store-timer-cassetto { animation: cra-battito 1s steps(2, end) infinite; }
+  @keyframes cra-battito { 0%, 60% { background: rgba(255, 255, 255, .1); } 61%, 100% { background: rgba(255, 255, 255, .28); } }
+}
+
+@media (max-width: 470px) {
+  .store-timer-cassetto { font-size: 13px; }
+  .store-nastro { font-size: 10px; padding: 8px 10px; gap: 8px; }
+}
+
+/* contatore proposta: "pop" ad ogni articolo aggiunto (badge rimontato via key) */
+.store-cart-badge { display: inline-block; animation: cartPop .34s var(--ease-out, ease); }
+@keyframes cartPop { 0% { transform: scale(1); } 40% { transform: scale(1.5); } 100% { transform: scale(1); } }
+
+/* micro-zoom della foto prodotto al passaggio del mouse (la fig ha overflow:hidden) */
+.store-card .store-fig-img { transition: transform .5s cubic-bezier(0.16, 1, 0.3, 1); }
+.store-card:hover .store-fig-img { transform: scale(1.06); }
+
+@media (prefers-reduced-motion: reduce) {
+  .store-cart-badge { animation: none; }
+  .store-card .store-fig-img, .store-card:hover .store-fig-img { transition: none; transform: none; }
+}
+
+@media (max-width: 900px) {
+  .store-layout { grid-template-columns: 1fr; gap: 16px; }
+  .store-sidebar { position: static; max-height: none; overflow: visible; }
+  .store-filters-toggle {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    background: var(--cra-charcoal); color: var(--cra-white); border: none; padding: 11px 16px;
+    font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-2xs);
+    text-transform: uppercase; letter-spacing: var(--ls-caps);
+  }
+}

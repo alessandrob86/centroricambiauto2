@@ -1,0 +1,176 @@
+/* ============================================================
+   IUBENDA — override grafici del banner cookie
+   Il banner è iniettato da script terzi fuori da #cra-root, quindi
+   lo raggiungiamo con selettori id-scoped. iubenda applica stili
+   inline + un proprio stylesheet: gli !important sono necessari.
+   NB: il modal "preferenze" vive in un iframe e NON è stilizzabile
+   da qui — segue solo i colori della csConfiguration in index.html.
+   ============================================================ */
+
+/* Font di brand su tutto il banner.
+   Doppio id (#x#x): specificità (2,0,0) per battere lo stylesheet iubenda,
+   iniettato a runtime DOPO il nostro (a parità di !important vincerebbe lui). */
+#iubenda-cs-banner#iubenda-cs-banner,
+#iubenda-cs-banner#iubenda-cs-banner * {
+  font-family: var(--font-brand, "Spartan MB", "League Spartan", system-ui, sans-serif) !important;
+}
+
+/* Contenitore: niente arrotondamenti (linguaggio squadrato del sito),
+   keyline rosso→oro sul bordo superiore come firma CRA */
+#iubenda-cs-banner .iubenda-cs-container {
+  border-radius: 0 !important;
+  border-top: 3px solid var(--cra-gold, #fdc543) !important;
+  border-image: linear-gradient(90deg, var(--cra-red, #bd3432) 60%, var(--cra-gold, #fdc543) 100%) 1 !important;
+  box-shadow: 0 -12px 32px rgba(27, 32, 31, 0.35) !important;
+}
+#iubenda-cs-banner .iubenda-cs-content,
+#iubenda-cs-banner .iubenda-cs-rationale {
+  border-radius: 0 !important;
+}
+
+/* Testo del banner: gerarchia leggibile */
+#iubenda-cs-banner .iubenda-banner-content {
+  line-height: 1.55 !important;
+}
+#iubenda-cs-banner .iub-title,
+#iubenda-cs-banner .iubenda-banner-content b {
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps, 0.06em);
+}
+
+/* Bottoni: squadrati, caps, pesi da design system */
+#iubenda-cs-banner .iubenda-cs-opt-group button,
+#iubenda-cs-banner [class*="iubenda-cs-"][class*="-btn"] {
+  border-radius: 0 !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  transition: filter 160ms ease, transform 160ms ease !important;
+}
+#iubenda-cs-banner .iubenda-cs-opt-group button:hover,
+#iubenda-cs-banner [class*="iubenda-cs-"][class*="-btn"]:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* Accetta: oro pieno, testo scuro (il colore arriva già dalla config;
+   qui blindiamo il caso in cui iubenda cambi i default) */
+#iubenda-cs-banner .iubenda-cs-accept-btn {
+  background: var(--cra-gold, #fdc543) !important;
+  color: #1b201f !important;
+}
+
+/* Rifiuta / Personalizza: superficie scura secondaria con bordo sottile */
+#iubenda-cs-banner .iubenda-cs-reject-btn,
+#iubenda-cs-banner .iubenda-cs-customize-btn {
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+}
+
+/* Link (privacy/cookie policy) in oro */
+#iubenda-cs-banner a {
+  color: var(--cra-gold, #fdc543) !important;
+  text-decoration: underline;
+}
+
+/* ============================================================
+   VARIANTE COMPATTA (position: float-bottom-left)
+   Riquadro piccolo in basso a sinistra invece della fascia piena:
+   il banner deve informare senza occupare mezza pagina.
+   ============================================================ */
+
+/* Il riquadro è alto al massimo 2/3 schermo: dentro, il testo scorre e i
+   bottoni restano SEMPRE visibili (colonna flex). Gli !important servono:
+   lo stylesheet iubenda è iniettato dopo il nostro. */
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-container {
+  max-width: 384px !important;
+  max-height: 66vh !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-content {
+  padding: 16px 18px !important;
+  max-height: 66vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-rationale {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+}
+/* Solo il testo scorre */
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-banner-content {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+/* Brand e bottoni non si comprimono mai */
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-brand,
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group {
+  flex: 0 0 auto !important;
+}
+
+/* Logo: presente ma discreto */
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-brand img,
+#iubenda-cs-banner#iubenda-cs-banner .iub-brand img {
+  max-height: 22px !important;
+  width: auto !important;
+}
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-brand,
+#iubenda-cs-banner#iubenda-cs-banner .iub-brand {
+  padding-bottom: 6px !important;
+}
+
+/* Bottoni: pieno larghezza in colonna stretta, tocco comodo ma compatti */
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 0 18px 16px !important;
+}
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group button {
+  flex: 1 1 132px !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+}
+/* "Scopri di più e personalizza" è secondario: riga a sé, più sobrio */
+#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-customize-btn {
+  flex: 1 1 100% !important;
+  order: 3;
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  font-size: 11px !important;
+}
+
+/* Entrata morbida dal basso (rispetta chi preferisce meno movimento) */
+@media (prefers-reduced-motion: no-preference) {
+  #iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-container {
+    animation: cra-cs-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes cra-cs-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+/* Su schermi piccoli torna a tutta larghezza, con margini */
+@media (max-width: 560px) {
+  #iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-container {
+    max-width: none !important;
+    margin: 8px !important;
+  }
+}
+
+/* Bottone flottante "preferenze" (ancorato a sinistra): squadrato e discreto */
+.iubenda-tp-btn[data-tp-float],
+.iubenda-uspr-btn[data-tp-float] {
+  border-radius: 0 !important;
+  box-shadow: var(--shadow-md, 0 6px 18px rgba(27, 32, 31, 0.18)) !important;
+}

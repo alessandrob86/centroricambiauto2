@@ -4,6 +4,11 @@ node_modules/
 # build (rigenerabile con: npm run build)
 dist/
 
+# segreti / configurazione locale (le VITE_ vanno nelle env di Netlify)
+.env
+.env.*.local
+.env.local
+
 # varie
 *.log
 .DS_Store

@@ -1,0 +1,301 @@
+/* ============================================================
+   ADMIN CRA — stili del back-office (#/admin).
+   Scorporati da ecom.css: là restavano mischiati agli stili dello
+   store, e il pannello ha ora un layout tutto suo (a tutta larghezza).
+   Global stylesheet con classi prefissate (adm-), tema chiaro CRA.
+   ============================================================ */
+
+/* Contenitore del pannello: molto più largo del sito (1200), perché qui
+   si leggono tabelle. --adm-max si può azzerare per riga (scheda Prezzi). */
+.adm-wrap {
+  width: 100%;
+  max-width: var(--adm-max, 1580px);
+  margin: 0 auto;
+  padding-inline: clamp(16px, 2vw, 32px);
+  box-sizing: border-box;
+}
+
+/* Fondo leggermente spento: a 1580px il bianco su bianco separato da un
+   filetto da 1px diventa una distesa indistinta. */
+.adm-page { background: var(--surface-subtle, #f2f1ed); min-height: 70vh; padding: var(--space-6) 0 var(--space-9); }
+
+.adm-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: var(--space-5); }
+.adm-title { margin: 0; font-family: var(--font-brand); font-weight: var(--fw-black); font-size: var(--fs-2xl); text-transform: uppercase; color: var(--text-strong); }
+
+.adm-tabs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: var(--space-5); }
+.adm-tab {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 11px 16px; background: transparent; color: var(--text-muted);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-2xs);
+  text-transform: uppercase; letter-spacing: var(--ls-caps);
+  transition: background var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
+}
+.adm-tab:hover { border-color: var(--cra-charcoal); color: var(--cra-charcoal); }
+.adm-tab.active { background: var(--cra-charcoal); border-color: var(--cra-charcoal); color: var(--cra-white); }
+.adm-count { background: var(--cra-gold); color: var(--cra-charcoal); padding: 1px 7px; font-weight: var(--fw-black); }
+
+/* Stato del foglio, in coda alla barra schede: visibile ovunque. */
+.adm-foglio-stato { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--text-muted); }
+
+.adm-row {
+  background: var(--surface-card); border: 1px solid var(--border-subtle, #e2e0da);
+  padding: 16px 18px; margin-bottom: 14px;
+}
+.adm-row-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.adm-num { font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-sm); color: var(--text-strong); }
+.adm-sub { font-size: var(--fs-xs); color: var(--text-muted); }
+.adm-badge {
+  display: inline-block; font-family: var(--font-brand); font-weight: var(--fw-bold);
+  font-size: 10px; text-transform: uppercase; letter-spacing: .08em; padding: 3px 8px;
+}
+.adm-badge.oro { background: var(--cra-gold); color: var(--cra-charcoal); }
+.adm-badge.grigio { background: var(--surface-subtle, #f2f1ed); color: var(--text-muted); border: 1px solid var(--border-subtle, #e2e0da); }
+.adm-badge.rosso { background: var(--red-50, #faf0ef); color: var(--cra-red); border: 1px solid #f0cfce; }
+
+.adm-fields { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin-top: 14px; }
+.adm-fld { display: flex; flex-direction: column; gap: 5px; min-width: 130px; }
+.adm-fld.wide { flex: 1 1 240px; max-width: 640px; }   /* senza limite, a 1580px diventa un input da 900px */
+.adm-fld > span {
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px;
+  text-transform: uppercase; letter-spacing: var(--ls-eyebrow); color: var(--text-muted);
+}
+.adm-fld input, .adm-fld select, .adm-fld textarea {
+  font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-strong);
+  background: var(--surface-card); border: var(--border-w-2) solid var(--border-strong);
+  padding: 9px 11px; outline: none;
+}
+/* Un solo anello di focus: site.css mette già un outline sugli interattivi. */
+.adm-fld input:focus, .adm-fld select:focus, .adm-fld textarea:focus { border-color: var(--char-700); }
+.adm-check { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font-family: var(--font-brand); font-weight: var(--fw-semibold); font-size: var(--fs-xs); color: var(--text-strong); }
+
+.adm-btn {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 11px 16px; border: var(--border-w-2) solid var(--cra-charcoal);
+  background: var(--cra-charcoal); color: var(--cra-white);
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-2xs);
+  text-transform: uppercase; letter-spacing: var(--ls-caps);
+  transition: background var(--dur-base) var(--ease-standard);
+}
+.adm-btn:hover { background: var(--char-900, #171b1a); }
+.adm-btn.rosso { background: var(--cra-red); border-color: var(--cra-red); }
+.adm-btn.rosso:hover { background: #a02b29; }
+.adm-btn.ghost { background: transparent; color: var(--text-strong); border-color: var(--border-strong); }
+.adm-btn.ghost:hover { background: var(--surface-subtle, #f2f1ed); }
+.adm-btn.mini { padding: 8px 11px; }
+.adm-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.adm-item { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--border-subtle, #e2e0da); font-size: var(--fs-sm); }
+.adm-item:first-child { border-top: none; }
+.adm-item-thumb { width: 44px; height: 44px; object-fit: contain; background: var(--surface-subtle, #f2f1ed); flex-shrink: 0; }
+
+.adm-state { text-align: center; color: var(--text-muted); padding: var(--space-7) 0; font-size: var(--fs-sm); }
+.adm-err {
+  display: flex; align-items: center; gap: 8px; background: var(--red-50, #faf0ef); color: var(--cra-red);
+  border: 1px solid #f3d5d4; padding: 10px 14px; margin-bottom: var(--space-4);
+  font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+}
+.adm-ok {
+  display: flex; align-items: center; gap: 8px; background: #eef6f0; color: #2e7d4f;
+  border: 1px solid #cfe6d6; padding: 10px 14px; margin-bottom: var(--space-4);
+  font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+}
+/* Richiamo informativo (oro): passaggi di consegne, controlli di integrità. */
+.adm-avviso {
+  display: flex; align-items: flex-start; gap: 8px; background: #fdf6e3; color: var(--text-strong);
+  border: 1px solid var(--cra-gold); padding: 10px 14px; margin-bottom: var(--space-4);
+  font-size: var(--fs-sm);
+}
+
+.adm-form { background: var(--surface-card); border: 1px solid var(--border-subtle, #e2e0da); padding: 18px; margin-bottom: var(--space-5); display: flex; flex-direction: column; gap: 14px; }
+/* Colonne esplicite: con auto-fit, a 1580px il form fa 8-9 colonne e
+   l'ordine di lettura si sbriciola proprio quando la pagina si allarga. */
+.adm-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 900px)  { .adm-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1300px) { .adm-form-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.adm-thumb-preview { width: 74px; height: 74px; object-fit: contain; background: var(--surface-subtle, #f2f1ed); border: 1px solid var(--border-subtle, #e2e0da); }
+
+/* Barra filtri di una scheda: campo di ricerca + qualche menu. */
+.adm-filtri { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.adm-filtri input, .adm-filtri select {
+  font-family: var(--font-body); font-size: var(--fs-sm); color: var(--text-strong);
+  background: var(--surface-card); border: var(--border-w-2) solid var(--border-strong);
+  padding: 10px 12px; outline: none;
+}
+.adm-filtri input[type="search"] { flex: 1 1 260px; min-width: 0; }
+.adm-filtri input:focus, .adm-filtri select:focus { border-color: var(--char-700); }
+
+/* ============================================================
+   OFFICINE — elenco clienti
+   Con la scheda sempre aperta, dieci clienti erano già un muro: qui
+   ogni cliente è una riga sola con lo stato a colpo d'occhio, e i due
+   pannelli (anagrafica, prezzi) si aprono verso il basso a richiesta.
+   ============================================================ */
+
+.adm-cli { background: var(--surface-card); border: 1px solid var(--border-subtle, #e2e0da); margin-bottom: 8px; }
+.adm-cli.aperta { border-color: var(--cra-charcoal); }
+
+.adm-cli-head { display: flex; align-items: center; gap: 14px; padding: 11px 16px; flex-wrap: wrap; }
+.adm-cli-id { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.adm-cli-nome { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-sm); color: var(--text-strong); }
+/* Una riga sola: l'email lunga non deve spingere fuori le pastiglie. */
+.adm-cli-meta { font-size: var(--fs-xs); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.adm-cli-stato { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.adm-cli-azioni { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* Pastiglia di sola lettura: stato, categoria, siti abilitati. */
+.adm-pill {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .06em;
+  padding: 4px 9px; border: 1px solid var(--border-subtle, #e2e0da);
+  background: var(--surface-subtle, #f2f1ed); color: var(--text-muted);
+}
+.adm-pill.attiva  { background: #eef6f0; border-color: #cfe6d6; color: #2e7d4f; }
+.adm-pill.attesa  { background: #fdf6e3; border-color: var(--cra-gold); color: var(--text-strong); }
+.adm-pill.sospesa { background: var(--red-50, #faf0ef); border-color: #f0cfce; color: var(--cra-red); }
+.adm-pill.spenta  { color: var(--char-400, #9aa09e); }
+.adm-pill-punto { width: 9px; height: 9px; flex: 0 0 auto; }
+
+/* Pannello che si apre sotto la riga del cliente. */
+.adm-cli-pannello {
+  border-top: 1px solid var(--border-subtle, #e2e0da);
+  padding: 4px 16px 16px; background: var(--surface-subtle, #f2f1ed);
+}
+.adm-cli-pannello .adm-fields { margin-top: 10px; }
+
+@media (max-width: 820px) {
+  .adm-cli-azioni { margin-left: 0; width: 100%; }
+}
+
+/* Paginazione numerata: con migliaia di clienti "carica altri" non basta,
+   serve poter saltare. I numeri lontani si comprimono in "…". */
+.adm-pagine {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: var(--space-4) 0; justify-content: center;
+}
+.adm-pagine .adm-btn { min-width: 38px; justify-content: center; padding: 8px 10px; }
+
+/* Regola della scheda: una riga che dice cosa si fa qui. */
+.adm-regola {
+  font-size: var(--fs-xs); color: var(--text-muted);
+  border-left: 3px solid var(--cra-gold); padding: 6px 0 6px 12px; margin-bottom: var(--space-4);
+}
+
+/* ============================================================
+   MATRICE PREZZI — una riga per prodotto, una colonna per categoria
+   ============================================================ */
+
+/* Il wrapper DEVE avere overflow:auto e min-width:0: site.css impone
+   html,body{overflow-x:clip}, quindi senza questo le colonne oltre il
+   bordo verrebbero tagliate senza barra di scorrimento e senza segnale. */
+.adm-mx-scroll {
+  overflow: auto;
+  min-width: 0;
+  max-height: calc(100vh - 260px);
+  border: 1px solid var(--border-subtle, #e2e0da);
+  background: var(--surface-card);
+}
+/* 'separate' è obbligatorio: con 'collapse' i bordi delle celle sticky spariscono. */
+.adm-mx { table-layout: fixed; border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+
+.adm-mx th, .adm-mx td { border-bottom: 1px solid var(--border-subtle, #e2e0da); vertical-align: middle; }
+
+.adm-mx thead th {
+  position: sticky; top: 0; z-index: 3;
+  background: var(--char-800, #272d2b); color: var(--cra-white);
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 11px;
+  text-transform: uppercase; letter-spacing: var(--ls-caps);
+  text-align: left; padding: 10px 12px;
+}
+
+/* Colonna prodotto congelata a sinistra: fondo OPACO, altrimenti le celle
+   che le scorrono sotto restano visibili in trasparenza. */
+.adm-mx .adm-mx-prod {
+  position: sticky; left: 0; z-index: 2;
+  width: 340px; min-width: 340px;
+  background: var(--surface-card);
+  padding: 8px 12px;
+}
+.adm-mx thead .adm-mx-prod { z-index: 4; background: var(--char-800, #272d2b); }
+/* Filetto di brand a chiudere il blocco congelato */
+.adm-mx .adm-mx-prod::after {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--cra-red) 0 50%, var(--cra-gold) 50% 100%);
+}
+
+.adm-mx-col { width: 124px; min-width: 124px; }
+.adm-mx-azioni { width: 132px; min-width: 132px; }
+
+.adm-mx tbody tr:hover .adm-mx-prod { background: var(--surface-subtle, #f2f1ed); }
+.adm-mx tbody tr:hover td { background-color: rgba(0, 0, 0, .015); }
+
+/* Riga prodotto */
+.adm-mx-nome { font-weight: var(--fw-bold); font-size: 13px; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm-mx-meta { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+
+/* ---- le celle prezzo, cinque stati ---- */
+.adm-mx-cell { padding: 4px 8px; text-align: right; font-variant-numeric: tabular-nums; font-size: var(--fs-sm); }
+.adm-mx-cell input {
+  width: 100%; box-sizing: border-box; text-align: right;
+  font-family: var(--font-body); font-size: var(--fs-sm); font-variant-numeric: tabular-nums;
+  padding: 6px 8px; border: var(--border-w-2) solid var(--char-700); outline: none;
+  background: var(--surface-card); color: var(--text-strong);
+}
+.adm-mx-val { display: block; padding: 7px 8px; cursor: text; min-height: 20px; }
+/* (a) eredita il prezzo base */
+.adm-mx-cell.eredita .adm-mx-val { color: var(--char-400, #9aa09e); }
+/* (b) ha un prezzo dedicato */
+.adm-mx-cell.dedicato { border-left: 3px solid var(--cra-gold); }
+/* (c) modificata, non ancora salvata */
+.adm-mx-cell.modificata { background: rgba(189, 52, 50, .06); box-shadow: inset 0 0 0 2px var(--cra-red); }
+.adm-mx-precedente { display: block; font-size: 10px; color: var(--text-muted); text-decoration: line-through; }
+/* (d) comandata dal foglio */
+.adm-mx-cell.bloccata { background: var(--char-50, #f4f4f3); color: var(--text-muted); cursor: not-allowed; }
+.adm-mx-cell.bloccata .adm-mx-val { cursor: not-allowed; display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+/* (e) valore non numerico */
+.adm-mx-cell.errore { box-shadow: inset 0 0 0 2px var(--cra-red); background: rgba(189, 52, 50, .1); }
+.adm-mx-cell.errore input { border-style: dashed; border-color: var(--cra-red); }
+
+/* Legenda sotto l'intestazione */
+.adm-legenda { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 11px; color: var(--text-muted); padding: 8px 2px; }
+.adm-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.adm-legenda i { width: 12px; height: 12px; display: inline-block; border: 1px solid var(--border-strong); font-style: normal; }
+.adm-legenda i.dedicato { border-left: 3px solid var(--cra-gold); }
+.adm-legenda i.bloccata { background: var(--char-50, #f4f4f3); }
+.adm-legenda i.modificata { box-shadow: inset 0 0 0 2px var(--cra-red); background: rgba(189, 52, 50, .06); }
+
+/* Barra di salvataggio: in BASSO dentro il wrapper. In alto finirebbe
+   sotto l'header sticky (alto ~113px, z-index 50) e sparirebbe. */
+.adm-salvabarra {
+  position: sticky; bottom: 0; z-index: 6;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--cra-charcoal); color: var(--cra-white);
+  border-top: 3px solid var(--cra-gold);
+  padding: 12px 16px; margin-top: 2px;
+}
+.adm-salvabarra .adm-btn.ghost { color: var(--cra-white); border-color: rgba(255, 255, 255, .35); }
+.adm-salvabarra .adm-btn.ghost:hover { background: rgba(255, 255, 255, .1); }
+.adm-salvabarra-testo { font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--ls-caps); }
+
+/* Elenco puntuale delle modifiche in sospeso */
+.adm-modifiche { background: var(--surface-card); border: 1px solid var(--border-subtle, #e2e0da); padding: 12px 14px; margin-top: 8px; max-height: 260px; overflow: auto; }
+.adm-modifiche div { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: var(--fs-xs); border-top: 1px solid var(--border-subtle, #e2e0da); }
+.adm-modifiche div:first-child { border-top: none; }
+
+/* Riquadro di spiegazione della cella bloccata */
+.adm-spiega { background: var(--surface-card); border: 2px solid var(--cra-charcoal); box-shadow: var(--shadow-md, 0 6px 18px rgba(27,32,31,.18)); padding: 14px 16px; margin: 0 0 14px; display: flex; flex-direction: column; gap: 8px; }
+.adm-spiega b { font-family: var(--font-brand); text-transform: uppercase; letter-spacing: var(--ls-caps); font-size: var(--fs-xs); }
+
+/* ---- schermi stretti: la tabella scorre, la colonna prodotto resta ancorata.
+       Meglio uno scorrimento onesto che una seconda vista da mantenere. ---- */
+@media (max-width: 1100px) {
+  .adm-mx .adm-mx-prod { width: 220px; min-width: 220px; }
+  .adm-mx-scroll { max-height: calc(100vh - 200px); }
+}
+@media (max-width: 700px) {
+  .adm-tabs { gap: 6px; }
+  .adm-tab { padding: 9px 12px; }
+  .adm-foglio-stato { margin-left: 0; width: 100%; }
+}

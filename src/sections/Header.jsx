@@ -3,7 +3,157 @@ import { Logo } from "../components/ds/Logo.jsx";
 import { Button } from "../components/ds/Button.jsx";
 import { Icon } from "../components/Icon.jsx";
 import { Container, ChromeButton } from "../components/shared.jsx";
+import { useAuth } from "../lib/auth.jsx";
 import l2fLogo from "../assets/brands/l2f.png";
+
+const B2B_URL = "https://centroricambiautosrl.blusys.it/";
+
+/* Voce del dropdown Ecom: <a> per link esterni, <button> per rotte interne. */
+function EcomItem({ href, onClick, icon, iconColor = "var(--cra-gold)", children, danger = false }) {
+  const [hover, setHover] = React.useState(false);
+  const style = {
+    display: "flex", alignItems: "center", gap: "10px", width: "100%",
+    padding: "12px 16px", background: hover ? "rgba(255,255,255,0.07)" : "none",
+    border: "none", cursor: "pointer", textAlign: "left", textDecoration: "none",
+    fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-xs)",
+    textTransform: "uppercase", letterSpacing: "var(--ls-caps)",
+    color: danger ? "#e88a88" : hover ? "var(--cra-white)" : "var(--char-200)",
+    transition: "background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard)",
+  };
+  const content = (
+    <React.Fragment>
+      <Icon name={icon} size={15} color={danger ? "#e88a88" : iconColor} />
+      {children}
+      {href && <Icon name="external-link" size={12} color="var(--char-500, #6e7678)" />}
+    </React.Fragment>
+  );
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" role="menuitem" style={style}
+        onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+        {content}
+      </a>
+    );
+  }
+  return (
+    <button type="button" role="menuitem" onClick={onClick} style={style}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      {content}
+    </button>
+  );
+}
+
+/* Versione mobile del menu Ecom: righe piene nel pannello hamburger
+   (niente dropdown annidato sotto i 1024px). */
+function MobileEcomRows({ go }) {
+  const { session, isActive, isAdmin, isStaff, signOut } = useAuth();
+  const row = (active = false) => ({
+    display: "flex", alignItems: "center", gap: "10px", width: "100%",
+    background: "none", border: "none", cursor: "pointer", textAlign: "left",
+    padding: "14px 4px", borderBottom: "1px solid var(--char-800)",
+    fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-base)",
+    textTransform: "uppercase", letterSpacing: "var(--ls-caps)",
+    color: active ? "var(--cra-gold)" : "var(--char-200)", textDecoration: "none",
+  });
+
+  if (!session) {
+    return (
+      <button onClick={() => go("login")} style={row()}>
+        <Icon name="log-in" size={17} color="var(--cra-gold)" /> Login
+      </button>
+    );
+  }
+  return (
+    <React.Fragment>
+      <a href={B2B_URL} target="_blank" rel="noopener noreferrer" style={row()}>
+        <Icon name="cog" size={17} color="var(--cra-gold)" /> B2B Ricambi
+        <Icon name="external-link" size={13} color="var(--char-500, #6e7678)" />
+      </a>
+      {isActive && (
+        <button onClick={() => go("store")} style={row()}>
+          <Icon name="store" size={17} color="var(--cra-gold)" /> CRA Store
+        </button>
+      )}
+      {isStaff && (
+        <button onClick={() => go("interno")} style={row()}>
+          <Icon name="users" size={17} color="var(--cra-gold)" /> Area interna
+        </button>
+      )}
+      {isAdmin && (
+        <button onClick={() => go("admin")} style={row()}>
+          <Icon name="shield-check" size={17} color="var(--cra-gold)" /> Admin
+        </button>
+      )}
+      <button onClick={async () => { await signOut(); go("home"); }} style={{ ...row(), color: "#e88a88" }}>
+        <Icon name="log-out" size={17} color="#e88a88" /> Logout
+      </button>
+    </React.Fragment>
+  );
+}
+
+/* Bottone Ecom dell'header: sloggato → Login; loggato → dropdown con
+   B2B, CRA Store, Admin (solo admin) e Logout. */
+function EcomMenu({ go }) {
+  const { session, isActive, isAdmin, isStaff, signOut } = useAuth();
+  const [open, setOpen] = React.useState(false);
+  const wrapRef = React.useRef(null);
+
+  /* chiusura su click fuori + Escape */
+  React.useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  if (!session) {
+    return (
+      <ChromeButton onClick={() => go("login")} size="sm" aria-label="Accedi all'area officine">
+        <Icon name="log-in" size={15} color="var(--cra-gold)" /> Login
+      </ChromeButton>
+    );
+  }
+
+  const pick = (id) => { setOpen(false); go(id); };
+  const onLogout = async () => {
+    setOpen(false);
+    await signOut();
+    go("home");
+  };
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <ChromeButton onClick={() => setOpen(!open)} size="sm"
+        aria-haspopup="menu" aria-expanded={open}>
+        <Icon name="cog" size={15} color="var(--cra-gold)" /> Ecom
+        <span style={{ display: "inline-flex", transform: open ? "rotate(180deg)" : "none", transition: "transform var(--dur-base) var(--ease-standard)" }}>
+          <Icon name="chevron-down" size={14} color="var(--char-300, #aab3b2)" />
+        </span>
+      </ChromeButton>
+      {open && (
+        <div role="menu" style={{
+          position: "absolute", top: "calc(100% + 10px)", right: 0, minWidth: "235px",
+          background: "var(--surface-darker)", border: "1px solid var(--char-700)",
+          boxShadow: "var(--shadow-lg)", zIndex: 60, padding: "6px 0",
+        }}>
+          <EcomItem href={B2B_URL} icon="cog">B2B Ricambi</EcomItem>
+          {isActive && <EcomItem onClick={() => pick("store")} icon="store">CRA Store</EcomItem>}
+          {isStaff && <EcomItem onClick={() => pick("interno")} icon="users">Area interna</EcomItem>}
+          {isAdmin && <EcomItem onClick={() => pick("admin")} icon="shield-check">Admin</EcomItem>}
+          <div style={{ height: "1px", background: "var(--char-800)", margin: "6px 0" }} />
+          <EcomItem onClick={onLogout} icon="log-out" danger>Logout</EcomItem>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* Bottone L2F dedicato: logo del marchio su fondo trasparente (l'argento + il
    rosso si leggono bene sull'header scuro), con bagliore rosso sul logo al
@@ -120,9 +270,7 @@ export function Header({ current, onNavigate }) {
             Preventivo
           </Button>
           <L2FNavButton logoHeight={24} />
-          <ChromeButton href="https://centroricambiautosrl.blusys.it/" size="sm">
-            <Icon name="cog" size={15} color="var(--cra-gold)" /> E-Com
-          </ChromeButton>
+          <EcomMenu go={go} />
         </nav>
 
         {/* controlli mobile: CTA primaria sempre visibile + hamburger */}
@@ -150,11 +298,9 @@ export function Header({ current, onNavigate }) {
                 {n.label}
               </button>
             ))}
+            <MobileEcomRows go={go} />
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", marginTop: "var(--space-4)", flexWrap: "wrap" }}>
               <L2FNavButton logoHeight={26} />
-              <ChromeButton href="https://centroricambiautosrl.blusys.it/" size="sm">
-                <Icon name="cog" size={15} color="var(--cra-gold)" /> E-Com
-              </ChromeButton>
               <a href="tel:+39081281732" style={{ display: "inline-flex", alignItems: "center", gap: "8px", textDecoration: "none", color: "var(--char-200)", fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-xs)", textTransform: "uppercase", letterSpacing: "var(--ls-caps)", padding: "10px 14px", border: "1px solid var(--char-700)", borderRadius: "var(--radius-sm)" }}>
                 <Icon name="phone" size={15} color="var(--cra-gold)" /> Chiama
               </a>

@@ -1,0 +1,867 @@
+/* ============================================================
+   MODULO INTERNO — #/interno
+   L'area di lavoro del personale CRA. Come il back-office va a TUTTA
+   LARGHEZZA: qui si leggono elenchi e griglie, il contenitore boxed del
+   sito pubblico strozzerebbe tutto. Classi prefissate `dip-`.
+   ============================================================ */
+
+.dip-page {
+  background: var(--surface-subtle, #f2f1ed);
+  min-height: 78vh;
+  padding: var(--space-6) 0 var(--space-9);
+}
+
+/* Nessun max-width: è la differenza voluta rispetto al resto del sito. */
+.dip-wrap {
+  width: 100%;
+  padding-inline: clamp(16px, 2.4vw, 40px);
+  box-sizing: border-box;
+}
+
+.dip-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: var(--space-5); }
+.dip-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-2xs);
+  letter-spacing: var(--ls-eyebrow); text-transform: uppercase; color: var(--cra-red);
+}
+.dip-title { margin: 0; font-family: var(--font-brand); font-weight: var(--fw-black); font-size: var(--fs-2xl); text-transform: uppercase; color: var(--text-strong); }
+.dip-chi {
+  display: inline-flex; align-items: center; gap: 12px; text-align: right;
+  font-size: var(--fs-xs); color: var(--text-muted);
+  background: none; border: 0; padding: 4px; margin: -4px; cursor: pointer;
+  font-family: var(--font-body);
+}
+.dip-chi:hover b { color: var(--cra-red); }
+.dip-chi b { display: block; font-family: var(--font-brand); font-size: var(--fs-sm); color: var(--text-strong); text-transform: uppercase; letter-spacing: var(--ls-caps); }
+
+/* ---- schede di navigazione ----
+   Sono le stesse del back-office (.adm-tab): stesso peso, stesso contrasto,
+   stessa abitudine per chi le usa. Un tempo qui c'era un fondo animato con
+   layoutId, ma la regola `.dip-tab > *` colpiva anche quel fondo e gli
+   toglieva il posizionamento assoluto: il risultato era testo bianco su
+   bianco. Il movimento è passato al contenuto, dove non può nascondere
+   nulla. */
+.dip-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--space-5); }
+.dip-tab {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 11px 16px; background: transparent; color: var(--text-muted);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-2xs);
+  text-transform: uppercase; letter-spacing: var(--ls-caps);
+  transition: background var(--dur-base) var(--ease-standard),
+              color var(--dur-base) var(--ease-standard),
+              border-color var(--dur-base) var(--ease-standard);
+}
+.dip-tab:hover { border-color: var(--cra-charcoal); color: var(--cra-charcoal); }
+.dip-tab.on {
+  background: var(--cra-charcoal); border-color: var(--cra-charcoal); color: var(--cra-white);
+}
+.dip-tab.on:hover { color: var(--cra-white); }
+.dip-tab-badge { background: var(--cra-gold); color: var(--cra-charcoal); padding: 1px 7px; font-weight: var(--fw-black); }
+
+/* ---- riquadri e schede generiche ---- */
+.dip-card {
+  background: var(--surface-card); border: 1px solid var(--border-subtle, #e2e0da);
+  padding: 16px 18px;
+}
+.dip-card-titolo {
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-xs);
+  text-transform: uppercase; letter-spacing: var(--ls-caps); color: var(--text-strong);
+  display: flex; align-items: center; gap: 8px; margin: 0 0 10px;
+}
+.dip-sub { font-size: var(--fs-xs); color: var(--text-muted); }
+.dip-vuoto { text-align: center; color: var(--text-muted); padding: var(--space-7) 0; font-size: var(--fs-sm); }
+
+.dip-regola {
+  font-size: var(--fs-xs); color: var(--text-muted);
+  border-left: 3px solid var(--cra-gold); padding: 6px 0 6px 12px; margin-bottom: var(--space-4);
+}
+
+/* ============================================================
+   HOME MODULARE — riquadri spostabili e ridimensionabili.
+   Griglia a 4 colonne su desktop; le misure sono preset, non pixel
+   liberi: "come sul telefono", non come un editor di layout.
+   ============================================================ */
+.dip-griglia {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(190px, auto);
+  gap: 14px;
+}
+.dip-riquadro { grid-column: span 1; grid-row: span 1; min-width: 0; display: flex; flex-direction: column; }
+.dip-riquadro[data-taglia="2x1"] { grid-column: span 2; }
+/* Larga quanto la pagina ma alta una riga: la striscia da tenere in cima. */
+.dip-riquadro[data-taglia="4x1"] { grid-column: span 4; grid-row: span 1; }
+.dip-riquadro[data-taglia="2x2"] { grid-column: span 2; grid-row: span 2; }
+.dip-riquadro[data-taglia="3x2"] { grid-column: span 3; grid-row: span 2; }
+/* `min-width: 0` anche qui: senza, un titolo lungo dentro un riquadro
+   allarga la colonna oltre la griglia e il pannello finisce fuori schermo. */
+.dip-riquadro-corpo { flex: 1; overflow: auto; overflow-x: hidden; min-height: 0; min-width: 0; }
+
+/* Le regolazioni del riquadro: compaiono sotto la barra delle misure, solo
+   in modifica. Restano dentro il riquadro perché è lì che si vede l'effetto. */
+.dip-regolazioni {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 10px; margin-bottom: 8px;
+  background: var(--surface-subtle, #f2f1ed);
+  border: 1px solid var(--border-subtle, #e2e0da);
+}
+.dip-regolazioni .dip-campo { min-width: 130px; flex: 1 1 130px; }
+.dip-regolazioni .dip-campo select { padding: 5px 7px; font-size: var(--fs-xs); }
+
+/* Anche i riquadri rispondono al passaggio del mouse: con quattro pannelli
+   affiancati serve sapere in quale si è, prima ancora di cliccare. */
+.dip-riquadro:not(.modifica):not(.presa) {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.dip-riquadro:not(.modifica):not(.presa):hover {
+  border-color: var(--border-strong, #272d2b);
+  box-shadow: 0 8px 22px rgba(39, 45, 43, .10);
+}
+.dip-badge { transition: background .18s ease, transform .18s ease; }
+.dip-badge:hover { background: var(--surface-subtle, #f2f1ed); transform: translateY(-2px); }
+
+/* In modifica il riquadro si stacca dalla pagina e mostra i comandi. */
+.dip-riquadro.modifica { cursor: grab; box-shadow: 0 6px 18px rgba(0, 0, 0, .10); }
+.dip-riquadro.modifica:active { cursor: grabbing; }
+
+/* Quello in mano diventa una sagoma: gli altri si spostano davvero
+   sotto il mouse, e al rilascio la posizione si conferma. */
+.dip-riquadro.presa {
+  opacity: .38;
+  outline: 2px dashed var(--cra-red);
+  outline-offset: -3px;
+  box-shadow: none;
+}
+.dip-riquadro.presa .dip-riquadro-corpo { visibility: hidden; }
+
+/* Maniglia: dice "questo si trascina" senza doverlo spiegare. */
+.dip-presa { color: var(--text-muted); font-size: 13px; line-height: 1; cursor: grab; letter-spacing: -2px; }
+.dip-riquadro-barra { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.dip-misura {
+  cursor: pointer; padding: 3px 8px; font-family: var(--font-brand); font-weight: var(--fw-bold);
+  font-size: 10px; letter-spacing: .06em; border: 1px solid var(--border-subtle, #e2e0da);
+  background: var(--surface-subtle, #f2f1ed); color: var(--text-muted);
+}
+.dip-misura.on { background: var(--cra-charcoal); border-color: var(--cra-charcoal); color: var(--cra-white); }
+.dip-misura.togli:hover { background: var(--cra-red); border-color: var(--cra-red); color: var(--cra-white); }
+
+/* I riquadri tolti restano a portata: rimetterli è un clic, non una caccia. */
+.dip-rimetti { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+
+@media (max-width: 1100px) { .dip-griglia { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Sotto i 760px una colonna sola: l'ordine scelto resta, le misure decadono.
+   Trascinare riquadri su un telefono non serve a nessuno. */
+@media (max-width: 760px) {
+  .dip-griglia { grid-template-columns: 1fr; grid-auto-rows: auto; }
+  .dip-riquadro, .dip-riquadro[data-taglia] { grid-column: span 1; grid-row: span 1; }
+}
+
+/* ============================================================
+   BARRA ANNUNCI — in testa a TUTTO il sito, non solo al modulo.
+   La vede solo il personale loggato: un visitatore non ha filiale,
+   quindi non ha annunci.
+
+   Il colore lo porta l'annuncio e lo applica il componente. La prima
+   versione era antracite come l'header che le sta sotto: una striscia
+   scura su fondo scuro, che nessuno notava. Un avviso che non si vede
+   non è un avviso, quindi qui la banda è piena e stacca.
+   ============================================================ */
+.dip-barra {
+  position: relative; z-index: 60;
+  border-bottom: 3px solid var(--cra-charcoal);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .18);
+}
+.dip-barra-in {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px clamp(16px, 2.4vw, 40px); min-height: 54px;
+}
+
+/* Pastiglia con l'icona; dentro ci pulsa l'alone. */
+.dip-barra-icona {
+  position: relative; flex: 0 0 auto;
+  width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+}
+.dip-barra-alone { position: absolute; inset: 4px; border-radius: 999px; pointer-events: none; }
+.dip-barra-icona > span:last-child { position: relative; z-index: 1; }
+
+.dip-barra-testo { flex: 1; min-width: 0; }
+.dip-barra-titolo {
+  font-family: var(--font-brand); font-weight: var(--fw-black); font-size: var(--fs-sm);
+  text-transform: uppercase; letter-spacing: .05em; display: block; line-height: 1.25;
+}
+.dip-barra-corpo { display: block; font-size: var(--fs-xs); line-height: 1.4; opacity: .88; margin-top: 1px; }
+
+.dip-barra-azioni { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+
+/* Conto alla rovescia: cifre tabulari, altrimenti la larghezza balla a
+   ogni secondo e l'occhio ci inciampa. */
+.dip-barra-timer {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 5px 10px; border: 1.5px solid currentColor;
+  font-family: var(--font-brand); font-weight: var(--fw-black); font-size: 11px;
+  letter-spacing: .04em;
+}
+.dip-barra-timer-cifre { font-variant-numeric: tabular-nums; }
+.dip-barra-timer.urgente { border-width: 2px; }
+
+/* Un pallino per annuncio: si vede quanti ce ne sono e ci si salta sopra. */
+.dip-barra-punti { display: inline-flex; align-items: center; gap: 5px; margin-right: 4px; }
+.dip-barra-punto {
+  width: 7px; height: 7px; padding: 0; border: none; cursor: pointer;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
+}
+.dip-barra-punto:hover { opacity: .75 !important; }
+.dip-barra-punto.on { transform: scale(1.3); }
+
+.dip-barra-btn {
+  cursor: pointer; background: transparent; border: 1px solid var(--dip-velo, rgba(0, 0, 0, .3));
+  padding: 6px 11px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .06em;
+  transition: background var(--dur-base) var(--ease-standard), transform var(--dur-fast, .12s) var(--ease-standard);
+}
+.dip-barra-btn:hover { background: var(--dip-velo, rgba(0, 0, 0, .12)); }
+.dip-barra-btn:active { transform: scale(.96); }
+.dip-barra-btn.forte:hover { filter: brightness(.92); }
+
+/* Su schermi stretti il corpo dell'annuncio si taglia a una riga: il
+   titolo e i due pulsanti restano, che sono la parte utile. */
+@media (max-width: 720px) {
+  .dip-barra-in { gap: 10px; padding-inline: 14px; }
+  .dip-barra-corpo { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .dip-barra-punti { display: none; }
+}
+
+/* ============================================================
+   CAMPANELLA NOTIFICHE — pulsante flottante, non nel menu.
+   Stava fra il logo L2F e il tasto Ecom e sporcava una barra di
+   navigazione pubblica con uno strumento che è solo del personale.
+   Ora vive in basso a destra, sopra il «torna su», e non tocca niente.
+   ============================================================ */
+.dip-camp { position: fixed; right: 20px; bottom: 78px; z-index: 95; }
+.dip-camp-btn {
+  position: relative; cursor: pointer;
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 1px solid var(--char-700); background: rgba(27, 32, 31, .92);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-lg);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--dur-base) var(--ease-standard),
+              border-color var(--dur-base) var(--ease-standard);
+}
+.dip-camp-btn:hover { background: var(--cra-charcoal); border-color: var(--cra-gold); }
+.dip-camp-badge {
+  position: absolute; top: -3px; right: -3px;
+  min-width: 18px; height: 18px; padding: 0 4px;
+  background: var(--cra-red); color: var(--cra-white);
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px;
+  font-family: var(--font-brand); font-weight: var(--fw-black); font-size: 10px;
+  border: 2px solid var(--cra-charcoal); box-sizing: content-box;
+}
+
+/* Il pannello si apre VERSO L'ALTO: sotto non c'è spazio. */
+.dip-camp-pannello {
+  position: absolute; bottom: calc(100% + 10px); right: 0; z-index: 200;
+  width: min(380px, calc(100vw - 24px));
+  background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #e2e0da);
+  border-bottom: 3px solid var(--cra-red);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, .26);
+}
+
+/* Su schermi bassi il pannello non deve uscire dallo schermo. */
+@media (max-height: 620px) { .dip-camp-lista { max-height: 46vh; } }
+.dip-camp-testa {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 14px; border-bottom: 1px solid var(--border-subtle, #e2e0da);
+}
+.dip-camp-testa b {
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-xs);
+  text-transform: uppercase; letter-spacing: var(--ls-caps); color: var(--text-strong);
+}
+.dip-camp-link { cursor: pointer; background: none; border: none; padding: 0; font-size: var(--fs-xs); color: var(--cra-red); text-decoration: underline; }
+
+.dip-camp-permesso {
+  display: flex; align-items: center; gap: 8px; width: 100%; cursor: pointer;
+  padding: 10px 14px; background: #fdf6e3; border: none; border-bottom: 1px solid var(--cra-gold);
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-xs);
+  color: var(--text-strong); text-align: left;
+}
+.dip-camp-permesso:hover { background: #fbefd0; }
+
+.dip-camp-lista { max-height: min(60vh, 420px); overflow: auto; }
+.dip-camp-riga {
+  display: flex; gap: 10px; align-items: flex-start; width: 100%; cursor: pointer; text-align: left;
+  padding: 11px 14px; background: transparent; border: none;
+  border-bottom: 1px solid var(--border-subtle, #e2e0da);
+}
+.dip-camp-riga:hover { background: var(--surface-subtle, #f2f1ed); }
+.dip-camp-riga.letta { opacity: .6; }
+.dip-camp-icona { flex: 0 0 auto; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; }
+.dip-camp-testo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dip-camp-testo b { font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-xs); color: var(--text-strong); }
+.dip-camp-testo span { font-size: var(--fs-xs); color: var(--text-body); line-height: 1.35; }
+.dip-camp-testo em { font-style: normal; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+.dip-camp-punto { flex: 0 0 auto; width: 8px; height: 8px; background: var(--cra-red); margin-top: 6px; }
+.dip-camp-vuoto { padding: 18px 14px; margin: 0; font-size: var(--fs-xs); color: var(--text-muted); text-align: center; }
+
+/* ---- scelta dell'aspetto dell'avviso, con anteprima ---- */
+.dip-aspetto {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-top: 14px; padding: 14px; background: var(--surface-subtle, #f2f1ed);
+  border: 1px solid var(--border-subtle, #e2e0da);
+}
+.dip-aspetto-campi { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-top: 12px; }
+.dip-aspetto-prova { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.dip-aspetto-prova .dip-barra { position: static; }
+
+/* Menu a scomparsa per le scelte estetiche: chi scrive un annuncio nel 90%
+   dei casi vuole solo titolo e testo, non decidere il colore del bagliore. */
+.dip-avanzate { border-top: 1px solid var(--border-subtle, #e2e0da); }
+.dip-avanzate > summary {
+  cursor: pointer; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 10px 0 2px; list-style: none;
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-xs);
+  text-transform: uppercase; letter-spacing: var(--ls-caps); color: var(--text-strong);
+}
+.dip-avanzate > summary::-webkit-details-marker { display: none; }
+.dip-avanzate > summary::after {
+  content: "▾"; margin-left: auto; color: var(--text-muted);
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+.dip-avanzate[open] > summary::after { transform: rotate(180deg); }
+.dip-avanzate > summary .dip-sub { text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+.dip-scelte { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 4px; }
+.dip-scelta {
+  cursor: pointer; padding: 6px 11px; background: var(--surface-card, #fff);
+  border: 1px solid var(--border-strong); color: var(--text-muted);
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .06em;
+  transition: background var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard);
+}
+.dip-scelta:hover { color: var(--cra-charcoal); border-color: var(--cra-charcoal); }
+.dip-scelta.on { background: var(--cra-charcoal); border-color: var(--cra-charcoal); color: var(--cra-white); }
+
+.dip-icone { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 4px; }
+.dip-icona-scelta {
+  cursor: pointer; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-card, #fff); border: 1px solid var(--border-strong); color: var(--text-muted);
+  transition: background var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard);
+}
+.dip-icona-scelta:hover { color: var(--cra-charcoal); border-color: var(--cra-charcoal); }
+.dip-icona-scelta.on { background: var(--cra-red); border-color: var(--cra-red); color: var(--cra-white); }
+
+/* ---- foto dell'annuncio in bacheca ---- */
+.dip-annuncio-foto {
+  width: 100%; max-width: 380px; display: block; margin-top: 10px;
+  border: 1px solid var(--border-subtle, #e2e0da); cursor: zoom-in;
+}
+
+/* ---- bacheca ---- */
+.dip-annuncio { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; background: var(--surface-card); border: 1px solid var(--border-subtle, #e2e0da); border-left: 4px solid var(--cra-gold); margin-bottom: 10px; }
+.dip-annuncio.letto { border-left-color: var(--border-subtle, #e2e0da); opacity: .78; }
+.dip-annuncio-testo { flex: 1; min-width: 0; }
+.dip-annuncio-titolo { font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-sm); color: var(--text-strong); margin: 0 0 4px; }
+.dip-annuncio-corpo { margin: 0; font-size: var(--fs-sm); color: var(--text-body); line-height: var(--lh-relaxed); white-space: pre-wrap; }
+
+/* ---- Card Center ---- */
+/* Sei per riga, non «quante ce ne stanno». Con `auto-fill` su un monitor
+   largo ne entravano sette o otto e le locandine diventavano illeggibili:
+   una promozione si guarda, non si scorre. */
+.dip-schede { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1600px) { .dip-schede { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (max-width: 1320px) { .dip-schede { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 1040px) { .dip-schede { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px)  { .dip-schede { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px)  { .dip-schede { grid-template-columns: minmax(0, 1fr); } }
+.dip-scheda {
+  background: var(--surface-card); border: 1px solid var(--border-subtle, #e2e0da);
+  display: flex; flex-direction: column; overflow: hidden; position: relative;
+}
+/* La lama rossa sul bordo alto: parte dal centro e attraversa la scheda. */
+.dip-scheda-lama {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 2;
+  background: var(--cra-red); transform-origin: 50% 50%;
+}
+/* La cornice tiene la locandina: senza, l'ingrandimento uscirebbe fuori. */
+.dip-scheda-cornice { position: relative; display: block; overflow: hidden; }
+.dip-scheda-img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--surface-subtle, #f2f1ed); display: block; }
+.dip-scheda-apri {
+  position: absolute; left: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(27, 32, 31, .88); color: var(--cra-white); padding: 5px 10px;
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .08em; backdrop-filter: blur(4px);
+}
+.dip-scheda:hover .dip-scheda-titolo,
+.dip-scheda:focus-visible .dip-scheda-titolo { color: var(--cra-red); }
+.dip-scheda:focus-visible { outline: 2px solid var(--cra-red); outline-offset: 2px; }
+.dip-scheda-vuota { width: 100%; aspect-ratio: 4 / 3; background: var(--surface-subtle, #f2f1ed); display: flex; align-items: center; justify-content: center; }
+.dip-scheda-corpo { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.dip-scheda-titolo {
+  font-family: var(--font-brand); font-size: var(--fs-sm); color: var(--text-strong);
+  transition: color .18s ease;
+}
+.dip-tipo {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-brand); font-weight: var(--fw-bold);
+  font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+  padding: 3px 8px; color: var(--cra-white); white-space: nowrap;
+}
+
+/* A quali filiali è destinata una scheda. Il contorno invece del pieno:
+   sono un contorno di contesto, non un'etichetta da leggere per prima. */
+.dip-filiali { display: flex; flex-wrap: wrap; gap: 4px; }
+.dip-filiale {
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  font-size: var(--fs-2xs); color: var(--text-muted);
+  border: 1px solid var(--border-subtle, #e2e0da); padding: 2px 7px;
+}
+.dip-filiale.ovunque { border-style: dashed; }
+
+/* ---- tabella compatta (clienti, statistiche) ---- */
+.dip-tab-scroll { overflow: auto; min-width: 0; border: 1px solid var(--border-subtle, #e2e0da); background: var(--surface-card); }
+.dip-tabella { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.dip-tabella th {
+  position: sticky; top: 0; z-index: 1; text-align: left; white-space: nowrap;
+  background: var(--cra-charcoal); color: var(--cra-white);
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .08em; padding: 9px 12px;
+}
+.dip-tabella td { padding: 9px 12px; border-top: 1px solid var(--border-subtle, #e2e0da); vertical-align: middle; }
+.dip-tabella tbody tr:hover td { background: rgba(0, 0, 0, .015); }
+.dip-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Barra di riempimento per le statistiche: niente librerie di grafici, la
+   percentuale si legge benissimo da una barra. */
+.dip-barra-quota { height: 8px; background: var(--surface-subtle, #f2f1ed); border: 1px solid var(--border-subtle, #e2e0da); min-width: 90px; }
+.dip-barra-quota > span { display: block; height: 100%; background: var(--cra-red); }
+
+/* ============================================================
+   STATISTICHE — i numeri grossi in alto, il tempo al centro,
+   il dettaglio sotto. Si legge dall'alto in basso.
+   ============================================================ */
+.dip-filtro-periodo {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  margin-bottom: var(--space-4);
+}
+
+.dip-kpi-riga {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px; background: var(--border-subtle, #e2e0da);
+  border: 1px solid var(--border-subtle, #e2e0da); margin-bottom: var(--space-6);
+}
+.dip-kpi {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 14px 16px; background: var(--surface-card, #fff);
+}
+.dip-kpi.forte { background: var(--cra-charcoal); }
+.dip-kpi.forte .dip-kpi-eti { color: var(--cra-gold); }
+.dip-kpi.forte .dip-kpi-val { color: var(--cra-white); }
+.dip-kpi.forte .dip-kpi-nota { color: rgba(255, 255, 255, .62); }
+.dip-kpi-eti {
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted);
+}
+.dip-kpi-val {
+  font-family: var(--font-brand); font-size: var(--fs-xl); line-height: 1.1;
+  color: var(--text-strong); font-variant-numeric: tabular-nums;
+}
+.dip-kpi-nota { font-size: var(--fs-2xs); color: var(--text-muted); }
+
+.dip-delta { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: var(--fw-bold); }
+.dip-delta.su { color: #2E7D4F; }
+.dip-delta.giu { color: var(--cra-red); }
+.dip-delta.pari { opacity: .5; }
+.dip-kpi.forte .dip-delta.su { color: #7ED9A6; }
+.dip-kpi.forte .dip-delta.giu { color: #F2938F; }
+
+/* ---- filtri ---- */
+.dip-barra-filtri {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px; margin-bottom: var(--space-4);
+  border: 1px solid var(--border-subtle, #e2e0da); background: var(--surface-card, #fff);
+}
+.dip-filtro-riga { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.dip-campo { display: flex; flex-direction: column; gap: 3px; min-width: 150px; }
+.dip-campo.cresce { flex: 1 1 220px; }
+.dip-campo > span {
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted);
+}
+.dip-campo select, .dip-campo input {
+  font-family: var(--font-body); font-size: var(--fs-sm); padding: 7px 9px;
+  border: 1px solid var(--border-strong, #272d2b); background: var(--surface-card, #fff);
+  color: var(--text-strong); border-radius: 0; max-width: 100%;
+}
+
+.dip-titolo-riga {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 10px; margin-top: var(--space-6);
+}
+.dip-titolo-riga .dip-card-titolo { margin: 0; }
+
+/* ---- grafici ---- */
+.dip-graf-box { border: 1px solid var(--border-subtle, #e2e0da); background: var(--surface-card, #fff); padding: 16px; }
+.dip-due { display: grid; grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr); gap: var(--space-4); align-items: stretch; }
+.dip-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.dip-svg-asse { font-size: 10px; fill: var(--text-muted); font-family: var(--font-body); }
+.dip-svg-anno { opacity: .55; }
+
+.dip-ciambella { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.dip-ciambella svg { width: 100%; max-width: 170px; height: auto; }
+.dip-ciambella-val {
+  font-family: var(--font-brand); font-size: 22px; fill: var(--text-strong);
+  font-weight: var(--fw-bold);
+}
+
+.dip-scheda-dati { margin: 14px 0 0; display: grid; gap: 8px; }
+.dip-scheda-dati > div { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--border-subtle, #e2e0da); padding-top: 8px; }
+.dip-scheda-dati dt { font-size: var(--fs-2xs); color: var(--text-muted); margin: 0; }
+.dip-scheda-dati dd { margin: 0; font-size: var(--fs-sm); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
+
+.dip-legenda {
+  display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0 0;
+  font-size: var(--fs-2xs); color: var(--text-muted);
+}
+.dip-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.dip-legenda i.q { width: 10px; height: 10px; display: inline-block; }
+.dip-legenda i.rosso { background: var(--cra-red); }
+.dip-legenda i.oro { background: var(--cra-gold); }
+.dip-legenda i.verde { background: #2E7D4F; }
+.dip-legenda i.grigio { background: #4A5150; }
+
+/* ---- classifica ---- */
+.dip-rank { display: grid; grid-template-columns: 26px minmax(120px, 1.4fr) minmax(80px, 3fr) auto; align-items: center; gap: 10px; padding: 7px 0; }
+.dip-rank + .dip-rank { border-top: 1px solid var(--border-subtle, #e2e0da); }
+.dip-rank-pos {
+  font-family: var(--font-brand); font-size: var(--fs-sm); color: var(--text-muted); text-align: right;
+}
+.dip-rank-nome { font-size: var(--fs-sm); color: var(--text-strong); min-width: 0; }
+.dip-rank-nome em { display: block; font-style: normal; font-size: var(--fs-2xs); color: var(--text-muted); }
+.dip-rank-barra { display: block; height: 12px; background: var(--surface-subtle, #f2f1ed); min-width: 40px; }
+.dip-rank-barra i { display: block; height: 100%; background: var(--cra-red); }
+.dip-rank-val { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: var(--fs-sm); }
+
+.dip-dettaglio { margin-top: 10px; }
+.dip-dettaglio > summary {
+  cursor: pointer; font-size: var(--fs-xs); color: var(--text-muted);
+  padding: 6px 0; user-select: none;
+}
+.dip-dettaglio > summary:hover { color: var(--cra-red); }
+
+.dip-pagine {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  margin-top: 10px; padding: 8px 0;
+}
+.dip-pagine-quanti {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-2xs); color: var(--text-muted);
+}
+.dip-pagine-quanti select {
+  font-family: var(--font-body); font-size: var(--fs-xs); padding: 3px 6px; border-radius: 0;
+  border: 1px solid var(--border-strong, #272d2b); background: var(--surface-card, #fff);
+  color: var(--text-strong);
+}
+.dip-pagine-nav { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* Graffetta: dice «qui dentro c'è un file» senza aprire la scheda. */
+.dip-graffetta { display: inline-flex; align-items: center; }
+
+/* ============================================================
+   RIQUADRO ANNUNCI — più spazio, più racconto. A 1×1 sono titoli
+   cliccabili; da 2×2 in su entra anche la foto.
+   ============================================================ */
+.dip-mini-annunci { display: flex; flex-direction: column; gap: 2px; }
+.dip-mini-annuncio {
+  position: relative; display: flex; gap: 10px; align-items: flex-start; text-align: left;
+  width: 100%; background: none; border: 0; border-radius: 0;
+  padding: 7px 6px 7px 10px; margin: 0 -6px; cursor: pointer; color: inherit;
+  font: inherit;
+}
+.dip-mini-annuncio + .dip-mini-annuncio { border-top: 1px solid var(--border-subtle, #e2e0da); }
+.dip-mini-annuncio:focus-visible { outline: 2px solid var(--cra-red); outline-offset: -2px; }
+/* Il segno rosso a sinistra: cresce dal centro e dice «sei qui». */
+.dip-mini-segno {
+  position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px;
+  background: var(--cra-red); transform-origin: 50% 50%;
+}
+.dip-mini-freccia { align-self: center; flex: 0 0 auto; display: inline-flex; margin-left: 2px; }
+/* La cornice ritaglia l'ingrandimento della miniatura. */
+.dip-mini-cornice { flex: 0 0 auto; display: block; overflow: hidden; line-height: 0; }
+.dip-mini-annuncio:hover .dip-mini-titolo b,
+.dip-mini-annuncio:focus-visible .dip-mini-titolo b { color: var(--cra-red); }
+.dip-mini-titolo b { transition: color .18s ease; }
+.dip-mini-testo {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;
+  overflow-wrap: anywhere;
+}
+.dip-mini-titolo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dip-mini-titolo b {
+  font-family: var(--font-brand); font-size: var(--fs-sm); color: var(--text-strong);
+  line-height: 1.25;
+}
+.dip-mini-titolo .dip-tab-badge { font-size: 9px; }
+.dip-mini-corpo {
+  display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+}
+/* La misura sta sulla cornice, non sull'immagine: è la cornice a occupare
+   il posto nella riga, l'immagine la riempie e può ingrandirsi dentro. */
+.dip-mini-cornice {
+  width: 68px; height: 68px; border: 1px solid var(--border-subtle, #e2e0da);
+}
+.dip-mini-foto { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* La faccia: se non c'è, le iniziali. Sempre tonda, sempre della stessa
+   famiglia, dovunque compaia un nome. */
+.dip-faccia {
+  flex: 0 0 auto; display: inline-grid; place-items: center; overflow: hidden;
+  border-radius: 50%; background: var(--cra-charcoal); color: var(--cra-white);
+  font-family: var(--font-brand); font-weight: var(--fw-bold); line-height: 1;
+}
+.dip-faccia img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.dip-colleghi { display: flex; flex-direction: column; gap: 8px; }
+.dip-collega { display: flex; align-items: center; gap: 9px; font-size: var(--fs-sm); }
+.dip-collega em { display: block; font-style: normal; font-size: var(--fs-2xs); color: var(--text-muted); }
+
+.dip-conta-grosso {
+  font-family: var(--font-brand); font-weight: var(--fw-black);
+  font-size: var(--fs-2xl); line-height: 1; color: var(--text-strong);
+}
+.dip-mini-tutti {
+  display: inline-flex; align-items: center; gap: 4px; align-self: flex-start;
+  background: none; border: 0; padding: 8px 0 0; cursor: pointer;
+  font-size: var(--fs-2xs); color: var(--text-muted); font-family: var(--font-body);
+}
+.dip-mini-tutti:hover { color: var(--cra-red); }
+
+/* Più spazio, foto più grande: è la scala che rende utile ingrandire. */
+.dip-riquadro[data-taglia="2x2"] .dip-mini-cornice { width: 84px; height: 84px; }
+
+/* 3×2 è largo tre colonne: una riga per voce lasciava mezzo riquadro vuoto.
+   Qui le voci vanno a due per riga e la foto si prende quasi metà casella.
+   L'altezza è FISSA di proposito: con `height: 100%` in una cella che si
+   dimensiona sul contenuto il calcolo gira a vuoto e l'immagine cresce fino
+   alla sua altezza naturale — mezzo schermo per una miniatura. */
+.dip-riquadro[data-taglia="3x2"] .dip-mini-annunci {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px;
+  background: var(--border-subtle, #e2e0da); align-content: start;
+}
+.dip-riquadro[data-taglia="3x2"] .dip-mini-annuncio {
+  margin: 0; border-top: 0; padding: 0; gap: 12px; align-items: center;
+  background: var(--surface-card, #fff);
+}
+.dip-riquadro[data-taglia="3x2"] .dip-mini-cornice {
+  flex: 0 0 44%; width: 44%; height: 132px; border: 0;
+}
+.dip-riquadro[data-taglia="3x2"] .dip-mini-testo { padding: 12px 0; justify-content: center; }
+.dip-riquadro[data-taglia="3x2"] .dip-mini-annuncio > .dip-mini-testo:first-child { padding-left: 12px; }
+.dip-riquadro[data-taglia="3x2"] .dip-mini-titolo b { font-size: var(--fs-sm); }
+.dip-riquadro[data-taglia="3x2"] .dip-mini-giorni { padding-right: 12px; }
+
+@media (max-width: 1100px) {
+  .dip-riquadro[data-taglia="3x2"] .dip-mini-annunci { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 4×1: le voci si mettono in fila e scorrono in orizzontale. Poca altezza,
+   tanta larghezza — quindi foto piccole e una riga di testo. */
+.dip-riquadro[data-taglia="4x1"] .dip-mini-annunci {
+  flex-direction: row; gap: 1px; overflow-x: auto; overflow-y: hidden;
+  background: var(--border-subtle, #e2e0da); align-items: stretch;
+}
+.dip-riquadro[data-taglia="4x1"] .dip-mini-annuncio {
+  flex: 1 0 190px; margin: 0; border-top: 0; align-items: center;
+  background: var(--surface-card, #fff);
+}
+.dip-riquadro[data-taglia="4x1"] .dip-mini-cornice { width: 40px; height: 40px; }
+.dip-riquadro[data-taglia="4x1"] .dip-mini-titolo b { font-size: var(--fs-xs); }
+.dip-riquadro[data-taglia="4x1"] .dip-mini-tutti { flex: 0 0 auto; padding: 0 12px; background: var(--surface-card, #fff); }
+
+/* Quanto manca alla scadenza non si accorcia mai: è il dato che fa decidere. */
+.dip-mini-giorni {
+  flex: 0 0 auto; align-self: center; font-style: normal; white-space: nowrap;
+  font-size: var(--fs-2xs); color: var(--text-muted); font-variant-numeric: tabular-nums;
+}
+.dip-mini-giorni.scade { color: var(--cra-red); font-weight: var(--fw-bold); }
+
+/* L'annuncio a cui sono arrivato da un riquadro: si fa notare e poi smette. */
+.dip-annuncio.fuoco {
+  outline: 2px solid var(--cra-gold); outline-offset: 3px;
+  animation: dip-lampo 2.2s ease-out 1;
+}
+@keyframes dip-lampo {
+  0%, 40% { background: #fdf6e3; }
+  100% { background: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dip-annuncio.fuoco { animation: none; }
+}
+
+@media (max-width: 900px) {
+  .dip-due { grid-template-columns: 1fr; }
+}
+
+/* Riga del riquadro promozioni: titolo a sinistra, quanto manca a destra. */
+.dip-riga-promo {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  margin: 0 0 8px; font-size: var(--fs-sm); color: var(--text-strong);
+}
+/* Il titolo si accorcia con i puntini: è lui che deve cedere, non la griglia. */
+.dip-riga-promo > span {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dip-riga-promo em {
+  font-style: normal; white-space: nowrap; font-size: var(--fs-2xs); color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.dip-riga-promo em.scade { color: var(--cra-red); font-weight: var(--fw-bold); }
+
+/* Scheda spenta: finita o non ancora partita. Il colore se ne va, il
+   contenuto resta. Al passaggio del mouse torna viva, così si può comunque
+   guardarla senza cambiare vista. */
+.dip-scheda.spenta { opacity: .62; }
+.dip-scheda.spenta .dip-scheda-img { filter: grayscale(1) contrast(.9); }
+.dip-scheda.spenta .dip-tipo { filter: grayscale(1); }
+.dip-scheda.spenta:hover,
+.dip-scheda.spenta:focus-visible { opacity: 1; }
+.dip-scheda.spenta:hover .dip-scheda-img,
+.dip-scheda.spenta:focus-visible .dip-scheda-img { filter: none; }
+
+.dip-scheda-alto { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.dip-scaduta {
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 9px;
+  text-transform: uppercase; letter-spacing: .07em; padding: 3px 7px;
+  border: 1px solid var(--border-subtle, #e2e0da);
+  background: var(--surface-subtle, #f2f1ed); color: var(--text-muted);
+}
+.dip-scaduta.viva { border-color: var(--cra-gold); background: #fdf6e3; color: var(--text-strong); }
+
+/* Modulo in riga: quantità e note si scrivono dov'è il cliente, non in una
+   finestrella di sistema che su un telefono è un disastro. */
+.dip-modulo { display: flex; align-items: flex-end; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.dip-modulo label { display: flex; flex-direction: column; gap: 3px; text-align: left; }
+.dip-modulo label.cresce { flex: 1 1 180px; min-width: 140px; }
+.dip-modulo label > span {
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 9px;
+  text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted);
+}
+.dip-modulo input {
+  font-family: var(--font-body); font-size: var(--fs-sm); padding: 6px 8px; border-radius: 0;
+  border: 1px solid var(--border-strong, #272d2b); background: var(--surface-card, #fff);
+  color: var(--text-strong); width: 100%;
+}
+.dip-modulo input[type="number"] { width: 74px; }
+
+/* ---- esiti ---- */
+.dip-esito {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .06em; padding: 4px 9px;
+  border: 1px solid var(--border-subtle, #e2e0da); background: var(--surface-subtle, #f2f1ed); color: var(--text-muted);
+}
+.dip-esito.accettata { background: #eef6f0; border-color: #cfe6d6; color: #2e7d4f; }
+.dip-esito.rifiutata { background: var(--red-50, #faf0ef); border-color: #f0cfce; color: var(--cra-red); }
+.dip-esito.rimandata { background: #fdf6e3; border-color: var(--cra-gold); color: var(--text-strong); }
+
+/* ============================================================
+   PROFILO E TRAGUARDI
+   ============================================================ */
+.dip-profilo { border: 1px solid var(--border-subtle, #e2e0da); background: var(--surface-card, #fff); padding: 18px; }
+.dip-profilo-testa {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding-bottom: 16px; margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle, #e2e0da);
+}
+.dip-profilo-chi { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.dip-motto { margin: 6px 0 0; font-size: var(--fs-sm); color: var(--text-muted); font-style: italic; }
+
+.dip-avatar {
+  position: relative; width: 84px; height: 84px; flex: 0 0 auto; cursor: pointer;
+  display: grid; place-items: center; overflow: hidden;
+  background: var(--cra-charcoal); color: var(--cra-white);
+  font-family: var(--font-brand); font-size: var(--fs-xl); letter-spacing: .04em;
+  border: 2px solid var(--cra-charcoal);
+}
+.dip-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dip-avatar-cambia {
+  position: absolute; inset: auto 0 0 0; height: 24px;
+  display: grid; place-items: center; background: rgba(0, 0, 0, .55);
+  opacity: 0; transition: opacity .15s ease;
+}
+.dip-avatar:hover .dip-avatar-cambia,
+.dip-avatar:focus-within .dip-avatar-cambia { opacity: 1; }
+
+.dip-profilo-conta { text-align: right; }
+.dip-profilo-conta b {
+  display: block; font-family: var(--font-brand); font-size: var(--fs-2xl);
+  color: var(--text-strong); line-height: 1;
+}
+.dip-profilo-conta b em { font-style: normal; font-size: var(--fs-md); color: var(--text-muted); }
+
+.dip-badge-griglia {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1px;
+  background: var(--border-subtle, #e2e0da); border: 1px solid var(--border-subtle, #e2e0da);
+}
+.dip-badge { display: flex; gap: 12px; padding: 14px; background: var(--surface-card, #fff); }
+.dip-badge-bollo {
+  width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center;
+  background: var(--surface-subtle, #f2f1ed); border: 1px solid var(--border-subtle, #e2e0da);
+}
+/* I gradi si leggono dal colore prima che dalla parola. */
+.dip-badge-bollo.g1 { background: #8a6a3d; border-color: #8a6a3d; }
+.dip-badge-bollo.g2 { background: #7c8489; border-color: #7c8489; }
+.dip-badge-bollo.g3 { background: var(--cra-gold); border-color: var(--cra-gold); }
+.dip-badge-bollo.g4 { background: var(--cra-red); border-color: var(--cra-red); }
+.dip-badge-testo { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.dip-badge-testo > b {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-family: var(--font-brand); font-size: var(--fs-sm); color: var(--text-strong);
+}
+.dip-badge-testo > b em {
+  font-style: normal; font-size: 9px; text-transform: uppercase; letter-spacing: .07em;
+  padding: 2px 6px; border: 1px solid var(--border-subtle, #e2e0da); color: var(--text-muted);
+}
+.dip-badge.preso .dip-badge-testo > b em { border-color: var(--cra-gold); color: var(--text-strong); }
+.dip-badge-barra { display: block; height: 6px; background: var(--surface-subtle, #f2f1ed); }
+.dip-badge-barra i { display: block; height: 100%; background: var(--cra-red); }
+
+/* ---- matrice dei permessi ---- */
+.dip-permessi { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); }
+.dip-permessi th, .dip-permessi td { border: 1px solid var(--border-subtle, #e2e0da); padding: 7px 10px; }
+.dip-permessi thead th { background: var(--cra-charcoal); color: var(--cra-white); font-family: var(--font-brand); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
+.dip-permessi tbody th { text-align: left; background: var(--surface-subtle, #f2f1ed); font-weight: var(--fw-bold); }
+.dip-permessi td { text-align: center; padding: 4px; }
+.dip-permessi tbody tr:hover td { background: rgba(0, 0, 0, .02); }
+
+/* La casella dice la risposta, non chiede una domanda. */
+.dip-cella {
+  position: relative; width: 100%; min-width: 54px; height: 34px;
+  display: grid; place-items: center; cursor: pointer;
+  border: 1px solid transparent; background: none; border-radius: 0;
+  transition: background .12s ease, border-color .12s ease;
+}
+.dip-cella.si { background: #eef6f0; }
+.dip-cella.no { background: #faf0ef; }
+.dip-cella:hover { border-color: var(--border-strong, #272d2b); }
+.dip-cella:focus-visible { outline: 2px solid var(--cra-red); outline-offset: -2px; }
+/* La colonna dell'admin non è una scelta: è un fatto. Niente puntatore a
+   mano, niente bordo al passaggio — non c'è nulla da cliccare. */
+.dip-cella.bloccata { cursor: default; gap: 6px; grid-auto-flow: column; }
+.dip-cella.bloccata:hover { border-color: transparent; }
+.dip-cella.bloccata em {
+  font-style: normal; font-size: 9px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text-muted);
+}
+
+/* Il pallino distingue una scelta voluta da un valore ereditato. */
+.dip-cella-punto {
+  position: absolute; top: 4px; right: 4px; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--cra-charcoal);
+}
+
+/* Chi preferisce non vedere movimento non lo vede: framer-motion legge
+   useReducedMotion, questo copre transizioni e animazioni CSS. */
+@media (prefers-reduced-motion: reduce) {
+  .dip-page *, .dip-barra * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
