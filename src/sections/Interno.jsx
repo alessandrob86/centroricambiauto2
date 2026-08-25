@@ -206,6 +206,11 @@ function InternoInner({ onNavigate }) {
   }, []);
 
   const puoGestire = isAdmin || ruolo === "manager";
+  /* Prima di ogni uscita anticipata: React conta gli hook a ogni disegno e
+     pretende sempre lo stesso numero. Chiamandolo dopo il `return` di
+     «Caricamento…» il primo disegno ne aveva uno in meno del secondo, e il
+     modulo si schiantava appena arrivavano i dati. */
+  const mobile = useMobile();
 
   if (!moduli) {
     return <div className="dip-page"><div className="dip-wrap"><p className="dip-vuoto">Caricamento…</p></div></div>;
@@ -219,7 +224,6 @@ function InternoInner({ onNavigate }) {
     setTab(destinazione);
   };
 
-  const mobile = useMobile();
   const comuni = { dipendente, ruolo, isAdmin, puoGestire, zone, setErr, onNavigate, vaiA };
 
   return (
