@@ -1128,3 +1128,38 @@
   .a-schede .dip-tab-azioni .adm-btn { flex: 1 1 auto; justify-content: center; min-height: 44px; }
   .a-schede .dip-tab-azioni .adm-btn + .adm-btn { margin-left: 0 !important; }
 }
+
+/* ============================================================
+   CAMPI SUL TELEFONO
+
+   Il motivo per cui "si spagina": iOS ingrandisce la pagina quando si tocca
+   un campo il cui testo sta sotto i 16 pixel, e da lì in poi tutto risulta
+   spostato. Non è un difetto di impaginazione, è lo zoom automatico — e si
+   toglie in un modo solo, dando ai campi almeno 16 px.
+   ============================================================ */
+@media (max-width: 760px) {
+  .dip-page input, .dip-page textarea, .dip-page select,
+  .dip-finestra input, .dip-finestra textarea, .dip-finestra select {
+    font-size: 16px;
+  }
+
+  /* Il modulo del rifiuto era disegnato per una cella allineata a destra.
+     Dentro una scheda deve fare l'opposto: incolonnarsi e prendersi tutto. */
+  .a-schede .dip-modulo {
+    flex-direction: column; align-items: stretch; justify-content: flex-start;
+    width: 100%; gap: 10px;
+  }
+  .a-schede .dip-modulo label.cresce { flex: none; min-width: 0; }
+  .a-schede .dip-modulo .adm-btn { min-height: 44px; justify-content: center; }
+}
+
+/* La textarea delle note, con lo stesso trattamento degli altri campi. */
+.dip-campo textarea {
+  font-family: var(--font-body); line-height: var(--lh-relaxed);
+  color: var(--text-strong);
+}
+.dip-campo textarea::placeholder { color: var(--text-muted); }
+.dip-campo textarea:focus-visible {
+  outline: none; border-color: var(--cra-red);
+  box-shadow: inset 0 0 0 1px var(--cra-red);
+}

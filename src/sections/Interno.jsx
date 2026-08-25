@@ -224,6 +224,14 @@ function InternoInner({ onNavigate }) {
     setTab(destinazione);
   };
 
+  /* Cambiare scheda dal menu azzera il fuoco. Senza, toccando una promozione
+     nel Cruscotto e poi «Card Center» dalla barra si riapriva quella di
+     prima: il fuoco serve al salto mirato, non deve sopravvivergli. */
+  const vaiScheda = (destinazione) => {
+    setFuoco(null);
+    setTab(destinazione);
+  };
+
   const comuni = { dipendente, ruolo, isAdmin, puoGestire, zone, setErr, onNavigate, vaiA };
 
   return (
@@ -251,7 +259,7 @@ function InternoInner({ onNavigate }) {
             <nav className="dip-tabs">
               {moduli.schede.map((m) => (
                 <button key={m.codice} className={`dip-tab ${tab === m.codice ? "on" : ""}`}
-                  onClick={() => setTab(m.codice)} aria-current={tab === m.codice ? "page" : undefined}>
+                  onClick={() => vaiScheda(m.codice)} aria-current={tab === m.codice ? "page" : undefined}>
                   <Icon name={m.icona || "chevron-right"} size={15} />
                   {m.nome}
                   {m.codice === "bacheca" && daLeggere > 0 && <span className="dip-tab-badge">{daLeggere}</span>}
@@ -278,7 +286,7 @@ function InternoInner({ onNavigate }) {
         </div>
 
         {mobile && (
-          <BarraInBasso schede={moduli.schede} attiva={tab} vai={setTab} daLeggere={daLeggere} />
+          <BarraInBasso schede={moduli.schede} attiva={tab} vai={vaiScheda} daLeggere={daLeggere} />
         )}
       </div>
     </MotionConfig>
@@ -292,13 +300,22 @@ function InternoInner({ onNavigate }) {
    voci: oltre, i bersagli diventano troppo stretti per un dito, quindi le
    rimanenti finiscono dietro «Altro».
    ============================================================ */
+/* Nella barra c'è spazio per una parola, non per un titolo: a cinque voci
+   su 390 pixel ognuna ha settanta pixel scarsi. Il nome per esteso resta
+   ovunque altro — qui serve riconoscere, non leggere. */
+const NOME_CORTO = {
+  home: "Cruscotto", bacheca: "Bacheca", schede: "Card",
+  clienti: "Clienti", statistiche: "Dati", profilo: "Profilo",
+  gestione: "Gestione",
+};
+
 function BarraInBasso({ schede, attiva, vai, daLeggere }) {
   const [altro, setAltro] = useState(false);
   const dirette = schede.length <= 5 ? schede : schede.slice(0, 4);
   const nascoste = schede.length <= 5 ? [] : schede.slice(4);
   const inAltro = nascoste.some((m) => m.codice === attiva);
 
-  const voce = (m) => (
+  const voce = (m, esteso = false) => (
     <button key={m.codice} type="button"
       className={`dip-giu-voce ${attiva === m.codice ? "on" : ""}`}
       onClick={() => { vai(m.codice); setAltro(false); }}
@@ -307,7 +324,7 @@ function BarraInBasso({ schede, attiva, vai, daLeggere }) {
         <Icon name={m.icona || "chevron-right"} size={20} />
         {m.codice === "bacheca" && daLeggere > 0 && <span className="dip-giu-bollo">{daLeggere}</span>}
       </span>
-      <span className="dip-giu-nome">{m.nome}</span>
+      <span className="dip-giu-nome">{esteso ? m.nome : (NOME_CORTO[m.codice] ?? m.nome)}</span>
     </button>
   );
 
@@ -322,7 +339,7 @@ function BarraInBasso({ schede, attiva, vai, daLeggere }) {
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}>
               <span className="dip-foglio-presa" />
-              {nascoste.map(voce)}
+              {nascoste.map((m) => voce(m, true))}
             </motion.div>
           </React.Fragment>
         )}
@@ -2928,9 +2945,9 @@ function FinestraInvio({ cliente, scheda, tipi, busy, onAnnulla, onInvia }) {
           </div>
 
           <div className="dip-campo">
-            <span className="dip-campo-nome">Note <span className="dip-sub">(facoltative)</span></span>
+            <span className="dip-campo-nome">Note</span>
             <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)}
-              placeholder="consegna, riferimenti, accordi presi…" />
+              placeholder="Consegna, riferimenti, accordi presi… (facoltativo)" />
           </div>
         </div>
 
@@ -2979,22 +2996,53 @@ function Notifiche({ setErr }) {
     }
   };
 
-  if (stato?.stato === "non-supportate") {
+  /* Ogni motivo ha la sua strada d'uscita: dire solo «non supportate»
+     lascerebbe l'utente convinto che sia rotto. */
+  const IMPOSSIBILI = {
+    "non-sicuro": {
+      titolo: "Serve un indirizzo sicuro",
+      testo: <React.Fragment>
+        Stai aprendo il sito da un indirizzo di rete (<code>http://…</code>). Le notifiche
+        esistono solo su <b>https</b> o su <b>localhost</b>: è una regola del browser, non
+        un'impostazione nostra. Apri il sito pubblicato e le ritrovi.
+      </React.Fragment>,
+    },
+    "ios-da-installare": {
+      titolo: "Su iPhone va aggiunto alla Home",
+      testo: <React.Fragment>
+        Safari da solo non riceve notifiche. Tocca <b>Condividi</b> → <b>Aggiungi alla schermata
+        Home</b>, poi apri il sito da quell'icona: da lì l'interruttore compare.
+        {" "}Se ce l'hai già dai giorni scorsi, <b>togli l'icona vecchia e rifallo</b>: prima
+        di oggi mancava il manifest e iOS l'aveva salvato come semplice segnalibro.
+      </React.Fragment>,
+    },
+    "non-supportate": {
+      titolo: "Questo browser non le supporta",
+      testo: "Prova da Chrome, Firefox o Edge aggiornati.",
+    },
+  };
+
+  if (IMPOSSIBILI[stato?.stato]) {
+    const m = IMPOSSIBILI[stato.stato];
     return (
       <React.Fragment>
         <h2 className="dip-card-titolo" style={{ marginTop: "var(--space-6)" }}>
           <Icon name="bell" size={14} color="var(--cra-red)" /> Notifiche
         </h2>
-        <p className="dip-regola">
-          Questo browser non le supporta. Su iPhone funzionano solo dopo aver aggiunto
-          il sito alla schermata Home.
-        </p>
+        <p className="dip-regola"><b>{m.titolo}.</b> {m.testo}</p>
       </React.Fragment>
     );
   }
 
   const attive = stato?.stato === "attive";
   const negato = stato?.stato === "negato";
+  /* La prova parte verso TUTTI i dispositivi iscritti, non verso questo:
+     legarla allo stato di questa finestra la nascondeva proprio a chi le
+     aveva già attivate altrove. Un'iscrizione appartiene all'indirizzo dove
+     è nata — localhost e il sito pubblicato sono due siti diversi per il
+     browser — mentre l'elenco viene dal database, che è uno solo. */
+  const altrove = dispositivi.length > 0
+    && !dispositivi.some((d) => d.endpoint === stato?.endpoint);
 
   return (
     <React.Fragment>
@@ -3015,25 +3063,27 @@ function Notifiche({ setErr }) {
       ) : (
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
           {attive ? (
-            <React.Fragment>
-              <button className="adm-btn ghost" disabled={lavoro === "spengo"}
-                onClick={() => fai("spengo", push.disattiva,
-                  () => "Questo dispositivo non riceverà più notifiche.")}>
-                <Icon name="bell" size={15} /> {lavoro === "spengo" ? "Spengo…" : "Disattiva qui"}
-              </button>
-              <button className="adm-btn" disabled={lavoro === "provo"}
-                onClick={() => fai("provo", push.provaPush,
-                  (r) => r?.inviate
-                    ? `Mandata a ${r.inviate} dispositiv${r.inviate === 1 ? "o" : "i"}.`
-                    : "Nessuna partita — controlla che il dispositivo sia ancora iscritto.")}>
-                <Icon name="megaphone" size={15} /> {lavoro === "provo" ? "Mando…" : "Mandami una prova"}
-              </button>
-            </React.Fragment>
+            <button className="adm-btn ghost" disabled={lavoro === "spengo"}
+              onClick={() => fai("spengo", push.disattiva,
+                () => "Questo dispositivo non riceverà più notifiche.")}>
+              <Icon name="bell" size={15} /> {lavoro === "spengo" ? "Spengo…" : "Disattiva qui"}
+            </button>
           ) : (
             <button className="adm-btn" disabled={lavoro === "attivo"}
               onClick={() => fai("attivo", push.attiva, (r) => `Attive su ${r.dispositivo}.`)}>
               <Icon name="bell" size={15} />
               {lavoro === "attivo" ? "Attivo…" : "Attiva su questo dispositivo"}
+            </button>
+          )}
+
+          {/* Basta un dispositivo iscritto, ovunque sia: la prova va a tutti. */}
+          {dispositivi.length > 0 && (
+            <button className={`adm-btn ${attive ? "" : "ghost"}`} disabled={lavoro === "provo"}
+              onClick={() => fai("provo", push.provaPush,
+                (r) => r?.inviate
+                  ? `Mandata a ${r.inviate} dispositiv${r.inviate === 1 ? "o" : "i"}.`
+                  : "Nessuna partita — i dispositivi in elenco potrebbero non essere più validi.")}>
+              <Icon name="megaphone" size={15} /> {lavoro === "provo" ? "Mando…" : "Mandami una prova"}
             </button>
           )}
         </div>
@@ -3042,6 +3092,14 @@ function Notifiche({ setErr }) {
       {esito && (
         <p className="dip-sub" style={{ marginTop: "10px" }}>
           <Icon name="check-circle-2" size={14} color="#2E7D4F" /> {esito}
+        </p>
+      )}
+
+      {altrove && !attive && (
+        <p className="dip-sub" style={{ marginTop: "10px" }}>
+          <Icon name="info" size={14} /> Le notifiche sono attive su altri dispositivi, ma non su
+          questo. Un'iscrizione vale per l'indirizzo dove è nata: se le avevi attivate aprendo
+          il sito da un altro indirizzo, qui vanno riattivate.
         </p>
       )}
 

@@ -15,9 +15,27 @@ export const supportate = () =>
   typeof window !== "undefined" &&
   "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 
+const iOS = () => typeof navigator !== "undefined" &&
+  (/iPhone|iPad|iPod/.test(navigator.userAgent) ||
+   (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+const installata = () => typeof window !== "undefined" &&
+  (window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true);
+
+/* «Non supportate» è vero ma inutile: quasi sempre il motivo è uno di due, e
+   tutti e due si risolvono. Dirlo cambia un vicolo cieco in un'istruzione. */
+export function perche() {
+  if (typeof window === "undefined") return "non-supportate";
+  // Senza contesto sicuro il service worker non esiste proprio: succede
+  // aprendo il sito da un indirizzo di rete tipo http://192.168.1.24:5173
+  if (!window.isSecureContext) return "non-sicuro";
+  if (iOS() && !installata()) return "ios-da-installare";
+  return "non-supportate";
+}
+
 /** Lo stato attuale, per disegnare l'interruttore senza indovinare. */
 export async function statoPush() {
-  if (!supportate()) return { stato: "non-supportate", iscritto: false };
+  if (!supportate()) return { stato: perche(), iscritto: false };
   if (Notification.permission === "denied") return { stato: "negato", iscritto: false };
 
   const reg = await navigator.serviceWorker.getRegistration("/");
