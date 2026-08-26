@@ -3,7 +3,7 @@ import { Container, Eyebrow, Reveal } from "../components/shared.jsx";
 import { Button } from "../components/ds/Button.jsx";
 import { Input } from "../components/ds/Input.jsx";
 import { Icon } from "../components/Icon.jsx";
-import { useAuth } from "../lib/auth.jsx";
+import { useAuth, rottaDiAvvio } from "../lib/auth.jsx";
 
 const { useState, useEffect } = React;
 
@@ -55,7 +55,7 @@ const StatusBox = ({ icon, iconColor, title, children }) => (
 );
 
 export function Accedi({ onNavigate }) {
-  const { session, officina, loading, isActive, isAdmin, signIn, signUp, signOut } = useAuth();
+  const { session, officina, loading, isActive, isAdmin, avvio, signIn, signUp, signOut } = useAuth();
   const [mode, setMode] = useState("login");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
@@ -73,21 +73,22 @@ export function Accedi({ onNavigate }) {
      interno: senza una riga officine finirebbe nel ramo che ridisegna il
      modulo di accesso, con l'impressione che il login non abbia funzionato. */
   useEffect(() => {
-    if (!loading && session && !confirmSent) onNavigate("home");
-  }, [loading, session, confirmSent, onNavigate]);
+    if (!loading && session && !confirmSent) onNavigate(rottaDiAvvio(avvio));
+  }, [loading, session, confirmSent, avvio, onNavigate]);
 
   const onLogin = async (e) => {
     e.preventDefault();
     setErr(null);
     setBusy(true);
-    const { error } = await signIn(email.trim(), password);
+    const { error, avvio: dove } = await signIn(email.trim(), password);
     setBusy(false);
     if (error) { setErr(traduciErrore(error)); return; }
-    /* In home, e ognuno va dove gli serve: il cliente trova lo Store, chi è
-       interno sceglie fra Store e area interna. Prima si restava qui, e un
-       dipendente — che non ha una riga officine — si vedeva ricomparire il
-       modulo di accesso come se il login non fosse riuscito. */
-    onNavigate("home");
+    /* Ognuno dove gli serve: il cliente in home, dove trova lo Store; chi è
+       interno dove ha scelto lui o il suo ruolo — di solito il Cruscotto o
+       il Card Center, che è la prima cosa che apre la mattina. Restare qui
+       non è mai giusto: un dipendente non ha una riga officine e si vedeva
+       ricomparire il modulo di accesso come se il login fosse fallito. */
+    onNavigate(rottaDiAvvio(dove));
   };
 
   const onRegister = async (e) => {

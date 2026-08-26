@@ -131,16 +131,28 @@ repository e ci resta.
 | 104 | 2026-08-25 | prezzo_riga_l2f_a_contenitore | 3.765 |
 | 105 | 2026-08-25 | prezzo_riga_imposto_anche_su_l2f | 1.269 |
 | 106 | 2026-08-25 | totale_ordine_anche_su_l2f | 1.693 |
+| 107 | 2026-08-25 | esito_inviata_e_tipi_documento | 2.455 |
+| 108 | 2026-08-25 | esito_torna_a_due_stati | 957 |
+| 109 | 2026-08-25 | documento_predefinito_per_cliente | 670 |
+| 110 | 2026-08-25 | clienti_agente_col_documento | 2.076 |
+| 111 | 2026-08-25 | documento_predefinito_come_tipo_vero | 1.053 |
+| 112 | 2026-08-26 | elenco_media_non_usati | 2.331 |
+| 113 | 2026-08-26 | non_usati_esclude_i_caricati_da_poco | 2.994 |
+| 114 | 2026-08-26 | avvio_area_interna | 4.838 |
+| 115 | 2026-08-26 | rls_zona_su_schede_e_annunci | 1.430 |
 
 ## Dove guardare per capire una cosa
 
 | Se ti serve capire | Guarda |
 |---|---|
 | Come nascono i prezzi | 43-48, 53, 58-59 |
-| Chi può vedere cosa (RLS) | 13, 25, 28, 32-34, 52 |
+| Chi può vedere cosa (RLS) | 13, 25, 28, 32-34, 52, 115 |
 | Il catalogo condiviso fra i due siti | 49-54 |
 | Il modulo interno | 60-61, 68-76, 83-86, 93 |
 | Statistiche e traguardi | 79, 82, 94-98 |
 | Foto e documenti nel deposito | 99-101 |
 | Notifiche push | 102 |
 | Prezzo degli ordini imposto dal database | 91-92, 104-106 |
+| Documenti da emettere al cliente | 107-111 |
+| Pulizia dei file non più usati | 112-113 |
+| Dove si atterra dopo il login | 114 |

@@ -176,12 +176,12 @@ function StaffGate({ onNavigate, children }) {
   return children;
 }
 
-export function Interno({ onNavigate }) {
-  return <StaffGate onNavigate={onNavigate}><InternoInner onNavigate={onNavigate} /></StaffGate>;
+export function Interno({ onNavigate, tab }) {
+  return <StaffGate onNavigate={onNavigate}><InternoInner onNavigate={onNavigate} tab={tab} /></StaffGate>;
 }
 
-function InternoInner({ onNavigate }) {
-  const { dipendente, ruolo, isAdmin } = useAuth();
+function InternoInner({ onNavigate, tab: tabUrl }) {
+  const { dipendente, ruolo, isAdmin, avvio } = useAuth();
   const menoMoto = useReducedMotion();
   const [moduli, setModuli] = useState(null);
   const [tab, setTab] = useState(null);
@@ -200,10 +200,23 @@ function InternoInner({ onNavigate }) {
         setModuli(m);
         setZone(z);
         setDaLeggere(a.filter((x) => !x.letto).length);
-        setTab((t) => t ?? m.schede[0]?.codice ?? null);
       })
       .catch(() => setErr("Non riesco a caricare il modulo. Ricarica la pagina."));
   }, []);
+
+  /* Su quale scheda si apre l'area interna, in ordine di precedenza:
+     1. l'indirizzo — #/interno/schede — che è come arrivano le notifiche e
+        i segnalibri, e vince sempre perché è una richiesta esplicita;
+     2. quella già aperta, se si sta solo ricaricando qualcosa;
+     3. l'atterraggio scelto dalla persona o dal suo ruolo;
+     4. la prima scheda che vede.
+     Una destinazione che non c'è più — modulo spento, permesso tolto — non
+     deve lasciare la pagina vuota: `esiste` la scarta e si scende di uno. */
+  useEffect(() => {
+    if (!moduli) return;
+    const esiste = (c) => (c && moduli.schede.some((s) => s.codice === c) ? c : null);
+    setTab((t) => esiste(tabUrl) ?? t ?? esiste(avvio) ?? moduli.schede[0]?.codice ?? null);
+  }, [moduli, tabUrl, avvio]);
 
   const puoGestire = isAdmin || ruolo === "manager";
   /* Prima di ogni uscita anticipata: React conta gli hook a ogni disegno e
@@ -222,6 +235,7 @@ function InternoInner({ onNavigate }) {
   const vaiA = (destinazione, id = null) => {
     setFuoco(id);
     setTab(destinazione);
+    onNavigate("interno/" + destinazione);
   };
 
   /* Cambiare scheda dal menu azzera il fuoco. Senza, toccando una promozione
@@ -230,9 +244,14 @@ function InternoInner({ onNavigate }) {
   const vaiScheda = (destinazione) => {
     setFuoco(null);
     setTab(destinazione);
+    /* L'indirizzo segue la scheda: così il tasto Indietro torna dov'eri, il
+       segnalibro riapre la stessa pagina, e una notifica può puntare dritta
+       al Card Center invece che all'ingresso. */
+    onNavigate("interno/" + destinazione);
   };
 
-  const comuni = { dipendente, ruolo, isAdmin, puoGestire, zone, setErr, onNavigate, vaiA };
+  const comuni = { dipendente, ruolo, isAdmin, puoGestire, zone, setErr, onNavigate, vaiA,
+    schedeVisibili: moduli.schede };
 
   return (
     <MotionConfig reducedMotion="user">
@@ -243,7 +262,7 @@ function InternoInner({ onNavigate }) {
               <span className="dip-eyebrow"><Icon name="users" size={14} /> Area interna</span>
               <h1 className="dip-title">Centro Ricambi Auto</h1>
             </div>
-            <button type="button" className="dip-chi" onClick={() => setTab("profilo")}
+            <button type="button" className="dip-chi" onClick={() => vaiScheda("profilo")}
               title="Vai al tuo profilo">
               <span>
                 <b>{`${dipendente?.nome ?? ""} ${dipendente?.cognome ?? ""}`.trim() || "—"}</b>
@@ -1135,7 +1154,9 @@ function Bacheca({ dipendente, puoGestire, zone, setErr, onConteggio, fuoco }) {
             await push.inviaPush({
               titolo: form.titolo.trim(),
               corpo: (form.corpo || "").trim().slice(0, 120),
-              url: "/#/interno",
+              // Chi tocca la notifica si trova sulla bacheca, non
+              // all'ingresso con l'annuncio da cercare.
+              url: "/#/interno/bacheca",
               zone: form.zone?.length ? form.zone : undefined,
             });
           } catch (e) {
@@ -1408,7 +1429,7 @@ function CardCenter({ dipendente, ruolo, puoGestire, zone, setErr, fuoco }) {
             await push.inviaPush({
               titolo: form.titolo.trim(),
               corpo: (form.descrizione || "").trim().slice(0, 120),
-              url: "/#/interno",
+              url: "/#/interno/schede",
               zone: form.zone?.length ? form.zone : undefined,
             });
           } catch (e) {
@@ -2705,7 +2726,7 @@ function Traguardo({ t, i }) {
   );
 }
 
-function Profilo({ dipendente, ruolo, setErr }) {
+function Profilo({ dipendente, ruolo, setErr, schedeVisibili = [] }) {
   const [scheda, setScheda] = useState(null);
   const [numeri, setNumeri] = useState(null);
   const [traguardi, setTraguardi] = useState([]);
@@ -2724,7 +2745,8 @@ function Profilo({ dipendente, ruolo, setErr }) {
     setNumeri(n);
     setTraguardi(tg);
     setSquadra(sq);
-    setForm({ telefono: s?.telefono ?? "", motto: s?.motto ?? "", avatar_url: s?.avatar_url ?? "" });
+    setForm({ telefono: s?.telefono ?? "", motto: s?.motto ?? "",
+      avatar_url: s?.avatar_url ?? "", avvio: s?.avvio ?? "" });
   }, [dipendente]);
   useEffect(() => { carica().catch(() => setErr("Non riesco a leggere il tuo profilo.")); }, [carica, setErr]);
 
@@ -2799,6 +2821,20 @@ function Profilo({ dipendente, ruolo, setErr }) {
             <input type="text" value={form.motto} maxLength={90}
               placeholder="una riga che ti descrive"
               onChange={(e) => setForm({ ...form, motto: e.target.value })} />
+          </label>
+          {/* Chi passa la giornata sulle promozioni non deve attraversare tre
+              pagine per arrivarci: sceglie qui dove aprire, una volta sola. */}
+          <label className="adm-fld wide">
+            <span>Quando entro, portami a…</span>
+            <select value={form.avvio}
+              onChange={(e) => setForm({ ...form, avvio: e.target.value })}>
+              <option value="">Dove previsto per il mio ruolo</option>
+              <option value="sito">Home del sito</option>
+              {schedeVisibili.map((m) => (
+                <option key={m.codice} value={m.codice}>Area interna · {m.nome}</option>
+              ))}
+            </select>
+            <span className="dip-sub">vale al prossimo accesso, da qualunque dispositivo</span>
           </label>
           <div className="adm-azioni">
             <button className="adm-btn" onClick={salva} disabled={busy}>
@@ -3163,12 +3199,15 @@ function Gestione({ isAdmin, zone, setErr }) {
   const [dip, setDip] = useState(null);
   const [moduli, setModuli] = useState([]);
   const [permessi, setPermessi] = useState([]);
+  const [avvii, setAvvii] = useState({});
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const carica = useCallback(async () => {
-    const [d, m, p] = await Promise.all([api.getDipendenti(), api.getTuttiModuli(), api.getPermessi()]);
-    setDip(d); setModuli(m); setPermessi(p);
+    const [d, m, p, av] = await Promise.all([
+      api.getDipendenti(), api.getTuttiModuli(), api.getPermessi(), api.getAvvioRuoli(),
+    ]);
+    setDip(d); setModuli(m); setPermessi(p); setAvvii(av);
   }, []);
   useEffect(() => { carica().catch(() => setErr("Non riesco a caricare la gestione.")); }, [carica, setErr]);
 
@@ -3193,6 +3232,13 @@ function Gestione({ isAdmin, zone, setErr }) {
   const valore = (modulo, ruolo) => {
     const p = permessi.find((x) => x.modulo === modulo && x.ruolo === ruolo && !x.dipendente_id && !x.zona_id);
     return p ? (p.abilitato ? "si" : "no") : "";
+  };
+
+  const cambiaAvvio = async (r, dest) => {
+    try {
+      await api.setAvvioRuolo(r, dest);
+      setAvvii(await api.getAvvioRuoli());
+    } catch { setErr("Non riesco a salvare l'atterraggio del ruolo."); }
   };
 
   const cambiaPermesso = async (modulo, ruolo, v) => {
@@ -3292,6 +3338,31 @@ function Gestione({ isAdmin, zone, setErr }) {
 
       {sezione === "permessi" && (
         <React.Fragment>
+          {/* Dove si apre il sito è metà dell'esperienza: un rappresentante
+              che per arrivare alle promozioni deve passare da home, menu e
+              area interna, le apre meno spesso. */}
+          <h2 className="dip-card-titolo">
+            <Icon name="log-in" size={14} color="var(--cra-red)" /> Dove si atterra dopo il login
+          </h2>
+          <p className="dip-regola">
+            Vale per chi non ha scelto diversamente dal proprio profilo: come per i permessi,
+            <b> la scelta della persona batte quella del ruolo</b>. Chi non ha nulla impostato
+            resta sulla home del sito, come prima.
+          </p>
+          <div className="adm-form-grid" style={{ marginBottom: "var(--space-5)" }}>
+            {Object.entries(RUOLI).map(([k, v]) => (
+              <label key={k} className="adm-fld">
+                <span>{v}</span>
+                <select value={avvii[k] ?? ""} onChange={(e) => cambiaAvvio(k, e.target.value)}>
+                  <option value="">Home del sito</option>
+                  {moduli.filter((m) => m.tipo === "scheda" && m.attivo).map((m) => (
+                    <option key={m.codice} value={m.codice}>Area interna · {m.nome}</option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </div>
+
           {/* Prima erano sessanta menu a tendina tutti uguali: si vedeva la
               griglia, non la risposta. Ora ogni casella dice sì o no a colpo
               d'occhio, e un clic la fa girare. Il pallino segna le eccezioni:

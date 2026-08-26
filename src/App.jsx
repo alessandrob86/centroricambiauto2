@@ -24,15 +24,17 @@ const { useState, useEffect } = React;
 
 const PAGES = ["home", "contatti", "chisiamo", "privacy", "cookie", "login", "store", "admin", "interno"];
 
-/* Route = { page, param }: "store" supporta un segmento parametro
-   (#/store/<codice> → dettaglio prodotto). Un hash non-rotta (es. il
+/* Route = { page, param }: due pagine portano un segmento parametro.
+   #/store/<codice> è il dettaglio prodotto; #/interno/<modulo> apre l'area
+   interna già sulla scheda giusta — serve ai segnalibri, alle notifiche
+   push e all'atterraggio scelto da ciascuno. Un hash non-rotta (es. il
    callback auth di Supabase "#access_token=…") ricade su home: innocuo,
    supabase-js consuma i token dal fragment per conto suo. */
 function routeFromHash() {
   const h = window.location.hash.replace(/^#\/?/, "");
   const [base, ...rest] = h.split("/");
-  if (base === "store" && rest.length) {
-    return { page: "store", param: decodeURIComponent(rest.join("/")) };
+  if ((base === "store" || base === "interno") && rest.length) {
+    return { page: base, param: decodeURIComponent(rest.join("/")) };
   }
   return { page: PAGES.includes(base) ? base : "home", param: null };
 }
@@ -184,7 +186,7 @@ export default function App() {
         )}
         {page === "interno" && (
           <React.Suspense fallback={<ComingSoon title="Area interna" loading />}>
-            <Interno onNavigate={navigate} />
+            <Interno onNavigate={navigate} tab={route.param} />
           </React.Suspense>
         )}
       </main>

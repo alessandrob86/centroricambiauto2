@@ -27,21 +27,29 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [officina, setOfficina] = useState(null);
   const [dipendente, setDipendente] = useState(null);
+  const [avvio, setAvvio] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /** Carica in parallelo le due identità possibili dell'utente. */
+  /** Carica in parallelo le due identità possibili dell'utente e il posto
+   *  dove vuole atterrare. Le tre domande partono insieme: in fila
+   *  costerebbero tre giri di rete a ogni apertura di pagina. */
   const loadProfilo = useCallback(async (userId) => {
     if (!userId) {
       setOfficina(null);
       setDipendente(null);
-      return;
+      setAvvio(null);
+      return null;
     }
-    const [off, dip] = await Promise.all([
+    const [off, dip, av] = await Promise.all([
       supabase.from("officine").select("*").eq("user_id", userId).maybeSingle(),
       supabase.from("dipendenti").select("*, zone(id, nome)").eq("user_id", userId).eq("attivo", true).maybeSingle(),
+      supabase.rpc("avvio_utente"),
     ]);
     setOfficina(off.data ?? null);
     setDipendente(dip.data ?? null);
+    const dove = av.data ?? null;
+    setAvvio(dove);
+    return dove;
   }, []);
 
   useEffect(() => {
@@ -62,10 +70,15 @@ export const AuthProvider = ({ children }) => {
     };
   }, [loadProfilo]);
 
+  /* Restituisce anche dove atterrare. Il profilo si ricarica comunque da
+     solo al cambio di sessione, ma arriva un attimo dopo: la pagina di
+     accesso deve sapere subito dove mandare la persona, altrimenti la
+     manda in home e basta. */
   const signIn = useCallback(async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message };
-  }, []);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    return { avvio: await loadProfilo(data.user?.id) };
+  }, [loadProfilo]);
 
   const signUp = useCallback(async (d) => {
     // I dati officina viaggiano nei user_metadata: un trigger DB crea la riga
@@ -126,6 +139,9 @@ export const AuthProvider = ({ children }) => {
     ruolo: dipendente?.ruolo ?? null,
     /** Filiale di appartenenza: è il filtro dei contenuti interni. */
     zona: dipendente?.zone ?? null,
+    /** Dove atterra dopo il login: codice di una scheda dell'area interna,
+     *  'sito' per la home pubblica, null per chi non è personale. */
+    avvio,
     /** Back-office CRA e L2F: l'admin cliente storico o un dipendente admin. */
     isAdmin: officina?.is_admin === true || dipendente?.ruolo === "admin",
     signIn,
@@ -136,6 +152,11 @@ export const AuthProvider = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+/** Dalla preferenza alla rotta vera. Sta fuori dal contesto perché serve a
+ *  chi decide la navigazione, non solo a chi legge lo stato. */
+export const rottaDiAvvio = (avvio) =>
+  (!avvio || avvio === "sito" ? "home" : `interno/${avvio}`);
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);

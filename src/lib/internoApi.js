@@ -617,7 +617,7 @@ export async function getMioProfilo(dipendenteId) {
   if (!dipendenteId) return null;
   const { data, error } = await supabase
     .from("dipendenti")
-    .select("id, nome, cognome, email, telefono, ruolo, avatar_url, motto, created_at, zone(nome)")
+    .select("id, nome, cognome, email, telefono, ruolo, avatar_url, motto, avvio, created_at, zone(nome)")
     .eq("id", dipendenteId).maybeSingle();
   if (error) throw error;
   return data;
@@ -662,11 +662,30 @@ export async function getTraguardiFiliale() {
   return (data ?? []).map(numerico);
 }
 
-/** Si cambia solo ciò che è proprio: recapito, avatar, motto. */
-export async function salvaProfilo({ telefono, avatar_url, motto }) {
+/** Si cambia solo ciò che è proprio: recapito, avatar, motto, atterraggio. */
+export async function salvaProfilo({ telefono, avatar_url, motto, avvio }) {
   const { error } = await supabase.rpc("aggiorna_profilo", {
     p_telefono: telefono ?? null, p_avatar: avatar_url ?? null, p_motto: motto ?? null,
+    // "" = nessuna scelta personale: si torna a seguire il proprio ruolo.
+    p_avvio: avvio || null,
   });
+  if (error) throw error;
+}
+
+/* ---- atterraggio: dove si apre il sito dopo il login ----
+   Due livelli, come per i permessi dei moduli: la regola del ruolo sta qui,
+   la scelta della singola persona nel suo profilo — e quella vince. */
+
+/** { ruolo: destinazione }. Un ruolo assente significa "home del sito". */
+export async function getAvvioRuoli() {
+  const { data, error } = await supabase.from("avvio_ruolo").select("ruolo, destinazione");
+  if (error) return {};
+  return Object.fromEntries((data ?? []).map((r) => [r.ruolo, r.destinazione]));
+}
+
+/** `dest` vuoto cancella la regola e riporta quel ruolo sulla home. */
+export async function setAvvioRuolo(ruolo, dest) {
+  const { error } = await supabase.rpc("imposta_avvio_ruolo", { p_ruolo: ruolo, p_dest: dest || null });
   if (error) throw error;
 }
 
