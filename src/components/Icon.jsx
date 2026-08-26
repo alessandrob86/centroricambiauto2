@@ -10,6 +10,7 @@ import {
   Save, Pencil, Plus, Minus, Trash2, ImagePlus, RefreshCw,
   AlertCircle, CheckCircle2, Lock, Building2, History, Download,
   ExternalLink, Search, Tag, Megaphone, Bell, Info, TriangleAlert, Paperclip,
+  Copy, Link2, Link2Off,
 } from "lucide-react";
 
 /* Lucide icons keyed by the kebab-case names used across the kit. */
@@ -24,6 +25,9 @@ const ICONS = {
   bike: Bike,
   wrench: Wrench,
   "key-round": KeyRound,
+  copy: Copy,
+  link: Link2,
+  unlink: Link2Off,
   "plug-zap": PlugZap,
   headset: Headset,
   users: Users,

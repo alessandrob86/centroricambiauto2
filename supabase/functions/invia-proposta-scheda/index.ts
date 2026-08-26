@@ -34,6 +34,14 @@ const BUCKET = "cra-interno";
    peggio di una mail senza immagine. 6 MB grezzi ≈ 8 MB in base64. */
 const MAX_FOTO = 6_000_000;
 
+/* Chi può proporre a qualunque cliente, anche senza averlo in portafoglio.
+   È la regola di `scheda_dest_read`, e va ripetuta qui perché esito e ordine
+   li scriviamo con la chiave di servizio, che della RLS non sa nulla.
+   Il centralino c'è perché risponde per tutti, non perché abbia clienti suoi:
+   è anche l'unico ruolo che di suo non potrebbe scrivere su `scheda_esiti` e
+   `scheda_ordini`, dove la RLS ammette solo admin e manager. */
+const RUOLI_SENZA_PORTAFOGLIO = ["admin", "manager", "centralino"];
+
 const esc = (s: unknown) =>
   String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c] as string));
 
@@ -107,9 +115,16 @@ Deno.serve(async (req: Request) => {
 
     const { data: off } = await admin
       .from("officine")
-      .select("id, ragione_sociale, codice_cliente, piva, citta, provincia, telefono, email, documento_predefinito")
+      .select("id, ragione_sociale, codice_cliente, piva, citta, provincia, telefono, email, documento_predefinito, agente_id")
       .eq("id", officina_id).maybeSingle();
     if (!off) return json({ error: "cliente non trovato" }, 404);
+
+    /* Essere personale attivo non basta: il cliente dev'essere il proprio.
+       Senza questo un rappresentante si intesta proposte "accettate" sui
+       clienti dei colleghi — le sue statistiche salgono e le loro si sporcano. */
+    if (!RUOLI_SENZA_PORTAFOGLIO.includes(dip.ruolo) && (off as any).agente_id !== dip.id) {
+      return json({ error: "questo cliente non è in carico a te" }, 403);
+    }
 
     const RESEND = Deno.env.get("RESEND_API_KEY_CRA");
     const FROM = Deno.env.get("CRA_ORDER_FROM") ?? "Centro Ricambi Auto <noreply@centroricambiautosrl.it>";

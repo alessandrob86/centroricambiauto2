@@ -140,13 +140,22 @@ repository e ci resta.
 | 113 | 2026-08-26 | non_usati_esclude_i_caricati_da_poco | 2.994 |
 | 114 | 2026-08-26 | avvio_area_interna | 4.838 |
 | 115 | 2026-08-26 | rls_zona_su_schede_e_annunci | 1.430 |
+| 116 | 2026-08-26 | notifiche_con_rotta_giusta_e_traguardo_privato | 4.180 |
+| 117 | 2026-08-26 | prezzi_interni_e_anagrafica_blindata | 8.900 |
+| 118 | 2026-08-26 | officine_guard_niente_null | 2.100 |
+| 119 | 2026-08-26 | ordini_numero_e_stato_dal_database | 2.600 |
+| 120 | 2026-08-26 | inviti_cliente_al_posto_della_piva | 7.300 |
+| 121 | 2026-08-26 | aggancia_registrazione_all_anagrafica | 4.500 |
+| 122 | 2026-08-26 | aggancio_libera_prima_l_accesso | 3.900 |
+| 123 | 2026-08-26 | aggancio_colonne_giuste | 3.700 |
+| 124 | 2026-08-26 | corsi_notifiche_e_offerte_a_posto | 4.900 |
 
 ## Dove guardare per capire una cosa
 
 | Se ti serve capire | Guarda |
 |---|---|
 | Come nascono i prezzi | 43-48, 53, 58-59 |
-| Chi può vedere cosa (RLS) | 13, 25, 28, 32-34, 52, 115 |
+| Chi può vedere cosa (RLS) | 13, 25, 28, 32-34, 52, 115, 117, 124 |
 | Il catalogo condiviso fra i due siti | 49-54 |
 | Il modulo interno | 60-61, 68-76, 83-86, 93 |
 | Statistiche e traguardi | 79, 82, 94-98 |
@@ -156,3 +165,6 @@ repository e ci resta.
 | Documenti da emettere al cliente | 107-111 |
 | Pulizia dei file non più usati | 112-113 |
 | Dove si atterra dopo il login | 114 |
+| Come entra un cliente (inviti, aggancio) | 120-123 |
+| Ordini: numero, stato e totali imposti | 119 |
+| Notifiche: a chi arrivano e dove portano | 116, 124 |

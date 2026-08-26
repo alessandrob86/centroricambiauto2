@@ -8,6 +8,59 @@ import { supabase } from "./supabase.js";
    clienti su 3376 senza dirlo. Ricerca, filtri e conteggi stanno sul server. */
 
 /** `vista`: 'con_accesso' (registrati) | 'anagrafica' (solo importati) | 'tutti'. */
+/* ============ Inviti e aggancio all'anagrafica ============
+
+   Come entra un cliente, adesso. Prima bastava dichiarare la partita IVA in
+   fase di registrazione e il database consegnava l'anagrafica corrispondente:
+   comodo, ma la P.IVA sta sulle fatture e nelle visure, quindi la chiave di
+   casa la conoscevano tutti. Ora la chiave è un codice che generi tu, valido
+   una volta sola e a scadenza; chi si registra per conto suo nasce come
+   scheda nuova, e sei tu a fonderla con l'anagrafica quando l'hai vista. */
+
+/** Genera un codice per una scheda. Senza `officinaId` è un invito generico:
+ *  vale come "ti aspettiamo", ma l'aggancio lo farai a mano. */
+export async function creaInvito({ officinaId = null, email = null, nota = null, giorni = 30 } = {}) {
+  const { data, error } = await supabase.rpc("crea_invito", {
+    p_officina: officinaId, p_email: email || null, p_nota: nota || null, p_giorni: giorni,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** Gli inviti di una scheda, il più recente per primo. */
+export async function getInviti(officinaId) {
+  const { data, error } = await supabase
+    .from("inviti_cliente")
+    .select("codice, email, nota, created_at, scade_il, usato_il")
+    .eq("officina_id", officinaId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Ritira un codice non ancora usato. */
+export async function annullaInvito(codice) {
+  const { error } = await supabase.from("inviti_cliente").delete().eq("codice", codice);
+  if (error) throw error;
+}
+
+/** Fonde una registrazione nell'anagrafica vera: l'accesso e i recapiti si
+ *  spostano di là, i dati commerciali dell'anagrafica restano, e la scheda
+ *  doppia sparisce. Torna l'id di quella che resta. */
+export async function agganciaOfficina(registrazione, anagrafica) {
+  const { data, error } = await supabase.rpc("aggancia_officina", {
+    p_registrazione: registrazione, p_anagrafica: anagrafica,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** Il contrario, per rimediare a un aggancio sbagliato. */
+export async function staccaOfficina(id) {
+  const { error } = await supabase.rpc("stacca_officina", { p_officina: id });
+  if (error) throw error;
+}
+
 export async function getOfficine({ q = "", vista = "con_accesso", stato = "", categoria = "", provincia = "", limit = 50, offset = 0 } = {}) {
   let query = supabase.from("officine").select("*", { count: "exact" });
 

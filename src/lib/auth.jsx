@@ -84,6 +84,10 @@ export const AuthProvider = ({ children }) => {
     // I dati officina viaggiano nei user_metadata: un trigger DB crea la riga
     // officine (stato 'in_attesa') alla creazione utente, senza problemi di RLS.
     // origine:'cra' fa sì che all'attivazione si accenda cra_abilitata.
+    // `invito`: se c'è un codice valido il trigger aggancia la registrazione
+    // alla scheda giusta invece di crearne una nuova. Prima quel mestiere lo
+    // faceva la partita IVA, che però è un dato pubblico: bastava conoscerla
+    // per prendersi l'anagrafica di un cliente vero.
     const { data, error } = await supabase.auth.signUp({
       email: d.email,
       password: d.password,
@@ -94,6 +98,7 @@ export const AuthProvider = ({ children }) => {
           piva: d.piva ?? "",
           telefono: d.telefono ?? "",
           citta: d.citta ?? "",
+          invito: d.invito ?? "",
           origine: "cra",
         },
       },
@@ -152,6 +157,18 @@ export const AuthProvider = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+/** Un codice d'invito è buono? Risponde anche a chi non ha ancora un
+ *  account — serve al modulo di registrazione mentre si scrive. Torna
+ *  { valido, per } dove `per` è la ragione sociale della scheda collegata:
+ *  chi ha il codice ha già diritto di sapere a quale cliente corrisponde. */
+export async function controllaInvito(codice) {
+  const c = String(codice ?? "").trim();
+  if (c.length < 9) return { valido: false, per: null };
+  const { data, error } = await supabase.rpc("invito_valido", { p_codice: c });
+  if (error) return { valido: false, per: null };
+  return data ?? { valido: false, per: null };
+}
 
 /** Dalla preferenza alla rotta vera. Sta fuori dal contesto perché serve a
  *  chi decide la navigazione, non solo a chi legge lo stato. */

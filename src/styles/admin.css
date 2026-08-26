@@ -299,3 +299,43 @@
   .adm-tab { padding: 9px 12px; }
   .adm-foglio-stato { margin-left: 0; width: 100%; }
 }
+
+/* ============================================================
+   ACCESSO — il riquadro che dice come un cliente entra.
+
+   Sta in fondo alla scheda dell'officina, staccato dai campi da compilare:
+   non è un dato dell'anagrafica, è un'azione. Il codice si legge al
+   telefono, quindi grande, spaziato e monospaziato — 0 e O non si devono
+   confondere, anche se l'alfabeto esadecimale la O non ce l'ha.
+   ============================================================ */
+.adm-accesso {
+  margin-top: 16px; padding-top: 14px;
+  border-top: 1px dashed var(--border-subtle, #e2e0da);
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+}
+.adm-accesso-titolo {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-brand); font-size: var(--fs-2xs);
+  text-transform: uppercase; letter-spacing: var(--ls-caps);
+}
+.adm-accesso-testo {
+  text-transform: none; letter-spacing: 0; font-weight: 400;
+  margin: 0; max-width: 62ch; line-height: 1.55;
+}
+.adm-invito {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border-subtle, #e2e0da);
+  background: var(--surface-page, #fff);
+}
+.adm-invito-codice {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 17px; font-weight: 700; letter-spacing: .14em;
+  color: var(--cra-charcoal);
+}
+.adm-cerca-anagrafica {
+  width: 100%; max-width: 460px; padding: 9px 12px;
+  border: var(--border-w) solid var(--border-strong, #cfd3d1);
+  background: var(--surface-page, #fff); font-size: 14px;
+}
+.adm-cerca-anagrafica:focus { outline: none; border-color: var(--char-700); }

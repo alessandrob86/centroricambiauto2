@@ -3,7 +3,7 @@ import { Container, Eyebrow, Reveal } from "../components/shared.jsx";
 import { Button } from "../components/ds/Button.jsx";
 import { Input } from "../components/ds/Input.jsx";
 import { Icon } from "../components/Icon.jsx";
-import { useAuth, rottaDiAvvio } from "../lib/auth.jsx";
+import { useAuth, rottaDiAvvio, controllaInvito } from "../lib/auth.jsx";
 
 const { useState, useEffect } = React;
 
@@ -66,6 +66,9 @@ export function Accedi({ onNavigate }) {
   const [password, setPassword] = useState("");
   const [ragioneSociale, setRagioneSociale] = useState("");
   const [piva, setPiva] = useState("");
+  const [invito, setInvito] = useState("");
+  /* null = non ancora controllato · "controllo" · { valido, per } */
+  const [esitoInvito, setEsitoInvito] = useState(null);
   const [telefono, setTelefono] = useState("");
   const [citta, setCitta] = useState("");
 
@@ -91,6 +94,35 @@ export function Accedi({ onNavigate }) {
     onNavigate(rottaDiAvvio(dove));
   };
 
+  /* Il codice si scrive a gruppi di quattro: il trattino lo mettiamo noi,
+     e le lettere si alzano da sole. Chi lo detta al telefono non deve
+     ricordarsi la forma. */
+  const scriviInvito = (v) => {
+    const pulito = v.toUpperCase().replace(/[^0-9A-F]/g, "").slice(0, 8);
+    setInvito(pulito.length > 4 ? `${pulito.slice(0, 4)}-${pulito.slice(4)}` : pulito);
+  };
+
+  /* Si controlla mentre si scrive, ma non a ogni tasto: mezzo secondo di
+     silenzio e poi si chiede. Il ritorno dice anche PER CHI è il codice, ed
+     è la conferma che serve a chi lo sta usando: se legge il nome della sua
+     officina sa di aver digitato giusto. */
+  useEffect(() => {
+    if (invito.length < 9) { setEsitoInvito(null); return undefined; }
+    setEsitoInvito("controllo");
+    const t = setTimeout(() => {
+      controllaInvito(invito).then(setEsitoInvito).catch(() => setEsitoInvito(null));
+    }, 500);
+    return () => clearTimeout(t);
+  }, [invito]);
+
+  /* Se il codice porta con sé una ragione sociale, si scrive da sola: è
+     quella del gestionale, ed è quella che conta. */
+  useEffect(() => {
+    if (esitoInvito?.valido && esitoInvito.per && !ragioneSociale.trim()) {
+      setRagioneSociale(esitoInvito.per);
+    }
+  }, [esitoInvito, ragioneSociale]);
+
   const onRegister = async (e) => {
     e.preventDefault();
     setErr(null);
@@ -106,6 +138,7 @@ export function Accedi({ onNavigate }) {
       piva: piva.trim(),
       telefono: telefono.trim(),
       citta: citta.trim(),
+      invito: invito.trim(),
     });
     setBusy(false);
     if (error) {
@@ -257,6 +290,31 @@ export function Accedi({ onNavigate }) {
           </form>
         ) : (
           <form onSubmit={onRegister} style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+            {/* Il codice sta in cima perché cambia il senso di tutto il resto:
+                con l'invito la scheda esiste già e i campi sotto servono solo
+                ad aggiornare i recapiti. */}
+            <div>
+              <Input label="Codice invito" value={invito} inputMode="text"
+                onChange={(e) => scriviInvito(e.target.value)} placeholder="ABCD-1234" />
+              <p className="cra-meta" style={{ margin: "6px 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
+                {esitoInvito === "controllo" ? "Controllo il codice…"
+                  : esitoInvito?.valido ? (
+                    <React.Fragment>
+                      <Icon name="check" size={14} color="#2E7D4F" />
+                      <span style={{ color: "#2E7D4F" }}>
+                        Attiverai l'accesso per <strong>{esitoInvito.per ?? "la tua officina"}</strong>
+                      </span>
+                    </React.Fragment>
+                  ) : invito.length >= 9 ? (
+                    <React.Fragment>
+                      <Icon name="alert-circle" size={14} color="var(--cra-red)" />
+                      <span style={{ color: "var(--cra-red)" }}>
+                        Questo codice non è valido, è scaduto o è già stato usato.
+                      </span>
+                    </React.Fragment>
+                  ) : "Se te l'abbiamo dato, inseriscilo: ti colleghiamo alla tua scheda. Altrimenti lascialo vuoto."}
+              </p>
+            </div>
             <Input label="Ragione sociale *" required value={ragioneSociale}
               onChange={(e) => setRagioneSociale(e.target.value)} placeholder="Officina Rossi S.r.l." />
             <Input label="Email *" type="email" autoComplete="email" required value={email}

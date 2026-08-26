@@ -135,7 +135,14 @@ export default function App() {
     if (window.location.hash !== "#/" + id) window.history.pushState(null, "", "#/" + id);
   };
 
-  const navigate = (id) => {
+  /* Le rotte non arrivano solo dai bottoni del sito: le notifiche se le
+     portano dal database, dove possono avere la forma dell'indirizzo
+     ("/#/interno/profilo") invece di quella della rotta. Ripulire il davanti
+     costa una riga e toglie un modo di sbagliare in silenzio: una rotta non
+     riconosciuta non dà errore, scivola in home — ed è esattamente quello
+     che faceva la campanella. */
+  const navigate = (grezzo) => {
+    const id = String(grezzo ?? "").replace(/^\/?#?\/?/, "");
     scrollPos.current[routeKey(route)] = window.scrollY;
     const [base, ...rest] = id.split("/");
     if (!PAGES.includes(base)) {

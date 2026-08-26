@@ -25,6 +25,29 @@ const cors = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
 
+/* L'indirizzo che si apre al tocco lo scrive chi manda la notifica: accettarlo
+   così com'è vorrebbe dire che una notifica col logo CRA può portare su un
+   sito civetta. Guardare le prime lettere non basta: il browser, prima di
+   risolvere un indirizzo, cambia le barre rovesce in barre e butta via
+   tabulazioni e a capo, così "/\dominio.it" e "/<tab>/dominio.it" cominciano
+   per "/" ma finiscono su un altro dominio. L'unico giudice affidabile è lo
+   stesso parser: si risolve contro una base finta e si tiene solo ciò che è
+   rimasto su quella base. Un indirizzo assoluto — anche del sito vero — cade
+   qui dentro: da fuori non si sa qual è il dominio del sito, e comunque chi
+   manda scrive sempre percorsi relativi. */
+const BASE_FINTA = "https://interno.invalid";
+const percorsoInterno = (v: unknown) => {
+  // La stringa vuota è un indirizzo mancante, non la pagina iniziale:
+  // risolta com'è porterebbe alla vetrina invece che all'area interna.
+  if (typeof v !== "string" || !v.trim()) return "/#/interno";
+  try {
+    const u = new URL(v, BASE_FINTA);
+    return u.origin === BASE_FINTA ? u.pathname + u.search + u.hash : "/#/interno";
+  } catch {
+    return "/#/interno";
+  }
+};
+
 async function manda(
   iscr: { endpoint: string; p256dh: string; auth: string },
   payload: string, priv: CryptoKey, pubblica: string, sub: string,
@@ -105,6 +128,17 @@ Deno.serve(async (req) => {
       .select("id, ruolo, zona_id, attivo").eq("user_id", ute.user.id).maybeSingle();
     if (!dip?.attivo) return json({ error: "riservato al personale" }, 403);
 
+    /* Il controllo del ruolo sta qui, PRIMA di scegliere i destinatari.
+       Stando in fondo alla catena degli `else if` bastava passare un filtro
+       qualsiasi — per esempio `ruoli` con dentro tutti e cinque i ruoli —
+       perché un ramo precedente lo intercettasse e la notifica partisse a
+       tutta l'azienda. Chi non è admin né manager può mandare solo a se
+       stesso, cioè la prova del pulsante di verifica: ogni altra
+       combinazione, per lui, è un 403. */
+    if (dip.ruolo !== "admin" && dip.ruolo !== "manager" && !b.prova) {
+      return json({ error: "solo admin e manager possono mandare ad altri" }, 403);
+    }
+
     const titolo = String(b.titolo ?? "").trim();
     const corpoMsg = String(b.corpo ?? "").trim();
     if (!titolo) return json({ error: "manca il titolo" }, 400);
@@ -134,9 +168,9 @@ Deno.serve(async (req) => {
       const ids = (chi ?? []).map((r: { user_id: string }) => r.user_id);
       if (!ids.length) return json({ inviate: 0, fallite: 0, nota: "nessun destinatario per quei filtri" });
       q = q.in("user_id", ids);
-    } else if (dip.ruolo !== "admin" && dip.ruolo !== "manager") {
-      return json({ error: "solo admin e manager possono mandare a tutti" }, 403);
     }
+    // Nessun filtro: va a tutti gli iscritti. Qui ci arriva solo chi è admin
+    // o manager, il controllo è già passato sopra.
 
     const { data: iscrizioni, error } = await q;
     if (error) throw error;
@@ -145,7 +179,7 @@ Deno.serve(async (req) => {
     const priv = await chiavePrivata(privB64, cfg.value);
     const payload = JSON.stringify({
       titolo, corpo: corpoMsg,
-      url: typeof b.url === "string" ? b.url : "/#/interno",
+      url: percorsoInterno(b.url),
     });
 
     let inviate = 0;

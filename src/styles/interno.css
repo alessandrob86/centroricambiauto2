@@ -1190,3 +1190,25 @@
   .dip-trovato .adm-btn { justify-content: center; min-height: 46px; }
   .dip-trovato .dip-esito { align-self: flex-start; }
 }
+
+/* ============================================================
+   PANNELLO DI DETTAGLIO SUL TELEFONO
+
+   In cima al pannello convivono il tipo della scheda, «Modifica», il
+   cestino e la chiusura: quattro cose su trecentonovanta pixel. La parola
+   «Chiudi» era la meno necessaria — la X da sola si capisce — e liberava
+   la riga. Il gesto vero resta lo scorrimento verso destra.
+   ============================================================ */
+@media (max-width: 760px) {
+  .dip-solo-largo { display: none; }
+  .dip-pannello { padding-left: 24px !important; }
+  /* `fixed` dentro un elemento trasformato si posiziona sull'elemento, non
+     sulla pagina: così la presa resta incollata al bordo del pannello e lo
+     segue mentre lo si trascina. */
+  .dip-tira {
+    position: fixed; left: 8px; top: 50%; transform: translateY(-50%);
+    width: 4px; height: 46px; border-radius: 4px;
+    background: var(--char-200, #c9cccb);
+    pointer-events: none;
+  }
+}

@@ -1722,6 +1722,7 @@ function Filiali({ nomi, tutte = "Tutte le filiali" }) {
 
 /** Dettaglio scheda: per le promozioni è anche il posto dove si lavora. */
 function DettaglioScheda({ scheda, dipendente, puoGestire, setErr, onChiudi, onModifica, onElimina }) {
+  const mobile = useMobile();
   const img = useUrlFirmato(scheda.immagine);
   const allegato = useUrlFirmato(scheda.allegato);
   const [clienti, setClienti] = useState(null);
@@ -1792,15 +1793,29 @@ function DettaglioScheda({ scheda, dipendente, puoGestire, setErr, onChiudi, onM
       <motion.div onClick={onChiudi}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 80 }} />
-      <motion.aside role="dialog" aria-label={scheda.titolo}
+      {/* Sul telefono la finestra si chiude anche scorrendola via verso
+          destra, da dove è entrata. Col mouse no: il trascinamento ruberebbe
+          la selezione del testo, e lì il pulsante si vede benissimo. */}
+      <motion.aside role="dialog" aria-label={scheda.titolo} className="dip-pannello"
         initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
         transition={{ type: "spring", stiffness: 280, damping: 32 }}
+        drag={mobile ? "x" : false}
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={{ left: 0, right: 0.9 }}
+        dragMomentum={false}
+        onDragEnd={(_e, info) => {
+          // Un pollice lento che arriva lontano, o uno veloce anche corto:
+          // sono due modi diversi di dire la stessa cosa.
+          if (info.offset.x > 90 || info.velocity.x > 600) onChiudi();
+        }}
         style={{
           position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 81, width: "min(720px, 100%)",
           background: "var(--surface-page, #fff)", overflow: "auto", padding: "18px 20px 40px",
           borderLeft: "3px solid var(--cra-red)",
         }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+        {/* `wrap`: su uno schermo da 320 pixel quattro comandi in fila non
+            ci stanno, e senza andrebbero a finire sotto il bordo. */}
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "14px" }}>
           <Tipo nome={scheda.tipo_nome} colore={scheda.tipo_colore} icona={scheda.tipo_icona} />
           {scheda.stato && scheda.stato !== "attiva" && <span className="dip-esito">{scheda.stato}</span>}
           <span style={{ marginLeft: "auto", display: "inline-flex", gap: "8px" }}>
@@ -1814,11 +1829,15 @@ function DettaglioScheda({ scheda, dipendente, puoGestire, setErr, onChiudi, onM
                 </button>
               </React.Fragment>
             )}
-            <button className="adm-btn ghost mini" onClick={onChiudi}>
-              <Icon name="x" size={14} /> Chiudi
+            <button className="adm-btn ghost mini" onClick={onChiudi} aria-label="Chiudi">
+              <Icon name="x" size={14} />
+              <span className="dip-solo-largo">Chiudi</span>
             </button>
           </span>
         </div>
+        {/* Il segno che si può tirare: una gesture che nessuno vede non
+            esiste. Sta fisso al bordo, non scorre col contenuto. */}
+        {mobile && <span className="dip-tira" aria-hidden="true" />}
         <h2 className="dip-title" style={{ fontSize: "var(--fs-xl)" }}>{scheda.titolo}</h2>
         {img && <img src={img} alt="" style={{ width: "100%", marginTop: "14px", display: "block" }} />}
         {scheda.descrizione && <p className="dip-annuncio-corpo" style={{ marginTop: "14px" }}>{scheda.descrizione}</p>}

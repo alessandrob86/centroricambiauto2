@@ -17,6 +17,7 @@ import {
   contaEtichetteLocali, caricaEtichette, spostaEtichette, baseEtichette,
   contaDocumentiLocali, caricaDocumenti, spostaDocumenti, baseDocumenti,
   rinominaMedia, getTipiDocumento, mediaNonUsati, togliMediaNonUsati, mediaAppenaCaricati,
+  creaInvito, getInviti, annullaInvito, agganciaOfficina, staccaOfficina,
 } from "../lib/adminApi.js";
 
 /* ============================================================
@@ -2283,6 +2284,7 @@ function PannelloAdmin() {
                               <Icon name="clock" size={12} color="var(--cra-gold)" /> All'attivazione si abilita in automatico il sito di registrazione ({o.origine === "cra" ? "CRA Store" : "L2F"}).
                             </p>
                           )}
+                          <Accesso officina={o} setErr={setErr} onCambio={ricaricaOfficine} />
                         </div>
                       )}
 
@@ -3005,5 +3007,167 @@ function PannelloAdmin() {
         )}
       </div>
     </section>
+  );
+}
+
+/* ============================================================
+   ACCESSO — come un cliente entra, e a quale scheda finisce.
+
+   Tre situazioni, tre facce diverse dello stesso riquadro:
+   · l'anagrafica senza account   -> si genera un codice d'invito;
+   · la registrazione senza codice cliente -> si fonde con l'anagrafica vera;
+   · la scheda già a posto        -> si dice solo com'è messa.
+
+   Il codice sostituisce la partita IVA come chiave. La P.IVA stava sulle
+   fatture di tutti: bastava conoscerla per farsi consegnare la scheda di un
+   cliente vero, con dentro codice cliente, fascia di prezzo e agente.
+   ============================================================ */
+function Accesso({ officina, onCambio, setErr }) {
+  const [inviti, setInviti] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+  const [copiato, setCopiato] = React.useState(null);
+  const [cerca, setCerca] = React.useState("");
+  const [trovate, setTrovate] = React.useState(null);
+
+  const collegata = !!officina.user_id;
+  const daAgganciare = collegata && !officina.codice_cliente;
+
+  const caricaInviti = React.useCallback(async () => {
+    try { setInviti(await getInviti(officina.id)); } catch { setInviti([]); }
+  }, [officina.id]);
+
+  React.useEffect(() => { if (!collegata) caricaInviti(); }, [collegata, caricaInviti]);
+
+  /* La ricerca dell'anagrafica: mezzo secondo di silenzio e poi si chiede,
+     perché l'elenco è di tremila righe e non si filtra nel browser. */
+  React.useEffect(() => {
+    if (!daAgganciare || cerca.trim().length < 3) { setTrovate(null); return undefined; }
+    const t = setTimeout(async () => {
+      try {
+        const r = await getOfficine({ q: cerca.trim(), vista: "anagrafica", limit: 8 });
+        setTrovate(r.righe ?? []);
+      } catch { setTrovate([]); }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [cerca, daAgganciare]);
+
+  const nuovoInvito = async () => {
+    setBusy(true); setErr(null);
+    try { await creaInvito({ officinaId: officina.id }); await caricaInviti(); }
+    catch (e) { setErr(String(e?.message || "Non riesco a creare l'invito.")); }
+    finally { setBusy(false); }
+  };
+
+  const copia = async (c) => {
+    try {
+      await navigator.clipboard.writeText(c);
+      setCopiato(c);
+      setTimeout(() => setCopiato(null), 1600);
+    } catch { setErr("Il browser non mi lascia copiare: selezionalo a mano."); }
+  };
+
+  const aggancia = async (anagrafica) => {
+    if (!window.confirm(
+      `Fondere "${officina.ragione_sociale}" nella scheda di "${anagrafica.ragione_sociale}"?\n\n` +
+      `L'accesso e i recapiti passano sull'anagrafica; codice cliente, fascia di prezzo e agente ` +
+      `restano quelli dell'anagrafica. La scheda doppia viene cancellata. Non si torna indietro.`,
+    )) return;
+    setBusy(true); setErr(null);
+    try { await agganciaOfficina(officina.id, anagrafica.id); onCambio?.(); }
+    catch (e) { setErr(String(e?.message || "Aggancio non riuscito.")); }
+    finally { setBusy(false); }
+  };
+
+  const stacca = async () => {
+    if (!window.confirm(
+      `Staccare l'accesso da "${officina.ragione_sociale}"?\n\n` +
+      `La scheda torna a essere una semplice anagrafica. L'utenza resta viva: ` +
+      `per farla rientrare servirà un invito nuovo.`,
+    )) return;
+    setBusy(true); setErr(null);
+    try { await staccaOfficina(officina.id); onCambio?.(); }
+    catch (e) { setErr(String(e?.message || "Non riesco a staccare l'accesso.")); }
+    finally { setBusy(false); }
+  };
+
+  const aperti = (inviti ?? []).filter((i) => !i.usato_il && new Date(i.scade_il) > new Date());
+
+  return (
+    <div className="adm-accesso">
+      <b className="adm-accesso-titolo">
+        <Icon name="key-round" size={13} color="var(--cra-red)" /> Accesso
+      </b>
+
+      {!collegata && (
+        <React.Fragment>
+          <p className="adm-sub adm-accesso-testo">
+            Questa scheda non ha un account. Genera un codice e daglielo: quando si registrerà
+            indicandolo, si troverà collegato <b>a questa</b> scheda, con il suo codice cliente e la
+            sua fascia di prezzo. Vale una volta sola e scade dopo trenta giorni.
+          </p>
+          {aperti.map((i) => (
+            <div key={i.codice} className="adm-invito">
+              <code className="adm-invito-codice">{i.codice}</code>
+              <span className="adm-sub">scade il {new Date(i.scade_il).toLocaleDateString("it-IT")}</span>
+              <span style={{ marginLeft: "auto", display: "inline-flex", gap: "6px" }}>
+                <button type="button" className="adm-btn ghost mini" onClick={() => copia(i.codice)}>
+                  <Icon name={copiato === i.codice ? "check" : "copy"} size={13} />
+                  {copiato === i.codice ? "copiato" : "copia"}
+                </button>
+                <button type="button" className="adm-btn ghost mini" title="Ritira questo codice"
+                  onClick={async () => {
+                    try { await annullaInvito(i.codice); await caricaInviti(); }
+                    catch { setErr("Non riesco a ritirare il codice."); }
+                  }}>
+                  <Icon name="x" size={13} />
+                </button>
+              </span>
+            </div>
+          ))}
+          <button type="button" className="adm-btn mini" onClick={nuovoInvito} disabled={busy}>
+            <Icon name="plus" size={13} /> {aperti.length ? "Un altro codice" : "Genera il codice d'invito"}
+          </button>
+        </React.Fragment>
+      )}
+
+      {daAgganciare && (
+        <React.Fragment>
+          <p className="adm-sub adm-accesso-testo">
+            Si è registrato per conto suo, senza codice: è una scheda nuova, senza codice cliente.
+            Se corrisponde a un cliente che hai già in anagrafica, cercalo qui e fondili.
+          </p>
+          <input type="text" className="adm-cerca-anagrafica" value={cerca}
+            onChange={(e) => setCerca(e.target.value)}
+            placeholder="Cerca l'anagrafica per nome, città, codice o partita IVA…" />
+          {trovate?.length === 0 && cerca.trim().length >= 3 && (
+            <p className="adm-sub adm-accesso-testo">Nessuna anagrafica libera con questi dati.</p>
+          )}
+          {(trovate ?? []).map((a) => (
+            <div key={a.id} className="adm-invito">
+              <span>
+                <b>{a.ragione_sociale}</b>
+                <span className="adm-sub" style={{ display: "block" }}>
+                  {[a.codice_cliente, a.piva, a.citta].filter(Boolean).join(" · ") || "—"}
+                </span>
+              </span>
+              <button type="button" className="adm-btn mini" style={{ marginLeft: "auto" }}
+                disabled={busy} onClick={() => aggancia(a)}>
+                <Icon name="link" size={13} /> Fondi qui
+              </button>
+            </div>
+          ))}
+        </React.Fragment>
+      )}
+
+      {collegata && !daAgganciare && (
+        <p className="adm-sub adm-accesso-testo">
+          Account collegato all'anagrafica <b>{officina.codice_cliente}</b>.
+          <button type="button" className="adm-btn ghost mini" style={{ marginLeft: "10px" }}
+            disabled={busy} onClick={stacca}>
+            <Icon name="unlink" size={13} /> Stacca l'accesso
+          </button>
+        </p>
+      )}
+    </div>
   );
 }
