@@ -290,7 +290,7 @@ Deno.serve(async (req: Request) => {
       return b;
     };
 
-    const non_trovati: { codice: string; scheda: string }[] = [];
+    const non_trovati: { codice: string; scheda: string; riga: Record<string, string> }[] = [];
     const tabs: Record<string, number> = {};
     const colonne_categoria = new Set<string>();
     const colonne_ignorate = new Set<string>();
@@ -331,7 +331,20 @@ Deno.serve(async (req: Request) => {
           pid ??= byProduct.get(cod);
           if (!pid) vid ??= byVariant.get(cod);
         }
-        if (!pid && !vid) { non_trovati.push({ codice: codici[0], scheda: cfg.tab }); continue; }
+        if (!pid && !vid) {
+          /* Il codice da solo non dice niente: «manca L2F22291» costringe ad
+             andare a cercare nel foglio cosa sia. Riportiamo le colonne
+             descrittive della riga, così dal pannello si vede il prodotto e
+             lo si può creare senza indovinare. Prezzi compresi: sono quelli
+             che il sync applicherà da solo appena il codice esiste. */
+          const riga: Record<string, string> = {};
+          for (const k of ["nome", "gamma", "imballo", "specifiche", "applicazione", "listino", "netto", "netto_nord"]) {
+            const v = r[k];
+            if (v != null && String(v).trim() !== "") riga[k] = String(v).trim();
+          }
+          non_trovati.push({ codice: codici[0], scheda: cfg.tab, riga });
+          continue;
+        }
 
         // ---- prezzo base ----
         if (pid) {

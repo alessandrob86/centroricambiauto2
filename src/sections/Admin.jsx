@@ -2872,14 +2872,33 @@ function PannelloAdmin() {
                     {ultimoSync.non_trovati.slice(0, 200).map((n, i) => {
                       const codice = typeof n === "string" ? n : n.codice;
                       const scheda = typeof n === "string" ? "" : n.scheda;
+                      /* Le colonne descrittive del foglio: il codice da solo
+                         costringe ad andare a cercare cosa sia. */
+                      const riga = (typeof n === "object" && n.riga) || {};
+                      const descrizione = [riga.nome, riga.gamma, riga.imballo].filter(Boolean).join(" · ");
+                      const prezzi = [
+                        riga.listino ? `listino ${riga.listino}` : null,
+                        (riga.netto ?? riga.netto_nord) ? `netto ${riga.netto ?? riga.netto_nord}` : null,
+                      ].filter(Boolean).join(" · ");
                       return (
-                        <div key={`${codice}-${i}`} className="adm-item" style={{ padding: "6px 10px" }}>
+                        <div key={`${codice}-${i}`} className="adm-item" style={{ padding: "7px 10px", alignItems: "flex-start" }}>
                           <span className="adm-num" style={{ minWidth: "140px" }}>{codice}</span>
-                          <span className="adm-sub" style={{ flex: 1 }}>{scheda}</span>
+                          <span className="adm-sub" style={{ flex: 1, textTransform: "none", letterSpacing: 0 }}>
+                            {descrizione || scheda}
+                            {descrizione && <><br /><span style={{ opacity: 0.7 }}>{scheda}{prezzi ? ` · ${prezzi}` : ""}</span></>}
+                            {riga.specifiche && <><br /><span style={{ opacity: 0.7 }}>{riga.specifiche}</span></>}
+                          </span>
                           <button className="adm-btn ghost mini" onClick={() => {
                             setTab("prodotti");
                             resetForm();
-                            setForm((f) => ({ ...f, codice }));
+                            // Si porta dietro quello che il foglio sa già: il
+                            // nome scritto a mano una seconda volta è il modo
+                            // più facile per farlo diverso dal foglio.
+                            setForm((f) => ({
+                              ...f, codice,
+                              nome: riga.nome || f.nome,
+                              prezzo: riga.listino || f.prezzo,
+                            }));
                             window.scrollTo({ top: 0, behavior: "smooth" });
                           }}>Crea a catalogo</button>
                         </div>
