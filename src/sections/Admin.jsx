@@ -16,7 +16,7 @@ import {
   getAttivita,
   contaEtichetteLocali, caricaEtichette, spostaEtichette, baseEtichette,
   contaDocumentiLocali, caricaDocumenti, spostaDocumenti, baseDocumenti,
-  rinominaMedia, getTipiDocumento, mediaNonUsati, togliMediaNonUsati,
+  rinominaMedia, getTipiDocumento, mediaNonUsati, togliMediaNonUsati, mediaAppenaCaricati,
 } from "../lib/adminApi.js";
 
 /* ============================================================
@@ -40,11 +40,13 @@ function Trasloco({ titolo, spiega, cartella, base, conta, carica, sposta, esito
      Non danno fastidio, ma nessuno sa più quali siano — e non saperlo è il
      motivo per cui poi non si cancellano mai. */
   const [inutili, setInutili] = useState(null);
+  const [recenti, setRecenti] = useState(0);
   const [pulendo, setPulendo] = useState(false);
 
   const aggiorna = useCallback(() => {
     conta().then(setStato).catch(() => setErr("Non riesco a contare i file da spostare."));
     mediaNonUsati(cartella).then(setInutili).catch(() => setInutili(null));
+    mediaAppenaCaricati(cartella).then(setRecenti).catch(() => setRecenti(0));
   }, [conta, cartella, setErr]);
   useEffect(() => { aggiorna(); }, [aggiorna]);
 
@@ -160,6 +162,10 @@ function Trasloco({ titolo, spiega, cartella, base, conta, carica, sposta, esito
           <b>{inutili.length} file nel deposito non sono richiamati da nessun prodotto</b>
           {" "}({(inutili.reduce((t, f) => t + f.byte, 0) / 1048576).toFixed(1)} MB).
           Restano dopo una rinomina, o quando il selettore si porta dietro una sottocartella.
+          {recenti > 0 && (
+            <> I <b>{recenti}</b> caricati nelle ultime 24 ore non sono in elenco: quasi sempre
+            sono lavoro in corso, non ancora agganciato a un prodotto.</>
+          )}
           <details style={{ marginTop: "6px" }}>
             <summary style={{ cursor: "pointer" }}>Vedi quali</summary>
             <ul style={{ margin: "6px 0 0 18px" }}>

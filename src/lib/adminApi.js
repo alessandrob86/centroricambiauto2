@@ -669,6 +669,14 @@ export async function mediaNonUsati(cartella) {
   return (data ?? []).map((r) => ({ nome: r.nome, byte: Number(r.byte), caricato: r.caricato }));
 }
 
+/** Quanti file sono stati caricati nelle ultime ore: non entrano
+ *  nell'elenco dei "non usati" perché quasi sempre sono lavoro in corso. */
+export async function mediaAppenaCaricati(cartella) {
+  const { data, error } = await supabase.rpc("media_appena_caricati", { p_cartella: cartella });
+  if (error) return 0;
+  return Number(data ?? 0);
+}
+
 /** Li toglie dal deposito. Si passano i nomi appena letti, non un filtro:
  *  fra la lettura e la cancellazione qualcuno potrebbe aver ricollegato un
  *  file, e cancellare «tutto ciò che non serve» due volte non è la stessa
