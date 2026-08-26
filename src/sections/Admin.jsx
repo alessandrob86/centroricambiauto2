@@ -16,7 +16,7 @@ import {
   getAttivita,
   contaEtichetteLocali, caricaEtichette, spostaEtichette, baseEtichette,
   contaDocumentiLocali, caricaDocumenti, spostaDocumenti, baseDocumenti,
-  rinominaMedia, getTipiDocumento,
+  rinominaMedia, getTipiDocumento, mediaNonUsati, togliMediaNonUsati,
 } from "../lib/adminApi.js";
 
 /* ============================================================
@@ -35,10 +35,35 @@ function Trasloco({ titolo, spiega, cartella, base, conta, carica, sposta, esito
   const [avanz, setAvanz] = useState({ fatti: 0, totale: 0 });
   const [esito, setEsito] = useState(null);
 
+  /* I file che nessun prodotto richiama più: restano dopo una rinomina o
+     quando il selettore di cartelle si porta dietro roba che non c'entra.
+     Non danno fastidio, ma nessuno sa più quali siano — e non saperlo è il
+     motivo per cui poi non si cancellano mai. */
+  const [inutili, setInutili] = useState(null);
+  const [pulendo, setPulendo] = useState(false);
+
   const aggiorna = useCallback(() => {
     conta().then(setStato).catch(() => setErr("Non riesco a contare i file da spostare."));
-  }, [conta, setErr]);
+    mediaNonUsati(cartella).then(setInutili).catch(() => setInutili(null));
+  }, [conta, cartella, setErr]);
   useEffect(() => { aggiorna(); }, [aggiorna]);
+
+  const pulisci = async () => {
+    const peso = (inutili.reduce((t, f) => t + f.byte, 0) / 1048576).toFixed(1);
+    const elenco = inutili.slice(0, 12).map((f) => `· ${f.nome}`).join("\n");
+    const altri = inutili.length > 12 ? `\n… e altri ${inutili.length - 12}` : "";
+    if (!window.confirm(
+      `Tolgo ${inutili.length} file dal deposito (${peso} MB)?\n\n${elenco}${altri}\n\n`
+      + "Nessuno di questi è richiamato da un prodotto. Non si recuperano.")) return;
+    setPulendo(true);
+    try {
+      // Si passano i nomi appena letti, non «tutto ciò che non serve»: fra la
+      // lettura e adesso qualcuno potrebbe averne ricollegato uno.
+      await togliMediaNonUsati(cartella, inutili.map((f) => f.nome));
+      aggiorna();
+    } catch (e) { setErr(String(e?.message || "Pulizia non riuscita.")); }
+    finally { setPulendo(false); }
+  };
 
   const scegli = async (files) => {
     if (!files?.length) return;
@@ -129,6 +154,26 @@ function Trasloco({ titolo, spiega, cartella, base, conta, carica, sposta, esito
       <p className="adm-sub" style={{ marginTop: "8px", opacity: 0.75 }}>
         Destinazione: <code>{base()}</code>
       </p>
+
+      {inutili?.length > 0 && (
+        <div className="adm-sub" style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid var(--border-subtle, #e2e0da)" }}>
+          <b>{inutili.length} file nel deposito non sono richiamati da nessun prodotto</b>
+          {" "}({(inutili.reduce((t, f) => t + f.byte, 0) / 1048576).toFixed(1)} MB).
+          Restano dopo una rinomina, o quando il selettore si porta dietro una sottocartella.
+          <details style={{ marginTop: "6px" }}>
+            <summary style={{ cursor: "pointer" }}>Vedi quali</summary>
+            <ul style={{ margin: "6px 0 0 18px" }}>
+              {inutili.map((f) => (
+                <li key={f.nome}>{f.nome} <span style={{ opacity: 0.7 }}>· {Math.round(f.byte / 1024)} kB</span></li>
+              ))}
+            </ul>
+          </details>
+          <button className="adm-btn ghost mini" style={{ marginTop: "8px" }}
+            disabled={pulendo} onClick={pulisci}>
+            <Icon name="trash-2" size={13} /> {pulendo ? "Tolgo…" : `Togli i ${inutili.length} file`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

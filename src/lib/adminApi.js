@@ -660,6 +660,27 @@ export async function spostaEtichette() {
   return { principali: Number(r.immagini_principali ?? 0), galleria: Number(r.in_galleria ?? 0) };
 }
 
+/** I file del deposito che nessun prodotto richiama più.
+ *  Il confronto lo fa il database: la verità su «chi punta a cosa» sta lì, e
+ *  un elenco calcolato male porterebbe a cancellare roba ancora in uso. */
+export async function mediaNonUsati(cartella) {
+  const { data, error } = await supabase.rpc("media_non_usati", { p_cartella: cartella });
+  if (error) throw error;
+  return (data ?? []).map((r) => ({ nome: r.nome, byte: Number(r.byte), caricato: r.caricato }));
+}
+
+/** Li toglie dal deposito. Si passano i nomi appena letti, non un filtro:
+ *  fra la lettura e la cancellazione qualcuno potrebbe aver ricollegato un
+ *  file, e cancellare «tutto ciò che non serve» due volte non è la stessa
+ *  cosa che cancellare quei file lì. */
+export async function togliMediaNonUsati(cartella, nomi) {
+  if (!nomi?.length) return 0;
+  const { data, error } = await supabase.storage
+    .from(BUCKET_PRODOTTI).remove(nomi.map((n) => `${cartella}/${n}`));
+  if (error) throw error;
+  return data?.length ?? 0;
+}
+
 /** I documenti che accompagnano la merce, per la scheda officina. */
 export async function getTipiDocumento() {
   const { data, error } = await supabase.rpc("tipi_documento_attivi");
