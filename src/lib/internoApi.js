@@ -587,6 +587,53 @@ export async function getRiepilogo(filtri = {}) {
   return numerico(data?.[0] ?? RIEPILOGO_VUOTO);
 }
 
+/* ============ Inviti al personale ============
+
+   Prima un collega entrava solo se qualcuno lo invitava dal pannello di
+   Supabase: una cosa da amministratore di sistema, per una faccenda
+   ordinaria. Con un codice monouso il giro si chiude qui dentro.
+
+   Il codice è legato per forza all'indirizzo aziendale della scheda, e il
+   collegamento vero avviene quando quell'indirizzo viene confermato: il
+   codice da solo non basta a farsi passare per un collega. */
+
+/** Gli inviti aperti del personale: { dipendenteId: invito }. */
+export async function getInvitiDipendenti() {
+  const { data, error } = await supabase
+    .from("inviti")
+    .select("codice, dipendente_id, email, scade_il, usato_il, inviato_il")
+    .not("dipendente_id", "is", null)
+    .is("usato_il", null)
+    .order("created_at", { ascending: false });
+  if (error) return {};
+  const out = {};
+  for (const i of data ?? []) if (!out[i.dipendente_id]) out[i.dipendente_id] = i;
+  return out;
+}
+
+export async function creaInvitoDipendente(dipendenteId, giorni = 14) {
+  const { data, error } = await supabase.rpc("crea_invito_dipendente", {
+    p_dipendente: dipendenteId, p_giorni: giorni,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** Manda il codice per email, dal mittente aziendale verificato. */
+export async function inviaInvito(codice) {
+  const { data, error } = await supabase.functions.invoke("invia-invito", {
+    body: { codice, sito: window.location.origin },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+export async function annullaInvito(codice) {
+  const { error } = await supabase.from("inviti").delete().eq("codice", codice);
+  if (error) throw error;
+}
+
 /* ============ Manutenzione ============ */
 
 const VECCHIO_DEPOSITO = "https://kliqbpdqufsgniqspbrb.supabase.co/storage/v1/object/public/card-center/";

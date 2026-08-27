@@ -1212,3 +1212,11 @@
     pointer-events: none;
   }
 }
+
+/* Il codice d'invito di un collega, dentro la tabella delle persone:
+   si legge al telefono, quindi spaziato e monospaziato. */
+.dip-codice-invito {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 15px; font-weight: 700; letter-spacing: .14em;
+  color: var(--text-strong);
+}

@@ -30,8 +30,8 @@ export async function creaInvito({ officinaId = null, email = null, nota = null,
 /** Gli inviti di una scheda, il più recente per primo. */
 export async function getInviti(officinaId) {
   const { data, error } = await supabase
-    .from("inviti_cliente")
-    .select("codice, email, nota, created_at, scade_il, usato_il")
+    .from("inviti")
+    .select("codice, email, nota, created_at, scade_il, usato_il, inviato_il")
     .eq("officina_id", officinaId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -40,8 +40,20 @@ export async function getInviti(officinaId) {
 
 /** Ritira un codice non ancora usato. */
 export async function annullaInvito(codice) {
-  const { error } = await supabase.from("inviti_cliente").delete().eq("codice", codice);
+  const { error } = await supabase.from("inviti").delete().eq("codice", codice);
   if (error) throw error;
+}
+
+/** Manda il codice per email, dal mittente aziendale verificato. Passa
+ *  l'indirizzo del sito perché il link dentro l'email sia quello giusto:
+ *  la funzione lo accetta solo se è uno dei nostri domini. */
+export async function inviaInvito(codice) {
+  const { data, error } = await supabase.functions.invoke("invia-invito", {
+    body: { codice, sito: window.location.origin },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
 }
 
 /** Fonde una registrazione nell'anagrafica vera: l'accesso e i recapiti si

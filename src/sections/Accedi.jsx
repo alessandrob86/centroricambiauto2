@@ -115,13 +115,26 @@ export function Accedi({ onNavigate }) {
     return () => clearTimeout(t);
   }, [invito]);
 
-  /* Se il codice porta con sé una ragione sociale, si scrive da sola: è
-     quella del gestionale, ed è quella che conta. */
+  /* Un codice può essere di due specie, e cambiano il modulo. Se è di un
+     CLIENTE, la ragione sociale si scrive da sola: è quella del gestionale,
+     ed è quella che conta. Se è di un COLLEGA, la ragione sociale non c'entra
+     nulla — si chiede solo la password, perché nome, ruolo e filiale sono
+     già nella sua scheda. */
+  const perCollega = esitoInvito?.valido === true && esitoInvito.tipo === "dipendente";
+
   useEffect(() => {
-    if (esitoInvito?.valido && esitoInvito.per && !ragioneSociale.trim()) {
+    if (esitoInvito?.valido && esitoInvito.tipo === "officina"
+        && esitoInvito.per && !ragioneSociale.trim()) {
       setRagioneSociale(esitoInvito.per);
     }
   }, [esitoInvito, ragioneSociale]);
+
+  /* Il codice del personale è legato a un indirizzo preciso: scriverne un
+     altro lo farebbe rifiutare dal database senza spiegazioni, quindi qui
+     l'email si compila da sola e non si tocca. */
+  useEffect(() => {
+    if (perCollega && esitoInvito.vincolato_a) setEmail(esitoInvito.vincolato_a);
+  }, [perCollega, esitoInvito]);
 
   const onRegister = async (e) => {
     e.preventDefault();
@@ -302,7 +315,14 @@ export function Accedi({ onNavigate }) {
                     <React.Fragment>
                       <Icon name="check" size={14} color="#2E7D4F" />
                       <span style={{ color: "#2E7D4F" }}>
-                        Attiverai l'accesso per <strong>{esitoInvito.per ?? "la tua officina"}</strong>
+                        {perCollega
+                          ? <React.Fragment>
+                              Stai attivando l'accesso di <strong>{esitoInvito.per ?? "un collega"}</strong>
+                              {esitoInvito.ruolo ? ` — ${esitoInvito.ruolo}` : ""}
+                            </React.Fragment>
+                          : <React.Fragment>
+                              Attiverai l'accesso per <strong>{esitoInvito.per ?? "la tua officina"}</strong>
+                            </React.Fragment>}
                       </span>
                     </React.Fragment>
                   ) : invito.length >= 9 ? (
@@ -315,27 +335,42 @@ export function Accedi({ onNavigate }) {
                   ) : "Se te l'abbiamo dato, inseriscilo: ti colleghiamo alla tua scheda. Altrimenti lascialo vuoto."}
               </p>
             </div>
-            <Input label="Ragione sociale *" required value={ragioneSociale}
-              onChange={(e) => setRagioneSociale(e.target.value)} placeholder="Officina Rossi S.r.l." />
+            {!perCollega && (
+              <Input label="Ragione sociale *" required value={ragioneSociale}
+                onChange={(e) => setRagioneSociale(e.target.value)} placeholder="Officina Rossi S.r.l." />
+            )}
             <Input label="Email *" type="email" autoComplete="email" required value={email}
+              disabled={perCollega}
+              title={perCollega ? "Il codice è legato a questo indirizzo" : undefined}
               onChange={(e) => setEmail(e.target.value)} placeholder="officina@email.it" />
             <Input label="Password * (min 8 caratteri)" type="password" autoComplete="new-password" required minLength={8} value={password}
               onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "var(--space-4)" }}>
-              <Input label="Partita IVA" value={piva}
-                onChange={(e) => setPiva(e.target.value)} placeholder="IT01234567890" />
-              <Input label="Telefono" type="tel" value={telefono}
-                onChange={(e) => setTelefono(e.target.value)} placeholder="081 …" />
-            </div>
-            <Input label="Città" value={citta}
-              onChange={(e) => setCitta(e.target.value)} placeholder="Napoli" />
+            {!perCollega && (
+              <React.Fragment>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "var(--space-4)" }}>
+                  <Input label="Partita IVA" value={piva}
+                    onChange={(e) => setPiva(e.target.value)} placeholder="IT01234567890" />
+                  <Input label="Telefono" type="tel" value={telefono}
+                    onChange={(e) => setTelefono(e.target.value)} placeholder="081 …" />
+                </div>
+                <Input label="Città" value={citta}
+                  onChange={(e) => setCitta(e.target.value)} placeholder="Napoli" />
+              </React.Fragment>
+            )}
             <Button type="submit" variant="primary" fullWidth disabled={busy}
               iconRight={<Icon name="user-plus" size={16} />}>
-              {busy ? "Invio…" : "Registra officina"}
+              {busy ? "Invio…" : perCollega ? "Crea il tuo accesso" : "Registra officina"}
             </Button>
             <p className="cra-meta" style={{ margin: 0 }}>
-              La registrazione è soggetta ad approvazione: dopo la verifica dei dati
-              attiveremo l'invio delle <strong>proposte d'ordine</strong> sul CRA Store.
+              {perCollega
+                ? <React.Fragment>
+                    Dopo la registrazione ti arriva un'email di conferma: <strong>è quel clic</strong> che
+                    collega la tua scheda — ruolo e filiale ci sono già.
+                  </React.Fragment>
+                : <React.Fragment>
+                    La registrazione è soggetta ad approvazione: dopo la verifica dei dati
+                    attiveremo l'invio delle <strong>proposte d'ordine</strong> sul CRA Store.
+                  </React.Fragment>}
             </p>
           </form>
         )}

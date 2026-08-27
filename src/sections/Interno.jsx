@@ -3219,14 +3219,16 @@ function Gestione({ isAdmin, zone, setErr }) {
   const [moduli, setModuli] = useState([]);
   const [permessi, setPermessi] = useState([]);
   const [avvii, setAvvii] = useState({});
+  const [inviti, setInviti] = useState({});
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const carica = useCallback(async () => {
-    const [d, m, p, av] = await Promise.all([
-      api.getDipendenti(), api.getTuttiModuli(), api.getPermessi(), api.getAvvioRuoli(),
+    const [d, m, p, av, inv] = await Promise.all([
+      api.getDipendenti(), api.getTuttiModuli(), api.getPermessi(),
+      api.getAvvioRuoli(), api.getInvitiDipendenti(),
     ]);
-    setDip(d); setModuli(m); setPermessi(p); setAvvii(av);
+    setDip(d); setModuli(m); setPermessi(p); setAvvii(av); setInviti(inv);
   }, []);
   useEffect(() => { carica().catch(() => setErr("Non riesco a caricare la gestione.")); }, [carica, setErr]);
 
@@ -3335,7 +3337,8 @@ function Gestione({ isAdmin, zone, setErr }) {
                     <td>
                       {d.user_id
                         ? <span className="dip-esito accettata">collegato</span>
-                        : <span className="dip-esito">da invitare</span>}
+                        : <InvitoPersona persona={d} invito={inviti[d.id]}
+                            onCambio={carica} setErr={setErr} />}
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <button className="adm-btn ghost mini"
@@ -3349,8 +3352,9 @@ function Gestione({ isAdmin, zone, setErr }) {
             </TabellaSchede>
           </div>
           <p className="dip-sub" style={{ marginTop: "10px" }}>
-            Chi risulta <b>da invitare</b> non ha ancora le credenziali: si creano da
-            Supabase → Authentication → Users → Invite, con la stessa email.
+            Chi non è ancora <b>collegato</b> non ha le credenziali. Genera il codice e mandaglielo:
+            si registra da solo con il suo indirizzo aziendale, e la scheda — ruolo e filiale
+            compresi — si aggancia quando conferma l'email.
           </p>
         </React.Fragment>
       )}
@@ -3545,5 +3549,96 @@ function Manutenzione({ setErr }) {
         )}
       </div>
     </React.Fragment>
+  );
+}
+
+/* ============================================================
+   INVITO A UN COLLEGA — il codice, e i due modi per mandarlo.
+
+   Due strade sole, volutamente. L'email parte dal sistema col mittente
+   verificato dell'azienda: è quella che arriva davvero, invece di finire
+   nello spam come farebbe un mittente automatico qualunque. «Copia» mette
+   negli appunti l'invito già scritto, da incollare su WhatsApp a mano.
+   ============================================================ */
+function InvitoPersona({ persona, invito, onCambio, setErr }) {
+  const [busy, setBusy] = useState(false);
+  const [copiato, setCopiato] = useState(false);
+
+  const testo = (codice) => {
+    const dove = `${window.location.origin}/#/login`;
+    const nome = `${persona.nome ?? ""}`.trim();
+    return [
+      `Ciao${nome ? " " + nome : ""},`,
+      "",
+      "ti ho attivato l'accesso all'area interna del sito: bacheca, Card",
+      "Center, i tuoi clienti e le proposte d'ordine.",
+      "",
+      `Registrati qui: ${dove}`,
+      `Codice invito: ${codice}`,
+      "",
+      `Usa il tuo indirizzo aziendale (${persona.email ?? "quello dell'ufficio"}):`,
+      "il codice è legato a quello.",
+    ].join("\n");
+  };
+
+  const genera = async () => {
+    setBusy(true); setErr(null);
+    try { await api.creaInvitoDipendente(persona.id); onCambio?.(); }
+    catch (e) { setErr(String(e?.message || "Non riesco a creare il codice.")); }
+    finally { setBusy(false); }
+  };
+
+  const manda = async () => {
+    setBusy(true); setErr(null);
+    try { await api.inviaInvito(invito.codice); onCambio?.(); }
+    catch (e) { setErr(String(e?.message || "L'email non è partita.")); }
+    finally { setBusy(false); }
+  };
+
+  const copia = async () => {
+    try {
+      await navigator.clipboard.writeText(testo(invito.codice));
+      setCopiato(true);
+      setTimeout(() => setCopiato(false), 2200);
+    } catch { setErr("Il browser non mi lascia copiare: selezionalo a mano."); }
+  };
+
+  if (!invito) {
+    return (
+      <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+        <span className="dip-esito">da invitare</span>
+        <button type="button" className="adm-btn ghost mini" onClick={genera} disabled={busy}
+          title={persona.email ? `Genera il codice per ${persona.email}` : "La scheda non ha un'email: aggiungila prima"}>
+          <Icon name="key-round" size={12} /> Genera il codice
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <span style={{ display: "inline-flex", flexDirection: "column", gap: "6px", alignItems: "flex-start" }}>
+      <code className="dip-codice-invito">{invito.codice}</code>
+      <span className="dip-sub">
+        {invito.inviato_il
+          ? `inviato il ${dataIt(invito.inviato_il)}`
+          : "non ancora inviato"}
+        {" · scade il "}{dataIt(invito.scade_il)}
+      </span>
+      <span style={{ display: "inline-flex", gap: "6px", flexWrap: "wrap" }}>
+        <button type="button" className="adm-btn mini" onClick={manda} disabled={busy}>
+          <Icon name="mail" size={12} /> {invito.inviato_il ? "rimanda" : "email"}
+        </button>
+        <button type="button" className="adm-btn ghost mini" onClick={copia}>
+          <Icon name={copiato ? "check" : "copy"} size={12} /> {copiato ? "invito copiato" : "copia"}
+        </button>
+        <button type="button" className="adm-btn ghost mini" title="Ritira questo codice"
+          onClick={async () => {
+            try { await api.annullaInvito(invito.codice); onCambio?.(); }
+            catch { setErr("Non riesco a ritirare il codice."); }
+          }}>
+          <Icon name="x" size={12} />
+        </button>
+      </span>
+    </span>
   );
 }

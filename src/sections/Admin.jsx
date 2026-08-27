@@ -17,7 +17,7 @@ import {
   contaEtichetteLocali, caricaEtichette, spostaEtichette, baseEtichette,
   contaDocumentiLocali, caricaDocumenti, spostaDocumenti, baseDocumenti,
   rinominaMedia, getTipiDocumento, mediaNonUsati, togliMediaNonUsati, mediaAppenaCaricati,
-  creaInvito, getInviti, annullaInvito, agganciaOfficina, staccaOfficina,
+  creaInvito, getInviti, annullaInvito, inviaInvito, agganciaOfficina, staccaOfficina,
 } from "../lib/adminApi.js";
 
 /* ============================================================
@@ -3058,53 +3058,29 @@ function Accesso({ officina, onCambio, setErr }) {
     finally { setBusy(false); }
   };
 
+  /* Copiare il solo codice non basta: chi lo riceve deve sapere dove
+     metterlo. Negli appunti finisce l'invito intero, pronto da incollare in
+     WhatsApp. L'indirizzo si prende da dove sta girando il sito, così il
+     giorno che punterai il dominio vero il testo cambia da solo. */
+  const testoInvito = (c) => testoInvitoCliente(officina.ragione_sociale, c);
+
   const copia = async (c) => {
     try {
-      await navigator.clipboard.writeText(c);
+      await navigator.clipboard.writeText(testoInvito(c));
       setCopiato(c);
-      setTimeout(() => setCopiato(null), 1600);
+      setTimeout(() => setCopiato(null), 2200);
     } catch { setErr("Il browser non mi lascia copiare: selezionalo a mano."); }
   };
 
-  /* Un codice senza le istruzioni non serve a niente: chi lo riceve deve
-     sapere dove metterlo. L'indirizzo si prende da dove sta girando il sito,
-     così il giorno che punterai il dominio vero il testo cambia da solo. */
-  const testoInvito = (c) => {
-    const dove = `${window.location.origin}/#/login`;
-    return [
-      `Buongiorno${officina.ragione_sociale ? " " + officina.ragione_sociale : ""},`,
-      "",
-      "abbiamo attivato l'accesso riservato al CRA Store: catalogo, prezzi",
-      "riservati e proposte d'ordine, senza pagamenti online.",
-      "",
-      `Per entrare, registratevi qui: ${dove}`,
-      `e inserite questo codice invito: ${c}`,
-      "",
-      "Il codice vale una volta sola e scade fra trenta giorni. Dopo la",
-      "registrazione verificheremo i dati e attiveremo l'accesso.",
-      "",
-      "Centro Ricambi Auto",
-    ].join("\n");
+  const manda = async (c) => {
+    if (!officina.email) { setErr("Questa scheda non ha un'email: aggiungila qui sopra."); return; }
+    setBusy(true); setErr(null);
+    try {
+      await inviaInvito(c);
+      await caricaInviti();
+    } catch (e) { setErr(String(e?.message || "L'email non è partita.")); }
+    finally { setBusy(false); }
   };
-
-  const perEmail = (c) => {
-    const oggetto = "Il vostro accesso al CRA Store";
-    return `mailto:${encodeURIComponent(officina.email ?? "")}` +
-      `?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(testoInvito(c))}`;
-  };
-
-  /* WhatsApp vuole il prefisso internazionale, e un fisso non ha WhatsApp:
-     senza questi due controlli il link portava a una chat sbagliata o a
-     nessuna. In Italia i cellulari cominciano per 3. */
-  const numeroWhatsapp = () => {
-    let num = String(officina.telefono ?? "").replace(/[^0-9]/g, "");
-    if (num.startsWith("00")) num = num.slice(2);
-    if (num.startsWith("39")) return num.length >= 11 ? num : null;
-    return num.startsWith("3") && num.length >= 9 ? "39" + num : null;
-  };
-
-  const perWhatsapp = (c) =>
-    `https://wa.me/${numeroWhatsapp()}?text=${encodeURIComponent(testoInvito(c))}`;
 
   const aggancia = async (anagrafica) => {
     if (!window.confirm(
@@ -3148,25 +3124,25 @@ function Accesso({ officina, onCambio, setErr }) {
           {aperti.map((i) => (
             <div key={i.codice} className="adm-invito">
               <code className="adm-invito-codice">{i.codice}</code>
-              <span className="adm-sub">scade il {new Date(i.scade_il).toLocaleDateString("it-IT")}</span>
+              <span className="adm-sub">
+                {i.inviato_il
+                  ? `inviato il ${new Date(i.inviato_il).toLocaleDateString("it-IT")}`
+                  : "non ancora inviato"}
+                {" · scade il "}{new Date(i.scade_il).toLocaleDateString("it-IT")}
+              </span>
               <span style={{ marginLeft: "auto", display: "inline-flex", gap: "6px", flexWrap: "wrap" }}>
+                {/* Due strade sole. L'email parte dal sistema col mittente
+                    verificato dell'azienda; «copia» mette negli appunti
+                    l'invito già scritto, da incollare a mano su WhatsApp. */}
+                <button type="button" className="adm-btn mini" onClick={() => manda(i.codice)}
+                  disabled={busy || !officina.email}
+                  title={officina.email ? `Manda a ${officina.email}` : "Questa scheda non ha un'email"}>
+                  <Icon name="mail" size={13} /> {i.inviato_il ? "rimanda" : "email"}
+                </button>
                 <button type="button" className="adm-btn ghost mini" onClick={() => copia(i.codice)}>
                   <Icon name={copiato === i.codice ? "check" : "copy"} size={13} />
-                  {copiato === i.codice ? "copiato" : "copia"}
+                  {copiato === i.codice ? "invito copiato" : "copia"}
                 </button>
-                {/* L'email si apre nel programma di posta dell'azienda: parte
-                    dal tuo indirizzo vero, non da un mittente automatico che
-                    finisce nello spam. Il testo è già scritto. */}
-                <a className="adm-btn ghost mini" href={perEmail(i.codice)}
-                   title={officina.email ? `Scrivi a ${officina.email}` : "L'officina non ha un'email: la aggiungi sopra"}>
-                  <Icon name="mail" size={13} /> email
-                </a>
-                {numeroWhatsapp() && (
-                  <a className="adm-btn ghost mini" href={perWhatsapp(i.codice)}
-                     target="_blank" rel="noopener noreferrer" title="Manda il codice su WhatsApp">
-                    <Icon name="message-circle" size={13} /> whatsapp
-                  </a>
-                )}
                 <button type="button" className="adm-btn ghost mini" title="Ritira questo codice"
                   onClick={async () => {
                     try { await annullaInvito(i.codice); await caricaInviti(); }
@@ -3223,4 +3199,25 @@ function Accesso({ officina, onCambio, setErr }) {
       )}
     </div>
   );
+}
+
+/* Il testo che finisce negli appunti. Sta fuori dal componente perché è
+   contenuto, non comportamento: si legge tutto insieme e si corregge senza
+   entrare nella logica. Deve stare in un messaggio WhatsApp, quindi corto. */
+function testoInvitoCliente(ragioneSociale, codice) {
+  const dove = `${window.location.origin}/#/login`;
+  return [
+    `Buongiorno${ragioneSociale ? " " + ragioneSociale : ""},`,
+    "",
+    "abbiamo attivato il vostro accesso al CRA Store: catalogo, i vostri",
+    "prezzi e le proposte d'ordine. Nessun pagamento online.",
+    "",
+    `Registratevi qui: ${dove}`,
+    `Codice invito: ${codice}`,
+    "",
+    "Il codice vale una volta sola. Dopo la registrazione verifichiamo i",
+    "dati e attiviamo l'accesso.",
+    "",
+    "Centro Ricambi Auto",
+  ].join("\n");
 }

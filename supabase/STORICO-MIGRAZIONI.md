@@ -149,7 +149,10 @@ repository e ci resta.
 | 122 | 2026-08-26 | aggancio_libera_prima_l_accesso | 3.900 |
 | 123 | 2026-08-26 | aggancio_colonne_giuste | 3.700 |
 | 124 | 2026-08-26 | corsi_notifiche_e_offerte_a_posto | 4.900 |
-| 125 | 2026-08-26 | cra_prezzo_riga_a_contenitore | 3.400 |
+| 125 | 2026-08-27 | cra_prezzo_riga_a_contenitore | 3.400 |
+| 126 | 2026-08-27 | inviti_anche_per_il_personale | 6.900 |
+| 127 | 2026-08-27 | invito_personale_solo_a_email_confermata | 3.500 |
+| 128 | 2026-08-27 | inviti_traccia_l_invio | 260 |
 
 ## Dove guardare per capire una cosa
 
@@ -166,6 +169,6 @@ repository e ci resta.
 | Documenti da emettere al cliente | 107-111 |
 | Pulizia dei file non più usati | 112-113 |
 | Dove si atterra dopo il login | 114 |
-| Come entra un cliente (inviti, aggancio) | 120-123 |
+| Come entra un cliente o un collega (inviti) | 120-123, 126-128 |
 | Ordini: numero, stato e totali imposti | 119 |
 | Notifiche: a chi arrivano e dove portano | 116, 124 |
