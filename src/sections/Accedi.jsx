@@ -25,7 +25,19 @@ function traduciErrore(msg) {
   if (m.includes("email not confirmed")) return "Devi prima confermare la tua email.";
   if (m.includes("password")) return "Password non valida (minimo 8 caratteri).";
   if (m.includes("rate limit")) return "Troppi tentativi. Riprova tra qualche minuto.";
-  return msg;
+  /* Quando il server di posta rifiuta, la registrazione viene annullata per
+     intero e chi sta davanti allo schermo non ha nessuna colpa: dirgli di
+     riprovare lo manderebbe in un giro a vuoto. Meglio mandarlo da noi. */
+  if (m.includes("sending") || m.includes("smtp") || m.includes("mail"))
+    return "Non siamo riusciti a mandare l'email di conferma. Non dipende da te: "
+      + "riprova fra poco o scrivici, sistemiamo noi.";
+  /* Rete di sicurezza: un errore senza testo — o con un testo che non dice
+     niente, come «{}» — riempiva il riquadro rosso di parentesi graffe.
+     Meglio una frase vera che una cosa che sembra un guasto del sito. */
+  const pulito = (msg || "").trim();
+  if (!pulito || pulito === "{}" || pulito === "[object Object]" || pulito.length < 4)
+    return "Qualcosa non ha funzionato. Riprova fra poco: se continua, scrivici.";
+  return pulito;
 }
 
 const card = {
@@ -306,7 +318,10 @@ export function Accedi({ onNavigate }) {
             }}
             onClick={() => { setMode("register"); setErr(null); }}
           >
-            <Icon name="user-plus" size={15} /> Registra officina
+            {/* «Registrati» e non «Registra officina»: da qui passa anche il
+                personale, e a un collega che sta attivando il suo accesso la
+                parola «officina» dice la cosa sbagliata. */}
+            <Icon name="user-plus" size={15} /> Registrati
           </button>
         </div>
 
