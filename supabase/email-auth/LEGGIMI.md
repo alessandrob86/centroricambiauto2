@@ -61,19 +61,35 @@ contenuto del file `.html` corrispondente nel riquadro del messaggio.
 
 ### Le variabili
 
-Il testo fra doppie graffe lo riempie Supabase al momento dell'invio. Quelle
-usate qui:
+Il testo fra doppie graffe lo riempie Supabase al momento dell'invio. Nei
+modelli qui dentro ce ne sono tre, non una di più:
 
 - `{{ .ConfirmationURL }}` — il link che fa la cosa. **Non toccarlo.**
 - `{{ .Email }}` — l'indirizzo a cui sta scrivendo.
-- `{{ .SiteURL }}` — l'indirizzo del sito, come configurato in
-  Authentication → URL Configuration.
+- `{{ .NewEmail }}` — solo nel cambio indirizzo: quello nuovo.
 
-⚠️ `{{ .SiteURL }}` oggi punta all'indirizzo `netlify.app`. Il giorno che
-metterai il dominio vero, va cambiato **lì**, non nei template: questi lo
-leggono da quella impostazione.
+⚠️ **Il dominio non sta nei modelli.** `{{ .ConfirmationURL }}` se lo
+costruisce Supabase a partire dal *Site URL*, che oggi è l'indirizzo
+`netlify.app`. Il giorno che punterai `centroricambiautosrl.it` va cambiato
+in **Authentication → URL Configuration**, e questi file non si toccano.
+Se te ne dimentichi, le email continueranno a portare i clienti sul vecchio
+indirizzo anche dopo il passaggio al dominio nuovo.
 
 ---
+
+## Prima di considerarlo fatto
+
+Supabase non ha un pulsante «manda una prova». Il modo onesto di verificare
+è registrare un'utenza finta con un tuo indirizzo (va bene un alias, tipo
+`tuonome+prova@gmail.com`) e guardare che cosa arriva: mittente, oggetto,
+aspetto, e soprattutto **che il link funzioni**. Poi si cancella l'utenza da
+Authentication → Users.
+
+Le tre cose da guardare, in ordine di quanto fanno danno se sbagliate:
+
+1. il link porta al sito giusto (se no: *Site URL* sbagliato);
+2. il mittente dice *Centro Ricambi Auto srl* (se no: SMTP non attivo);
+3. il testo è quello nuovo (se no: hai salvato in una linguetta diversa).
 
 ## Perché i colori sono quelli
 
