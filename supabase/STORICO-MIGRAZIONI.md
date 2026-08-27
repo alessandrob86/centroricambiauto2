@@ -154,6 +154,9 @@ repository e ci resta.
 | 127 | 2026-08-27 | invito_personale_solo_a_email_confermata | 3.500 |
 | 128 | 2026-08-27 | inviti_traccia_l_invio | 260 |
 | 129 | 2026-08-27 | desk_e_clienti_solo_a_chi_vende | 1.400 |
+| 130 | 2026-08-27 | giro_di_presentazione_visto | 1.500 |
+| 131 | 2026-08-27 | il_personale_atterra_nell_area_interna | 1.100 |
+| 132 | 2026-08-27 | cancellare_un_accesso_non_cancella_la_persona | 1.600 |
 
 ## Dove guardare per capire una cosa
 
@@ -169,7 +172,8 @@ repository e ci resta.
 | Prezzo degli ordini imposto dal database | 91-92, 104-106 |
 | Documenti da emettere al cliente | 107-111 |
 | Pulizia dei file non più usati | 112-113 |
-| Dove si atterra dopo il login | 114 |
-| Come entra un cliente o un collega (inviti) | 120-123, 126-128 |
+| Dove si atterra dopo il login | 114, 131 |
+| Il giro di presentazione | 130 |
+| Come entra un cliente o un collega (inviti) | 120-123, 126-128, 132 |
 | Ordini: numero, stato e totali imposti | 119 |
 | Notifiche: a chi arrivano e dove portano | 116, 124 |
