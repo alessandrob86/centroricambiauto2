@@ -826,40 +826,6 @@
 .dip-badge-barra { display: block; height: 6px; background: var(--surface-subtle, #f2f1ed); }
 .dip-badge-barra i { display: block; height: 100%; background: var(--cra-red); }
 
-/* ---- matrice dei permessi ---- */
-.dip-permessi { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); }
-.dip-permessi th, .dip-permessi td { border: 1px solid var(--border-subtle, #e2e0da); padding: 7px 10px; }
-.dip-permessi thead th { background: var(--cra-charcoal); color: var(--cra-white); font-family: var(--font-brand); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
-.dip-permessi tbody th { text-align: left; background: var(--surface-subtle, #f2f1ed); font-weight: var(--fw-bold); }
-.dip-permessi td { text-align: center; padding: 4px; }
-.dip-permessi tbody tr:hover td { background: rgba(0, 0, 0, .02); }
-
-/* La casella dice la risposta, non chiede una domanda. */
-.dip-cella {
-  position: relative; width: 100%; min-width: 54px; height: 34px;
-  display: grid; place-items: center; cursor: pointer;
-  border: 1px solid transparent; background: none; border-radius: 0;
-  transition: background .12s ease, border-color .12s ease;
-}
-.dip-cella.si { background: #eef6f0; }
-.dip-cella.no { background: #faf0ef; }
-.dip-cella:hover { border-color: var(--border-strong, #272d2b); }
-.dip-cella:focus-visible { outline: 2px solid var(--cra-red); outline-offset: -2px; }
-/* La colonna dell'admin non è una scelta: è un fatto. Niente puntatore a
-   mano, niente bordo al passaggio — non c'è nulla da cliccare. */
-.dip-cella.bloccata { cursor: default; gap: 6px; grid-auto-flow: column; }
-.dip-cella.bloccata:hover { border-color: transparent; }
-.dip-cella.bloccata em {
-  font-style: normal; font-size: 9px; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--text-muted);
-}
-
-/* Il pallino distingue una scelta voluta da un valore ereditato. */
-.dip-cella-punto {
-  position: absolute; top: 4px; right: 4px; width: 6px; height: 6px;
-  border-radius: 50%; background: var(--cra-charcoal);
-}
-
 /* Chi preferisce non vedere movimento non lo vede: framer-motion legge
    useReducedMotion, questo copre transizioni e animazioni CSS. */
 @media (prefers-reduced-motion: reduce) {
@@ -1211,12 +1177,4 @@
     background: var(--char-200, #c9cccb);
     pointer-events: none;
   }
-}
-
-/* Il codice d'invito di un collega, dentro la tabella delle persone:
-   si legge al telefono, quindi spaziato e monospaziato. */
-.dip-codice-invito {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 15px; font-weight: 700; letter-spacing: .14em;
-  color: var(--text-strong);
 }

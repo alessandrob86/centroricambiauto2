@@ -339,3 +339,52 @@
   background: var(--surface-page, #fff); font-size: 14px;
 }
 .adm-cerca-anagrafica:focus { outline: none; border-color: var(--char-700); }
+
+/* ============================================================
+   PERSONALE — le persone e la matrice dei permessi.
+
+   Le regole della matrice sono arrivate dall'area interna insieme al
+   pannello: erano le uniche .dip-* che nessun altro usava, quindi si sono
+   spostate qui col nome del back-office invece di restare in due fogli.
+   ============================================================ */
+/* Titolo di una sezione dentro una scheda: un h2 vero, ma della misura
+   delle etichette del back-office — non di un titolo di pagina, che qui
+   ce n'è già uno solo in cima. */
+.adm-sezione-titolo {
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-xs);
+  text-transform: uppercase; letter-spacing: var(--ls-caps); color: var(--text-strong);
+  display: flex; align-items: center; gap: 8px; margin: 0 0 10px;
+}
+
+.adm-permessi { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); }
+.adm-permessi th, .adm-permessi td { border: 1px solid var(--border-subtle, #e2e0da); padding: 7px 10px; }
+.adm-permessi thead th { background: var(--cra-charcoal); color: var(--cra-white); font-family: var(--font-brand); text-transform: uppercase; letter-spacing: .06em; font-size: 10px; }
+.adm-permessi tbody th { text-align: left; background: var(--surface-subtle, #f2f1ed); font-weight: var(--fw-bold); }
+.adm-permessi td { text-align: center; padding: 4px; }
+.adm-permessi tbody tr:hover td { background: rgba(0, 0, 0, .02); }
+
+/* La casella dice la risposta, non chiede una domanda. */
+.adm-cella {
+  position: relative; width: 100%; min-width: 54px; height: 34px;
+  display: grid; place-items: center; cursor: pointer;
+  border: 1px solid transparent; background: none; border-radius: 0;
+  transition: background .12s ease, border-color .12s ease;
+}
+.adm-cella.si { background: #eef6f0; }
+.adm-cella.no { background: #faf0ef; }
+.adm-cella:hover { border-color: var(--border-strong, #272d2b); }
+.adm-cella:focus-visible { outline: 2px solid var(--cra-red); outline-offset: -2px; }
+/* La colonna dell'admin non è una scelta: è un fatto. Niente puntatore a
+   mano, niente bordo al passaggio — non c'è nulla da cliccare. */
+.adm-cella.bloccata { cursor: default; gap: 6px; grid-auto-flow: column; }
+.adm-cella.bloccata:hover { border-color: transparent; }
+.adm-cella.bloccata em {
+  font-style: normal; font-size: 9px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text-muted);
+}
+
+/* Il pallino distingue una scelta voluta da un valore ereditato. */
+.adm-cella-punto {
+  position: absolute; top: 4px; right: 4px; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--cra-charcoal);
+}

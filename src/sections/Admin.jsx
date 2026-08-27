@@ -1,6 +1,7 @@
 import React from "react";
 import { Icon } from "../components/Icon.jsx";
 import { useAuth } from "../lib/auth.jsx";
+import { Personale } from "./Personale.jsx";
 import { formatEuro, PLACEHOLDER_IMG, MAX_HERO, MAX_GRANDE } from "../lib/craCatalog.js";
 import {
   getAllOfficine, updateOfficina, createOfficina,
@@ -1788,6 +1789,11 @@ function PannelloAdmin() {
           <button className={`adm-tab ${tab === "impostazioni" ? "active" : ""}`} onClick={() => setTab("impostazioni")}>
             <Icon name="cog" size={15} /> Impostazioni
           </button>
+          {/* Persone e permessi: stava nell'area interna, ma la vedeva solo
+              l'amministratore — sta con le altre cose che fa solo lui. */}
+          <button className={`adm-tab ${tab === "personale" ? "active" : ""}`} onClick={() => setTab("personale")}>
+            <Icon name="user-plus" size={15} /> Personale
+          </button>
           <span className="adm-foglio-stato">
             <Icon name="refresh-cw" size={13} />
             Foglio MASTER · {ultimoSync?.quando
@@ -3005,6 +3011,8 @@ function PannelloAdmin() {
             </details>
           </React.Fragment>
         )}
+
+        {tab === "personale" && <Personale setErr={setErr} />}
       </div>
     </section>
   );
@@ -3126,9 +3134,9 @@ function Accesso({ officina, onCambio, setErr }) {
               <code className="adm-invito-codice">{i.codice}</code>
               <span className="adm-sub">
                 {i.inviato_il
-                  ? `inviato il ${new Date(i.inviato_il).toLocaleDateString("it-IT")}`
+                  ? `inviato il ${dataInvito(i.inviato_il)}`
                   : "non ancora inviato"}
-                {" · scade il "}{new Date(i.scade_il).toLocaleDateString("it-IT")}
+                {" · scade il "}{dataInvito(i.scade_il)}
               </span>
               <span style={{ marginLeft: "auto", display: "inline-flex", gap: "6px", flexWrap: "wrap" }}>
                 {/* Due strade sole. L'email parte dal sistema col mittente
@@ -3200,6 +3208,12 @@ function Accesso({ officina, onCambio, setErr }) {
     </div>
   );
 }
+
+/* La stessa forma di data che usa il pannello Personale, che dice le stesse
+   identiche frasi su un altro tipo di invito. «10/9/2026» ha il giorno non
+   impaginato e il mese ambiguo per chi legge in fretta una scadenza. */
+const dataInvito = (s) =>
+  (s ? new Date(s).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 
 /* Il testo che finisce negli appunti. Sta fuori dal componente perché è
    contenuto, non comportamento: si legge tutto insieme e si corregge senza

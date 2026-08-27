@@ -634,28 +634,6 @@ export async function annullaInvito(codice) {
   if (error) throw error;
 }
 
-/* ============ Manutenzione ============ */
-
-const VECCHIO_DEPOSITO = "https://kliqbpdqufsgniqspbrb.supabase.co/storage/v1/object/public/card-center/";
-
-/** Quante schede hanno ancora foto o allegati sul vecchio portale. */
-export async function contaMediaDaMigrare() {
-  const { count, error } = await supabase
-    .from("schede")
-    .select("id", { count: "exact", head: true })
-    .or(`immagine.like.${VECCHIO_DEPOSITO}%,allegato.like.${VECCHIO_DEPOSITO}%`);
-  if (error) throw error;
-  return count ?? 0;
-}
-
-/** Sposta uno scaglione di media. Si richiama finché `rimasti` non è zero. */
-export async function migraMedia(limite = 15) {
-  const { data, error } = await supabase.functions.invoke("migra-media", { body: { limite } });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error);
-  return data;
-}
-
 /* ============ Profilo ============ */
 
 /** La propria scheda, letta fresca: dopo un salvataggio il contesto di
