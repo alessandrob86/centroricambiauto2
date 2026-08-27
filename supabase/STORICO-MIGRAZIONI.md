@@ -149,12 +149,13 @@ repository e ci resta.
 | 122 | 2026-08-26 | aggancio_libera_prima_l_accesso | 3.900 |
 | 123 | 2026-08-26 | aggancio_colonne_giuste | 3.700 |
 | 124 | 2026-08-26 | corsi_notifiche_e_offerte_a_posto | 4.900 |
+| 125 | 2026-08-26 | cra_prezzo_riga_a_contenitore | 3.400 |
 
 ## Dove guardare per capire una cosa
 
 | Se ti serve capire | Guarda |
 |---|---|
-| Come nascono i prezzi | 43-48, 53, 58-59 |
+| Come nascono i prezzi | 43-48, 53, 58-59, 125 |
 | Chi può vedere cosa (RLS) | 13, 25, 28, 32-34, 52, 115, 117, 124 |
 | Il catalogo condiviso fra i due siti | 49-54 |
 | Il modulo interno | 60-61, 68-76, 83-86, 93 |

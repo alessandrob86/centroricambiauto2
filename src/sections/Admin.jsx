@@ -3066,6 +3066,46 @@ function Accesso({ officina, onCambio, setErr }) {
     } catch { setErr("Il browser non mi lascia copiare: selezionalo a mano."); }
   };
 
+  /* Un codice senza le istruzioni non serve a niente: chi lo riceve deve
+     sapere dove metterlo. L'indirizzo si prende da dove sta girando il sito,
+     così il giorno che punterai il dominio vero il testo cambia da solo. */
+  const testoInvito = (c) => {
+    const dove = `${window.location.origin}/#/login`;
+    return [
+      `Buongiorno${officina.ragione_sociale ? " " + officina.ragione_sociale : ""},`,
+      "",
+      "abbiamo attivato l'accesso riservato al CRA Store: catalogo, prezzi",
+      "riservati e proposte d'ordine, senza pagamenti online.",
+      "",
+      `Per entrare, registratevi qui: ${dove}`,
+      `e inserite questo codice invito: ${c}`,
+      "",
+      "Il codice vale una volta sola e scade fra trenta giorni. Dopo la",
+      "registrazione verificheremo i dati e attiveremo l'accesso.",
+      "",
+      "Centro Ricambi Auto",
+    ].join("\n");
+  };
+
+  const perEmail = (c) => {
+    const oggetto = "Il vostro accesso al CRA Store";
+    return `mailto:${encodeURIComponent(officina.email ?? "")}` +
+      `?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(testoInvito(c))}`;
+  };
+
+  /* WhatsApp vuole il prefisso internazionale, e un fisso non ha WhatsApp:
+     senza questi due controlli il link portava a una chat sbagliata o a
+     nessuna. In Italia i cellulari cominciano per 3. */
+  const numeroWhatsapp = () => {
+    let num = String(officina.telefono ?? "").replace(/[^0-9]/g, "");
+    if (num.startsWith("00")) num = num.slice(2);
+    if (num.startsWith("39")) return num.length >= 11 ? num : null;
+    return num.startsWith("3") && num.length >= 9 ? "39" + num : null;
+  };
+
+  const perWhatsapp = (c) =>
+    `https://wa.me/${numeroWhatsapp()}?text=${encodeURIComponent(testoInvito(c))}`;
+
   const aggancia = async (anagrafica) => {
     if (!window.confirm(
       `Fondere "${officina.ragione_sociale}" nella scheda di "${anagrafica.ragione_sociale}"?\n\n` +
@@ -3109,11 +3149,24 @@ function Accesso({ officina, onCambio, setErr }) {
             <div key={i.codice} className="adm-invito">
               <code className="adm-invito-codice">{i.codice}</code>
               <span className="adm-sub">scade il {new Date(i.scade_il).toLocaleDateString("it-IT")}</span>
-              <span style={{ marginLeft: "auto", display: "inline-flex", gap: "6px" }}>
+              <span style={{ marginLeft: "auto", display: "inline-flex", gap: "6px", flexWrap: "wrap" }}>
                 <button type="button" className="adm-btn ghost mini" onClick={() => copia(i.codice)}>
                   <Icon name={copiato === i.codice ? "check" : "copy"} size={13} />
                   {copiato === i.codice ? "copiato" : "copia"}
                 </button>
+                {/* L'email si apre nel programma di posta dell'azienda: parte
+                    dal tuo indirizzo vero, non da un mittente automatico che
+                    finisce nello spam. Il testo è già scritto. */}
+                <a className="adm-btn ghost mini" href={perEmail(i.codice)}
+                   title={officina.email ? `Scrivi a ${officina.email}` : "L'officina non ha un'email: la aggiungi sopra"}>
+                  <Icon name="mail" size={13} /> email
+                </a>
+                {numeroWhatsapp() && (
+                  <a className="adm-btn ghost mini" href={perWhatsapp(i.codice)}
+                     target="_blank" rel="noopener noreferrer" title="Manda il codice su WhatsApp">
+                    <Icon name="message-circle" size={13} /> whatsapp
+                  </a>
+                )}
                 <button type="button" className="adm-btn ghost mini" title="Ritira questo codice"
                   onClick={async () => {
                     try { await annullaInvito(i.codice); await caricaInviti(); }
