@@ -7,6 +7,16 @@ import { useAuth, rottaDiAvvio, controllaInvito } from "../lib/auth.jsx";
 
 const { useState, useEffect } = React;
 
+/* I ruoli come si chiamano in azienda: «rappresentante» detto per esteso
+   suona come un riconoscimento, «dipendente» secco no. */
+const RUOLO_ESTESO = {
+  admin: "amministratore",
+  manager: "manager",
+  rappresentante: "rappresentante",
+  centralino: "centralino",
+  dipendente: "parte della squadra",
+};
+
 /** Traduce i messaggi più comuni di Supabase Auth in italiano. */
 function traduciErrore(msg) {
   const m = (msg || "").toLowerCase();
@@ -55,7 +65,7 @@ const StatusBox = ({ icon, iconColor, title, children }) => (
 );
 
 export function Accedi({ onNavigate }) {
-  const { session, officina, loading, isActive, isAdmin, avvio, signIn, signUp, signOut } = useAuth();
+  const { session, officina, dipendente, loading, isActive, isAdmin, signIn, signUp, signOut } = useAuth();
   const [mode, setMode] = useState("login");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
@@ -72,12 +82,16 @@ export function Accedi({ onNavigate }) {
   const [telefono, setTelefono] = useState("");
   const [citta, setCitta] = useState("");
 
-  /* Chi è già dentro non ha niente da fare qui. Serve soprattutto a chi è
-     interno: senza una riga officine finirebbe nel ramo che ridisegna il
-     modulo di accesso, con l'impressione che il login non abbia funzionato. */
-  useEffect(() => {
-    if (!loading && session && !confirmSent) onNavigate(rottaDiAvvio(avvio));
-  }, [loading, session, confirmSent, avvio, onNavigate]);
+  /* Chi è già dentro NON viene più rimbalzato via da qui.
+     Prima sì, e quel rimbalzo rendeva irraggiungibili quattro schermate già
+     scritte: «account in attesa di attivazione», «non ancora abilitato al
+     CRA Store», «account sospeso», «bentornato». Il risultato era che un
+     cliente registrato e non ancora abilitato veniva sbattuto in home senza
+     una riga di spiegazione, e non aveva nessun posto dove leggere perché
+     non riusciva a fare niente. Adesso questa pagina è anche il posto dove
+     uno vede a che punto è.
+     Il salto dopo il login resta: lo fa `onLogin`, che porta ognuno dove
+     deve andare appena inserita la password. */
 
   const onLogin = async (e) => {
     e.preventDefault();
@@ -178,6 +192,33 @@ export function Accedi({ onNavigate }) {
         </Button>
       </StatusBox>
     );
+  } else if (session && dipendente) {
+    const nome = `${dipendente.nome ?? ""} ${dipendente.cognome ?? ""}`.trim() || "collega";
+    body = (
+      <StatusBox icon="users" iconColor="#2e7d4f" title={`Ciao ${nome}`}>
+        <p className="cra-body">
+          Il tuo accesso all'area interna è <strong>attivo</strong>
+          {RUOLO_ESTESO[dipendente.ruolo] ? ` come ${RUOLO_ESTESO[dipendente.ruolo]}` : ""}
+          {dipendente.zone?.nome ? `, filiale di ${dipendente.zone.nome}` : ""}.
+        </p>
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+          <Button variant="accent" iconRight={<Icon name="arrow-right" size={16} />} onClick={() => onNavigate("interno")}>
+            Entra nell'area interna
+          </Button>
+          {isAdmin && (
+            <Button variant="dark" iconLeft={<Icon name="shield-check" size={16} color="var(--cra-gold)" />} onClick={() => onNavigate("admin")}>
+              Back-office
+            </Button>
+          )}
+          <Button variant="secondary" onClick={() => onNavigate("home")}>
+            Vai al sito
+          </Button>
+        </div>
+        <Button variant="ghost" size="sm" iconLeft={<Icon name="log-out" size={14} />} onClick={signOut}>
+          Esci
+        </Button>
+      </StatusBox>
+    );
   } else if (session && officina) {
     if (isActive) {
       body = (
@@ -228,9 +269,9 @@ export function Accedi({ onNavigate }) {
       body = (
         <StatusBox icon="clock" iconColor="var(--cra-gold)" title="Account in attesa di attivazione">
           <p className="cra-body">
-            Grazie <strong>{officina.ragione_sociale}</strong>. La tua richiesta è stata registrata:
-            verificheremo i dati e attiveremo l'accesso alle proposte d'ordine.
-            Ti avviseremo via email.
+            Grazie <strong>{officina.ragione_sociale}</strong>. La tua richiesta è stata registrata.
+            Verifichiamo i dati e ti abilitiamo noi: fino ad allora il catalogo con i tuoi prezzi
+            e le proposte d'ordine restano chiusi. Ti avvisiamo via email appena è fatta.
           </p>
           <Button variant="ghost" size="sm" iconLeft={<Icon name="log-out" size={14} />} onClick={signOut}>
             Esci

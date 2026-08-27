@@ -723,7 +723,7 @@ function MatricePrezzi({ righe, colonne, valoreDi, baseDi, bloccoDi, bulk, cella
 
               {colonne.map((c) => {
                 const k = chiave(r, c);
-                const bloccata = bloccoDi(r, c);
+                const bloccata = bloccoDi(r);
                 const originale = valoreDi(r, c);
                 const inSospeso = bulk[k];
                 const modificata = inSospeso !== undefined;
@@ -1559,10 +1559,23 @@ function PannelloAdmin() {
     return matrice[r.quale]?.[c.listinoId]?.[r.id] ?? null;
   }, [matrice]);
 
-  /** Cella bloccata = il prodotto viene dal foglio E quella colonna la comanda
-   *  il foglio. Non per riga: la categoria Nord non ha colonna nel foglio, e
-   *  bloccare l'intera riga renderebbe impossibile compilarla a mano. */
-  const bloccoDi = useCallback((r, c) => !!r.fonte_listino && !!c.dalFoglio, []);
+  /** Cella bloccata = il prodotto viene dal foglio. Punto: tutta la riga,
+   *  in ogni colonna di categoria.
+   *
+   *  Prima il blocco era per colonna — bloccate solo quelle che il foglio
+   *  alimenta davvero — col ragionamento che una categoria senza colonna nel
+   *  foglio, come Nord, sarebbe stata impossibile da compilare. Ragionamento
+   *  sbagliato: apriva una seconda fonte di verità per lo stesso prodotto.
+   *  È già successo — una batteria del foglio si è ritrovata un prezzo Nord
+   *  scritto a mano, e quella colonna è passata a «gestita a mano» — e il
+   *  giorno che qualcuno mette dei clienti in Nord si sarebbe portata dietro
+   *  un prezzo che nel foglio non c'è e che nessuno ricorda di aver messo.
+   *
+   *  Se serve un prezzo di categoria per un prodotto del foglio, si aggiunge
+   *  la colonna nel foglio. Se serve un prezzo per UN cliente, si mette dalla
+   *  sua scheda in Officine: quello resta sempre possibile, ed è l'unico
+   *  prezzo a mano ammesso su un prodotto del foglio. */
+  const bloccoDi = useCallback((r) => !!r.fonte_listino, []);
 
   /* ---------- modifiche in sospeso ---------- */
   const bulkCount = Object.keys(bulk).length;
@@ -1811,7 +1824,8 @@ function PannelloAdmin() {
             <div style={{ flex: 1 }}>
               <b>Cosa è cambiato.</b> I listini non compaiono più come scheda a parte: ogni categoria
               cliente ha i suoi prezzi e li trovi in <b>Prezzi</b> come colonne, esattamente come nel foglio MASTER.
-              I prezzi che arrivano dal foglio hanno il lucchetto e si cambiano nel foglio; i prodotti che hai
+              I prodotti che arrivano dal foglio hanno il lucchetto su tutta la riga e si cambiano nel foglio
+              (per un solo cliente, dalla sua scheda in Officine); i prodotti che hai
               creato tu restano modificabili da qui.
             </div>
             <button className="adm-btn ghost mini" onClick={chiudiNota}>Ho capito</button>
@@ -1902,10 +1916,29 @@ function PannelloAdmin() {
             {spiega && (
               <div className="adm-spiega">
                 <b>Prezzo comandato dal foglio</b>
-                <p style={{ margin: 0 }}>
-                  <b>{spiega.riga.nome}</b> arriva dal foglio MASTER, scheda <b>{spiega.riga.fonte_listino}</b>.
-                  Questa cella è la colonna <b>{spiega.colonna.nome}</b>. Cambiala lì e premi
-                  «Aggiorna dal foglio»: il pannello si riallinea da solo.
+                {/* Due situazioni diverse dietro lo stesso lucchetto: la
+                    colonna c'è nel foglio, oppure non c'è. Dirle uguali
+                    manderebbe a cercare nel foglio una colonna che non
+                    esiste. */}
+                {spiega.colonna.dalFoglio ? (
+                  <p style={{ margin: 0 }}>
+                    <b>{spiega.riga.nome}</b> arriva dal foglio MASTER, scheda <b>{spiega.riga.fonte_listino}</b>.
+                    Questa cella è la colonna <b>{spiega.colonna.nome}</b>. Cambiala lì e premi
+                    «Aggiorna dal foglio»: il pannello si riallinea da solo.
+                  </p>
+                ) : (
+                  <p style={{ margin: 0 }}>
+                    <b>{spiega.riga.nome}</b> arriva dal foglio MASTER, scheda <b>{spiega.riga.fonte_listino}</b>,
+                    e nel foglio <b>non c'è una colonna {spiega.colonna.nome}</b>. Per dare un prezzo
+                    di categoria a questo prodotto, la colonna va aggiunta al foglio: scrivendolo
+                    qui si aprirebbe una seconda verità sullo stesso articolo, e al prossimo
+                    aggiornamento nessuno saprebbe più quale delle due vale.
+                  </p>
+                )}
+                <p className="adm-sub" style={{ margin: 0 }}>
+                  Per un prezzo concordato con <b>un singolo cliente</b> non serve il foglio: si mette
+                  dalla sua scheda, in Officine → Prezzi. Quello vince su tutto e resta sempre possibile,
+                  anche sui prodotti del foglio.
                 </p>
                 <p className="adm-sub" style={{ margin: 0 }}>
                   Nome, foto, descrizione, reparto e visibilità restano modificabili da qui, nella scheda Prodotti.
