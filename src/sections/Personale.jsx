@@ -2,7 +2,7 @@ import React from "react";
 import { Icon } from "../components/Icon.jsx";
 import * as api from "../lib/internoApi.js";
 
-const { useState, useEffect, useCallback } = React;
+const { useState, useEffect, useCallback, useRef } = React;
 
 /* ============================================================
    PERSONALE — le persone, e chi vede cosa.
@@ -37,6 +37,24 @@ export function Personale({ setErr }) {
   const [inviti, setInviti] = useState({});
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
+  const rifModulo = useRef(null);
+  const rifNome = useRef(null);
+
+  /* Il modulo sta in cima alla sezione e l'elenco è di sedici righe: premendo
+     «Modifica» sull'ultima si apriva fuori dallo schermo, e il pulsante
+     sembrava non fare niente. Lo si porta sotto gli occhi e gli si dà il
+     fuoco, così si vede che è successo qualcosa e si può già scrivere. */
+  /* Si guarda CHE COSA è aperto, non il contenuto: dipendendo dal modulo
+     intero l'effetto ripartirebbe a ogni tasto, riportando su la pagina e
+     rimettendo il fuoco sul nome mentre stai scrivendo il telefono. */
+  const apertoSu = form ? (form.id ?? "nuova") : null;
+
+  useEffect(() => {
+    if (!apertoSu) return undefined;
+    rifModulo.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const t = setTimeout(() => rifNome.current?.focus(), 260);
+    return () => clearTimeout(t);
+  }, [apertoSu]);
 
   /* Le filiali se le legge da sé: qui non arrivano dall'alto come nell'area
      interna, dove il modulo le carica una volta sola per tutte le schede. */
@@ -100,10 +118,15 @@ export function Personale({ setErr }) {
             accede con questa email, il collegamento avviene da solo: ruolo e filiale sono già qui.
           </p>
 
-          <div className="adm-form">
+          <div className="adm-form" ref={rifModulo}>
+            {/* Il pulsante dice cosa c'è aperto: arrivando quassù dall'ultima
+                riga dell'elenco non ci si ricorda da dove si era partiti. */}
             <button className="adm-btn ghost" style={{ alignSelf: "flex-start" }}
               onClick={() => setForm((f) => (f ? null : { ...VUOTO }))}>
-              <Icon name={form ? "chevron-up" : "plus"} size={14} /> Nuova persona
+              <Icon name={form ? "chevron-up" : "plus"} size={14} />
+              {form?.id
+                ? `Stai modificando ${`${form.nome ?? ""} ${form.cognome ?? ""}`.trim() || "una scheda"}`
+                : form ? "Chiudi" : "Nuova persona"}
             </button>
             {form && (
               <React.Fragment>
@@ -111,7 +134,8 @@ export function Personale({ setErr }) {
                   {[["nome", "Nome *"], ["cognome", "Cognome"], ["email", "Email"], ["telefono", "Telefono"]].map(([k, l]) => (
                     <label className="adm-fld" key={k}>
                       <span>{l}</span>
-                      <input type="text" value={form[k] ?? ""} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
+                      <input type="text" ref={k === "nome" ? rifNome : undefined}
+                        value={form[k] ?? ""} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
                     </label>
                   ))}
                   <label className="adm-fld">
