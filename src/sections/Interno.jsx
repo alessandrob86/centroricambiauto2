@@ -188,25 +188,48 @@ const PASSI_GIRO = [
     scheda: "bacheca",
     bersaglio: "bacheca",
     titolo: "La Bacheca",
-    testo: "Gli avvisi dell'azienda. Alcuni valgono per tutti, altri solo per la tua "
-      + "filiale: qui trovi i tuoi. Il numero accanto a «Bacheca» dice quanti "
-      + "ne hai ancora da leggere.",
+    testo: (c) => "Gli avvisi dell'azienda. Alcuni valgono per tutti, altri solo per "
+      + "la tua filiale: qui trovi i tuoi. Il numero accanto a «Bacheca» dice quanti "
+      + "ne hai ancora da leggere."
+      + (c.gestisce
+        ? " Gli avvisi li scrivi anche tu, e scegli quali filiali li devono vedere."
+        : ""),
   },
   {
     codice: "schede",
     scheda: "schede",
     bersaglio: "schede",
     titolo: "Il Card Center",
-    testo: "Il materiale: listini, comunicazioni, promozioni. Apri una scheda, la "
-      + "leggi, scarichi l'allegato. A un cliente si mandano solo le promozioni.",
+    /* Qui il mestiere cambia tutto. Per un rappresentante è lo strumento con
+       cui vende; per il magazzino e il centralino è materiale da consultare.
+       Dire a tutti «mandala al cliente» significa dirlo a chi clienti non ne
+       ha: la prima frase che non ti riguarda spegne l'attenzione su tutto il
+       resto. */
+    testo: (c) => {
+      const base = "Il materiale: listini, comunicazioni, promozioni. Apri una scheda, "
+        + "la leggi, scarichi l'allegato.";
+      if (c.gestisce) {
+        return `${base} Le promozioni si mandano ai clienti, e da qui pubblichi tu `
+          + "le schede nuove scegliendo a quali filiali arrivano.";
+      }
+      if (c.vende) {
+        return `${base} Le promozioni le mandi ai tuoi clienti da qui: scegli il `
+          + "cliente, la quantità e il documento, e parte la proposta.";
+      }
+      return `${base} Le promozioni le girano ai clienti i rappresentanti; a te `
+        + "servono per sapere che cosa è in giro.";
+    },
   },
   {
     codice: "clienti",
     scheda: "clienti",
     bersaglio: "clienti",
-    titolo: "I miei clienti",
-    testo: "Le officine affidate a te, con recapiti e codice cliente. Da qui prendi "
-      + "in carico chi non ha ancora un referente.",
+    titolo: (c) => (c.gestisce ? "I clienti" : "I miei clienti"),
+    testo: (c) => (c.gestisce
+      ? "Le officine della rete, con recapiti e codice cliente. Vedi anche a chi "
+        + "sono affidate, e puoi spostarle da un rappresentante all'altro."
+      : "Le officine affidate a te, con recapiti e codice cliente. Da qui prendi "
+        + "in carico chi non ha ancora un referente."),
   },
   {
     codice: "campanella",
@@ -221,9 +244,15 @@ const PASSI_GIRO = [
     scheda: "profilo",
     bersaglio: "profilo",
     titolo: "Il tuo profilo",
-    testo: "Recapito, foto, motto. Sotto ci sono i traguardi: si muovono con i numeri "
-      + "veri del lavoro, non cliccando qui. Con «Quando entro, portami a…» scegli "
-      + "su quale pagina si apre il sito quando entri.",
+    /* I traguardi non misurano la stessa cosa per tutti: chi vende è contato
+       sulle proposte, chi non vende sulla presenza. Prometterli uguali
+       significa promettere a un magazziniere una classifica di vendite in
+       cui resterà a zero per sempre. */
+    testo: (c) => "Recapito, foto, motto. Sotto ci sono i traguardi: "
+      + (c.vende
+        ? "si muovono con le proposte che mandi e i clienti che lavori, non cliccando qui. "
+        : "si muovono con i giorni in cui ci sei e le schede che leggi, non cliccando qui. ")
+      + "Con «Quando entro, portami a…» scegli su quale pagina si apre il sito quando entri.",
   },
   {
     codice: "fine",
@@ -234,7 +263,12 @@ const PASSI_GIRO = [
        recuperare, e prometterlo fa sembrare finto tutto il resto. Meglio
        dire dov'è il tasto per rivedere questa presentazione, che altrimenti
        non lo trova nessuno. */
-    testo: "Da qui ti sposti fra le pagine: il resto si impara usandolo. "
+    /* Una cosa sola da fare adesso, e diversa a seconda del mestiere: un
+       elenco di suggerimenti non lo segue nessuno. */
+    testo: (c) => "Da qui ti sposti fra le pagine: il resto si impara usandolo. "
+      + (c.vende
+        ? "Comincia dal Card Center, guarda che promozioni sono in corso. "
+        : "Comincia dalla Bacheca, così sai a che punto siamo. ")
       + "Se ti serve rivedere questa presentazione, il tasto è nel tuo profilo.",
   },
 ];
@@ -259,6 +293,13 @@ function passiDelGiro(dipendente, ruolo, schede, mobile) {
     ruolo: RUOLI[ruolo] ?? ruolo ?? "In squadra",
     filiale: dipendente?.zone?.nome ?? "",
     mobile,
+    /* Due domande sole, e bastano a cambiare quattro vignette: questa
+       persona VENDE (ha clienti da lavorare) e GESTISCE (pubblica schede e
+       annunci, sposta i clienti fra agenti)? Sono le stesse due condizioni
+       che il resto del modulo usa già per decidere cosa mostrare, quindi il
+       giro racconta esattamente il sito che quella persona si troverà. */
+    vende: ["admin", "manager", "rappresentante"].includes(ruolo),
+    gestisce: ["admin", "manager"].includes(ruolo),
   };
   return PASSI_GIRO
     .filter((p) => !p.scheda || schede.some((m) => m.codice === p.scheda))
