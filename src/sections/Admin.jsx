@@ -3001,21 +3001,35 @@ function PannelloAdmin() {
                         <Icon name="trash-2" size={14} />
                       </button>
                     </div>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", marginTop: "10px" }}>
-                      <span className="adm-sub">Vale per le categorie:</span>
-                      {categorieCli.length === 0 && <span className="adm-sub">crea prima una categoria cliente</span>}
-                      {categorieCli.map((c) => {
-                        const on = (l.categorie ?? []).includes(c.id);
-                        return (
-                          <button key={c.id} onClick={() => toggleCategoriaListino(l, c.id)}
-                            className={`adm-btn mini ${on ? "" : "ghost"}`}
-                            style={on ? { background: c.colore || "var(--cra-red)", color: "#fff" } : undefined}>
-                            {on ? "✓ " : ""}{c.nome}
-                          </button>
-                        );
-                      })}
-                      <span className="adm-sub">(ricorda di premere Salva)</span>
-                    </div>
+                    {/* Un contenitore di un cliente NON si attacca a una
+                        categoria: i suoi prezzi valgono per lui e basta. Un
+                        clic qui li darebbe a tutti i clienti di quella
+                        categoria — e con la priorità alta che hanno i prezzi
+                        dedicati vincerebbero pure sul listino della
+                        categoria. Un incidente da un clic, silenzioso, su
+                        tutti i prezzi di mezza Italia. */}
+                    {(l.officine ?? []).length > 0 ? (
+                      <p className="adm-sub" style={{ marginTop: "10px" }}>
+                        Vale solo per il cliente a cui è intestato, non per una categoria.
+                        I suoi prezzi si cambiano dalla scheda del cliente, in <b>Officine</b>.
+                      </p>
+                    ) : (
+                      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", marginTop: "10px" }}>
+                        <span className="adm-sub">Vale per le categorie:</span>
+                        {categorieCli.length === 0 && <span className="adm-sub">crea prima una categoria cliente</span>}
+                        {categorieCli.map((c) => {
+                          const on = (l.categorie ?? []).includes(c.id);
+                          return (
+                            <button key={c.id} onClick={() => toggleCategoriaListino(l, c.id)}
+                              className={`adm-btn mini ${on ? "" : "ghost"}`}
+                              style={on ? { background: c.colore || "var(--cra-red)", color: "#fff" } : undefined}>
+                              {on ? "✓ " : ""}{c.nome}
+                            </button>
+                          );
+                        })}
+                        <span className="adm-sub">(ricorda di premere Salva)</span>
+                      </div>
+                    )}
                   </div>
                 ))}
             </details>
