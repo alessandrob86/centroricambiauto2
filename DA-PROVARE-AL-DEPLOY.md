@@ -40,7 +40,34 @@ perché la pagina d'arrivo era quella vecchia.
       sposta, codice cliente e fascia di prezzo restano quelli
       dell'anagrafica, il doppione sparisce.
 
+## 1-bis. Il giro di presentazione
+
+Parte da solo al **primo** ingresso nell'area interna di ogni persona.
+
+- [ ] **Parte** appena il primo collega entra, e non prima che la pagina sia
+      pronta (nessun faro sul vuoto).
+- [ ] **Illumina la cosa giusta**: il filo d'oro sta attorno all'elemento, non
+      dentro. Guarda soprattutto i passi che cambiano scheda — Bacheca, Card
+      Center, clienti, profilo — che sono quelli dove il faro si posava storto.
+- [ ] **Salta le tappe che non riguardano quella persona**: un magazziniere non
+      ha «I miei clienti» e non deve vedersi illuminare una linguetta che non ha.
+- [ ] **Si esce sempre**: Esc, «Salta la presentazione», e — se un passo tarda —
+      il pulsante di fuga che compare sul nero dopo mezzo secondo.
+- [ ] **Non riparte**: chiudi, esci e rientra. Non deve ricomparire.
+- [ ] **Il computer del banco**: se dopo il primo collega ne entra un altro
+      senza ricaricare la pagina, il giro deve ripartire per lui.
+- [ ] **Rivedi la presentazione** dal Profilo lo fa ripartire; e se lo abbandoni
+      a metà, al prossimo accesso **non** deve ricomparire da solo.
+- [ ] **Sul telefono**: le vignette non escono dallo schermo e non coprono
+      quello che stanno indicando.
+
 ## 2. I prezzi
+
+- [ ] **Un prodotto che viene dal foglio è bloccato in tutta la riga**, anche
+      nelle colonne che il foglio non alimenta (NORD). Cliccando il lucchetto
+      la spiegazione dice la cosa giusta nei due casi.
+- [ ] **Il prezzo dedicato a un singolo cliente** resta modificabile anche sui
+      prodotti del foglio, dalla scheda del cliente in Officine → Prezzi.
 
 - [ ] **Il fusto da 200 L** del 0W-20 Hybrid: la pagina dice 1.380,00 € e la
       proposta d'ordine deve dire **1.380,00 €**, non 6,90. *(corretto nel
@@ -61,6 +88,17 @@ perché la pagina d'arrivo era quella vecchia.
 - [ ] **Lo scorrimento verticale dentro il pannello** continua a funzionare.
 - [ ] **I clienti spariscono** dalla barra per centralino e dipendente, e
       restano per rappresentante e manager. *(già attivo nel database)*
+
+## 3-bis. Chi entra e dove atterra
+
+- [ ] **Un collega** dopo il login si trova sul **Desk**, non sulla vetrina.
+      *(già attivo nel database)*
+- [ ] **Tu** resti sulla home del sito.
+- [ ] **La pagina d'accesso non rimbalza più via chi è già dentro**: mostra a
+      che punto sei. Provale tutte e cinque — collega, cliente attivo, cliente
+      in attesa, cliente non abilitato al CRA Store, cliente sospeso.
+- [ ] **Il cliente in attesa** legge perché non riesce a fare niente e che lo
+      abilitate voi.
 
 ## 4. Gli indirizzi e l'atterraggio
 

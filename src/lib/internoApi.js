@@ -664,6 +664,20 @@ export async function segnaSchedaLetta(schedaId) {
   catch { /* è un di più */ }
 }
 
+/* ---- il giro di presentazione ----
+   Una data sola su `dipendenti.giro_il`: NULL vuol dire che quella persona
+   non l'ha ancora visto. */
+
+/** Visto: non riparte più. Se la chiamata non passa pazienza — un tutorial
+ *  non deve mai bloccare il lavoro, e al massimo si rivede una volta di più. */
+export async function giroFatto() {
+  try { await supabase.rpc("giro_fatto"); } catch { /* è un di più */ }
+}
+
+/* Non c'è il gemello che azzera la data: «Rivedi la presentazione» riapre il
+   giro sul posto, senza dire al database che non l'ha mai visto. La rpc
+   `giro_da_rifare` resta lì, se un domani servisse a chi gestisce. */
+
 /** I numeri del proprio lavoro: da qui nascono i traguardi. */
 export async function getMieiNumeri() {
   const { data, error } = await supabase.rpc("profilo_riepilogo");

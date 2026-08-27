@@ -1178,3 +1178,121 @@
     pointer-events: none;
   }
 }
+
+/* ============================================================
+   IL GIRO DI PRESENTAZIONE — il velo, il faro, la vignetta.
+
+   IL FARO. Il buco nel velo scuro non è un ritaglio: è un'ombra.
+   `.dip-giro-faro` è un riquadro trasparente appoggiato sopra l'elemento
+   vero, e la sua ombra — spessa 9999 pixel, cioè più di qualunque schermo —
+   annerisce tutto ciò che sta FUORI dal riquadro. Dentro non c'è niente da
+   attraversare: si vede l'elemento com'è, illuminato per differenza.
+   Nessuna maschera, nessun `clip-path`, nessuna copia dell'elemento da
+   tenere allineata mentre la pagina scorre.
+
+   Il faro non prende i clic (`pointer-events: none`): a fermarli ci pensa
+   `.dip-giro-buio`, che copre tutto e sta sotto. Il faro resta trasparente,
+   quindi durante il giro non si tocca nemmeno l'elemento illuminato — è una
+   presentazione, non un esercizio.
+
+   Il faro scivola da un passo all'altro con una transizione CSS. La vignetta
+   no: si sposta e basta, mentre è già sbiadita. Farla scivolare voleva dire
+   vederla partire dall'angolo in alto a sinistra la prima volta — prima di
+   sapere quanto è alta non si sa nemmeno dove metterla, e la transizione
+   parte comunque dal punto in cui è nata.
+   ============================================================ */
+.dip-giro { --giro-buio: rgba(24, 28, 27, .74); }
+
+.dip-giro-buio {
+  position: fixed; inset: 0; z-index: 900;
+  background: var(--giro-buio);
+}
+
+.dip-giro-faro {
+  position: fixed; z-index: 901; pointer-events: none;
+  box-shadow: 0 0 0 2px var(--cra-gold, #fdc543), 0 0 0 9999px var(--giro-buio);
+  transition: top var(--dur-slow, .3s) var(--ease-standard, cubic-bezier(.16, 1, .3, 1)),
+              left var(--dur-slow, .3s) var(--ease-standard, cubic-bezier(.16, 1, .3, 1)),
+              width var(--dur-slow, .3s) var(--ease-standard, cubic-bezier(.16, 1, .3, 1)),
+              height var(--dur-slow, .3s) var(--ease-standard, cubic-bezier(.16, 1, .3, 1));
+}
+
+.dip-giro-carta {
+  position: fixed; z-index: 902; top: 0; left: 0;
+  width: min(340px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 14px 16px 12px;
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--border-subtle, #e2e0da);
+  border-top: 3px solid var(--cra-red);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .34);
+}
+.dip-giro-carta:focus { outline: none; }
+
+.dip-giro-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-brand); font-weight: var(--fw-bold); font-size: var(--fs-2xs);
+  letter-spacing: var(--ls-eyebrow); text-transform: uppercase; color: var(--cra-red);
+}
+
+.dip-giro-titolo {
+  margin: 6px 0 6px;
+  font-family: var(--font-brand); font-weight: var(--fw-black); font-size: var(--fs-lg);
+  text-transform: uppercase; color: var(--text-strong);
+}
+
+.dip-giro-testo {
+  margin: 0;
+  font-size: var(--fs-sm); line-height: var(--lh-relaxed); color: var(--text-body);
+}
+
+.dip-giro-piede {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 14px;
+}
+
+/* A che punto sei. I pallini si riempiono fino a quello di adesso. */
+.dip-giro-pallini { display: inline-flex; align-items: center; gap: 5px; margin-right: auto; }
+.dip-giro-pallini i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border-strong, #c9cccb);
+}
+.dip-giro-pallini i.on { background: var(--cra-red); }
+
+/* Defilato: c'è, si legge, ma non compete con «Avanti». */
+.dip-giro-salta {
+  display: block; margin: 10px 0 0; padding: 4px 0;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-body); font-size: var(--fs-xs);
+  color: var(--text-muted); text-decoration: underline;
+}
+.dip-giro-salta:hover { color: var(--cra-red); }
+
+/* La via d'uscita sul buio. Compare solo mentre si aspetta una scheda che
+   tarda: in quel momento la vignetta non c'è ancora, lo schermo è tutto nero
+   e su un telefono non esiste un Esc da premere. Sta in basso, dove arriva il
+   pollice, ed è chiara sul fondo scuro perché lì dietro non c'è nient'altro. */
+.dip-giro-fuga {
+  position: fixed; z-index: 902;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  min-height: 44px; padding: 10px 18px;
+  background: none; border: 1px solid var(--char-500, #6e7678); cursor: pointer;
+  font-family: var(--font-body); font-size: var(--fs-xs);
+  color: var(--cra-white, #fff);
+}
+.dip-giro-fuga:hover { border-color: var(--cra-gold, #fdc543); }
+
+/* Sul telefono la vignetta prende quasi tutta la larghezza, e i tasti devono
+   restare da dito: 44 pixel è il minimo che si prende senza mirare. Vale
+   anche per «Salta», che è la via d'uscita e non un ripensamento. */
+@media (max-width: 760px) {
+  .dip-giro-carta { padding: 14px 14px 12px; }
+  .dip-giro-piede .adm-btn { min-height: 44px; }
+  .dip-giro-salta { min-height: 44px; padding: 12px 0 8px; }
+  .dip-giro-titolo { font-size: var(--fs-md); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dip-giro-faro { transition: none; }
+}

@@ -107,7 +107,10 @@ export function Campanella({ onNavigate }) {
 
   return (
     <div className="dip-camp" ref={box}>
-      <button className="dip-camp-btn" onClick={() => setAperta((v) => !v)}
+      {/* `data-giro`: il giro di presentazione si aggancia qui. Non alla
+          classe, che cambia col foglio di stile. */}
+      <button className="dip-camp-btn" data-giro="campanella"
+        onClick={() => setAperta((v) => !v)}
         aria-label={daLeggere ? `Notifiche: ${daLeggere} da leggere` : "Notifiche"}
         aria-expanded={aperta}>
         {/* La campanella si scuote solo quando c'è qualcosa di nuovo. */}

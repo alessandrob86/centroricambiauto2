@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence, MotionConfig, useReducedMotion } from "framer-motion";
 import { Icon } from "../components/Icon.jsx";
+import { Giro } from "../components/Giro.jsx";
 import { useAuth } from "../lib/auth.jsx";
 import { testoSu } from "../lib/contrasto.js";
 import {
@@ -148,6 +149,129 @@ function Paginatore({ p, nome = "righe" }) {
 }
 
 /* ============================================================
+   IL GIRO DI PRESENTAZIONE — i passi, scritti come dati.
+
+   Parte da solo la prima volta che una persona entra qui dentro (finché
+   `dipendenti.giro_il` è vuoto) e si rivede dal profilo. Il componente che
+   li mostra è components/Giro.jsx: quello sa come si accende un faro, non
+   cosa c'è scritto sopra. Il contenuto sta qui, tutto insieme, così si
+   corregge una frase senza andare a cercarla in mezzo al codice.
+
+   `scheda`    — dove deve trovarsi la persona: il giro ci passa da solo prima
+                 di illuminare. Vedere la Bacheca mentre si parla della Bacheca
+                 vale più di mille parole.
+   `bersaglio` — l'attributo `data-giro` dell'elemento da illuminare. Se è un
+                 elenco vince il primo che esiste davvero. Senza bersaglio la
+                 vignetta sta al centro dello schermo.
+   ============================================================ */
+const PASSI_GIRO = [
+  {
+    codice: "benvenuto",
+    titolo: (c) => (c.nome ? `Ciao ${c.nome}` : "Benvenuto"),
+    testo: (c) =>
+      `${c.ruolo}${c.filiale ? `, ${c.filiale}` : ""}. Questa è l'area interna: `
+      + "in due minuti ti faccio vedere dove sta cosa. Se hai fretta, puoi saltarla.",
+  },
+  {
+    codice: "desk",
+    scheda: "home",
+    bersaglio: ["desk-personalizza", "desk"],
+    titolo: "Il Desk",
+    testo: (c) => (c.mobile
+      ? "È la tua pagina: il riepilogo di quello che ti riguarda, in ordine. "
+        + "Da computer i riquadri si spostano e si ridimensionano con «Personalizza»."
+      : "È la tua pagina. Con «Personalizza» sposti i riquadri e ne cambi la misura. "
+        + "Restano come li lasci, anche domani."),
+  },
+  {
+    codice: "bacheca",
+    scheda: "bacheca",
+    bersaglio: "bacheca",
+    titolo: "La Bacheca",
+    testo: "Gli avvisi dell'azienda. Alcuni valgono per tutti, altri solo per la tua "
+      + "filiale: qui trovi i tuoi. Il numero accanto a «Bacheca» dice quanti "
+      + "ne hai ancora da leggere.",
+  },
+  {
+    codice: "schede",
+    scheda: "schede",
+    bersaglio: "schede",
+    titolo: "Il Card Center",
+    testo: "Il materiale: listini, comunicazioni, promozioni. Apri una scheda, la "
+      + "leggi, scarichi l'allegato. A un cliente si mandano solo le promozioni.",
+  },
+  {
+    codice: "clienti",
+    scheda: "clienti",
+    bersaglio: "clienti",
+    titolo: "I miei clienti",
+    testo: "Le officine affidate a te, con recapiti e codice cliente. Da qui prendi "
+      + "in carico chi non ha ancora un referente.",
+  },
+  {
+    codice: "campanella",
+    bersaglio: "campanella",
+    titolo: "La campanella",
+    testo: (c) => "Sta qui, sempre, anche fuori dall'area interna. Si segna quando "
+      + "esce un avviso o una scheda nuova mentre stai lavorando su altro. "
+      + `${c.mobile ? "Toccala" : "Cliccala"} e vai dritto alla novità.`,
+  },
+  {
+    codice: "profilo",
+    scheda: "profilo",
+    bersaglio: "profilo",
+    titolo: "Il tuo profilo",
+    testo: "Recapito, foto, motto. Sotto ci sono i traguardi: si muovono con i numeri "
+      + "veri del lavoro, non cliccando qui. Con «Quando entro, portami a…» scegli "
+      + "su quale pagina si apre il sito quando entri.",
+  },
+  {
+    codice: "fine",
+    scheda: "home",
+    bersaglio: "nav",
+    titolo: "Ci siamo",
+    /* Niente compiti a casa: il primo giorno non c'è nessun arretrato da
+       recuperare, e prometterlo fa sembrare finto tutto il resto. Meglio
+       dire dov'è il tasto per rivedere questa presentazione, che altrimenti
+       non lo trova nessuno. */
+    testo: "Da qui ti sposti fra le pagine: il resto si impara usandolo. "
+      + "Se ti serve rivedere questa presentazione, il tasto è nel tuo profilo.",
+  },
+];
+
+const dice = (v, c) => (typeof v === "function" ? v(c) : v);
+
+/* Una volta per sessione, non una per visita: uscire dall'area interna e
+   rientrare smonta e rimonta tutto, e `dipendente` — che arriva da useAuth —
+   porta ancora la data vecchia, perché non si ricarica da solo. Senza questa
+   riga il giro ripartirebbe da capo a ogni rientro, anche appena finito.
+   Ci si segna CHI, non un sì: al banco il computer è di tutti, e un collega
+   che entra dopo un altro senza ricaricare la pagina deve vedere il suo giro,
+   non ereditare quello di chi c'era prima. */
+let giroGiaPartito = null;
+
+/* Un passo su una scheda che questa persona non ha non si mostra proprio: non
+   è solo inutile, manderebbe l'area interna su una scheda che per lei non
+   esiste — pagina vuota. È il caso di «I miei clienti» per il magazzino. */
+function passiDelGiro(dipendente, ruolo, schede, mobile) {
+  const c = {
+    nome: (dipendente?.nome ?? "").trim(),
+    ruolo: RUOLI[ruolo] ?? ruolo ?? "In squadra",
+    filiale: dipendente?.zone?.nome ?? "",
+    mobile,
+  };
+  return PASSI_GIRO
+    .filter((p) => !p.scheda || schede.some((m) => m.codice === p.scheda))
+    .map((p) => ({
+      codice: p.codice,
+      scheda: p.scheda ?? null,
+      bersaglio: p.bersaglio ?? null,
+      titolo: dice(p.titolo, c),
+      testo: dice(p.testo, c),
+    }));
+}
+
+/* ============================================================
    Cancello: qui entra solo il personale.
    ============================================================ */
 function StaffGate({ onNavigate, children }) {
@@ -189,6 +313,7 @@ function InternoInner({ onNavigate, tab: tabUrl }) {
   const [zone, setZone] = useState([]);
   const [daLeggere, setDaLeggere] = useState(0);
   const [fuoco, setFuoco] = useState(null);
+  const [giro, setGiro] = useState(false);
 
   /* Una riga al giorno, appena entri: è la traccia che permette di premiare
      anche chi non vende. Se fallisce, non se ne accorge nessuno. */
@@ -225,6 +350,22 @@ function InternoInner({ onNavigate, tab: tabUrl }) {
      modulo si schiantava appena arrivavano i dati. */
   const mobile = useMobile();
 
+  const passiGiro = useMemo(
+    () => (moduli ? passiDelGiro(dipendente, ruolo, moduli.schede, mobile) : []),
+    [moduli, dipendente, ruolo, mobile],
+  );
+
+  /* Il giro parte da solo la prima volta — `giro_il` ancora vuoto — e solo
+     quando c'è già qualcosa da illuminare: prima dei moduli e della scheda
+     d'atterraggio il faro cadrebbe sul vuoto, che è peggio di niente. */
+  useEffect(() => {
+    if (!moduli || !tab || !dipendente) return;
+    if (giroGiaPartito === dipendente.id) return;
+    if (dipendente.giro_il != null || passiGiro.length === 0) return;
+    giroGiaPartito = dipendente.id;
+    setGiro(true);
+  }, [moduli, tab, dipendente, passiGiro]);
+
   if (!moduli) {
     return <div className="dip-page"><div className="dip-wrap"><p className="dip-vuoto">Caricamento…</p></div></div>;
   }
@@ -250,8 +391,20 @@ function InternoInner({ onNavigate, tab: tabUrl }) {
     onNavigate("interno/" + destinazione);
   };
 
+  /* Arrivato in fondo o saltato: è lo stesso gesto, e la rpc non si aspetta.
+     Se non passa, il giro si chiude comunque — un tutorial non deve mai
+     mettersi in mezzo al lavoro. */
+  const chiudiGiro = () => { setGiro(false); api.giroFatto(); };
+
+  /* «Rivedi la presentazione», dal profilo: riparte subito, e basta. La data
+     su `giro_il` non si tocca, perché vuol dire «l'ha già visto» ed è vero:
+     azzerarla per il ripasso significava che chi lo lasciava a metà e usciva
+     se lo ritrovava da solo al prossimo accesso, come se fosse il primo
+     giorno. Alla fine `chiudiGiro` la riscrive comunque. */
+  const rivediGiro = () => setGiro(true);
+
   const comuni = { dipendente, ruolo, isAdmin, puoGestire, zone, setErr, onNavigate, vaiA,
-    schedeVisibili: moduli.schede };
+    schedeVisibili: moduli.schede, rivediGiro };
 
   return (
     <MotionConfig reducedMotion="user">
@@ -275,7 +428,7 @@ function InternoInner({ onNavigate, tab: tabUrl }) {
           {err && <div className="adm-err"><Icon name="alert-circle" size={15} /> {err}</div>}
 
           {!mobile && (
-            <nav className="dip-tabs">
+            <nav className="dip-tabs" data-giro="nav">
               {moduli.schede.map((m) => (
                 <button key={m.codice} className={`dip-tab ${tab === m.codice ? "on" : ""}`}
                   onClick={() => vaiScheda(m.codice)} aria-current={tab === m.codice ? "page" : undefined}>
@@ -305,6 +458,10 @@ function InternoInner({ onNavigate, tab: tabUrl }) {
 
         {mobile && (
           <BarraInBasso schede={moduli.schede} attiva={tab} vai={vaiScheda} daLeggere={daLeggere} />
+        )}
+
+        {giro && passiGiro.length > 0 && (
+          <Giro passi={passiGiro} vaiScheda={vaiScheda} onChiudi={chiudiGiro} />
         )}
       </div>
     </MotionConfig>
@@ -362,7 +519,7 @@ function BarraInBasso({ schede, attiva, vai, daLeggere }) {
         )}
       </AnimatePresence>
 
-      <nav className="dip-giu" aria-label="Sezioni">
+      <nav className="dip-giu" aria-label="Sezioni" data-giro="nav">
         {dirette.map(voce)}
         {nascoste.length > 0 && (
           <button type="button" className={`dip-giu-voce ${inAltro ? "on" : ""}`}
@@ -502,7 +659,8 @@ function Home({ dipendente, riquadri: iniziali, setErr, zone, vaiA }) {
   return (
     <React.Fragment>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", flexWrap: "wrap" }}>
-        <button className={`adm-btn ${modifica ? "" : "ghost"}`} onClick={() => setModifica(!modifica)}>
+        <button className={`adm-btn ${modifica ? "" : "ghost"}`} data-giro="desk-personalizza"
+          onClick={() => setModifica(!modifica)}>
           <Icon name={modifica ? "check" : "pencil"} size={14} /> {modifica ? "Fatto" : "Personalizza"}
         </button>
         <span className="dip-sub">
@@ -530,7 +688,8 @@ function Home({ dipendente, riquadri: iniziali, setErr, zone, vaiA }) {
         </AnimatePresence>
       </div>
 
-      <div className="dip-griglia" onDragOver={(e) => e.preventDefault()} onDrop={rilascia}>
+      <div className="dip-griglia" data-giro="desk"
+        onDragOver={(e) => e.preventDefault()} onDrop={rilascia}>
         {ordineMostrato.map((r, i) => (
           <motion.div key={r.codice} layout
             className={`dip-card dip-riquadro ${modifica ? "modifica" : ""} ${preso === r.codice ? "presa" : ""}`}
@@ -746,7 +905,7 @@ const HOME_TELEFONO = [
 
 function HomeTelefono({ dati, zone, vaiA }) {
   return (
-    <div className="dip-tel-home">
+    <div className="dip-tel-home" data-giro="desk">
       {HOME_TELEFONO.map((r, i) => (
         <motion.section key={r.codice} className="dip-tel-blocco" {...entra(i)}>
           <h2 className="dip-tel-titolo">
@@ -1269,42 +1428,46 @@ function Bacheca({ dipendente, puoGestire, zone, setErr, onConteggio, fuoco }) {
         </div>
       )}
 
-      {righe.length === 0 ? <p className="dip-vuoto">Nessun annuncio per te.</p> : righe.map((a, i) => (
-        <motion.div key={a.id} id={`annuncio-${a.id}`}
-          className={`dip-annuncio ${a.letto ? "letto" : ""} ${fuoco === a.id ? "fuoco" : ""}`} {...entra(i)}>
-          <span className="dip-barra-punto" style={{ background: a.colore || "var(--cra-gold)", marginTop: "5px" }} />
-          <div className="dip-annuncio-testo">
-            <h3 className="dip-annuncio-titolo">
-              {a.titolo}
-              {a.attivo === false && <span className="dip-esito" style={{ marginLeft: 8 }}>spento</span>}
-              {a.scade_il && new Date(a.scade_il) < new Date() && <span className="dip-esito rifiutata" style={{ marginLeft: 8 }}>scaduto</span>}
-            </h3>
-            {a.corpo && <p className="dip-annuncio-corpo">{a.corpo}</p>}
-            {a.immagine && <FotoAnnuncio path={a.immagine} titolo={a.titolo} />}
-            <span className="dip-sub">
-              {dataIt(a.created_at)}
-              {a.scade_il ? ` · scade il ${dataIt(a.scade_il)}` : ""}
-              {a.in_barra ? " · in testa al sito" : ""}
-              {a.zone?.length ? ` · ${a.zone.length} filiali` : puoGestire ? " · tutte le filiali" : ""}
-            </span>
-          </div>
-          {puoGestire && (
-            <React.Fragment>
-              <button className="adm-btn ghost mini" onClick={() => apriModifica(a)}>
-                <Icon name="pencil" size={13} /> Modifica
+      {/* Il contenitore serve al giro di presentazione, che ha bisogno di un
+          elemento solo da illuminare invece di venti annunci sparsi. */}
+      <div data-giro="bacheca">
+        {righe.length === 0 ? <p className="dip-vuoto">Nessun annuncio per te.</p> : righe.map((a, i) => (
+          <motion.div key={a.id} id={`annuncio-${a.id}`}
+            className={`dip-annuncio ${a.letto ? "letto" : ""} ${fuoco === a.id ? "fuoco" : ""}`} {...entra(i)}>
+            <span className="dip-barra-punto" style={{ background: a.colore || "var(--cra-gold)", marginTop: "5px" }} />
+            <div className="dip-annuncio-testo">
+              <h3 className="dip-annuncio-titolo">
+                {a.titolo}
+                {a.attivo === false && <span className="dip-esito" style={{ marginLeft: 8 }}>spento</span>}
+                {a.scade_il && new Date(a.scade_il) < new Date() && <span className="dip-esito rifiutata" style={{ marginLeft: 8 }}>scaduto</span>}
+              </h3>
+              {a.corpo && <p className="dip-annuncio-corpo">{a.corpo}</p>}
+              {a.immagine && <FotoAnnuncio path={a.immagine} titolo={a.titolo} />}
+              <span className="dip-sub">
+                {dataIt(a.created_at)}
+                {a.scade_il ? ` · scade il ${dataIt(a.scade_il)}` : ""}
+                {a.in_barra ? " · in testa al sito" : ""}
+                {a.zone?.length ? ` · ${a.zone.length} filiali` : puoGestire ? " · tutte le filiali" : ""}
+              </span>
+            </div>
+            {puoGestire && (
+              <React.Fragment>
+                <button className="adm-btn ghost mini" onClick={() => apriModifica(a)}>
+                  <Icon name="pencil" size={13} /> Modifica
+                </button>
+                <button className="adm-btn rosso mini" onClick={() => elimina(a)} aria-label={`Elimina ${a.titolo}`}>
+                  <Icon name="trash-2" size={13} />
+                </button>
+              </React.Fragment>
+            )}
+            {!a.letto && (
+              <button className="adm-btn ghost mini" onClick={() => leggi(a)}>
+                <Icon name="check" size={13} /> Letto
               </button>
-              <button className="adm-btn rosso mini" onClick={() => elimina(a)} aria-label={`Elimina ${a.titolo}`}>
-                <Icon name="trash-2" size={13} />
-              </button>
-            </React.Fragment>
-          )}
-          {!a.letto && (
-            <button className="adm-btn ghost mini" onClick={() => leggi(a)}>
-              <Icon name="check" size={13} /> Letto
-            </button>
-          )}
-        </motion.div>
-      ))}
+            )}
+          </motion.div>
+        ))}
+      </div>
     </React.Fragment>
   );
 }
@@ -1610,21 +1773,25 @@ function CardCenter({ dipendente, ruolo, puoGestire, zone, setErr, fuoco }) {
         </div>
       )}
 
-      {viste.length === 0 ? (
-        <p className="dip-vuoto">
-          {cerca ? `Nessuna scheda per «${cerca}».` : "Nessuna scheda."}
-        </p>
-      ) : (
-        <React.Fragment>
-          <div className="dip-schede">
-            {pg.viste.map((s, i) => (
-              <SchedaCard key={s.id} s={s} i={i}
-                onApri={() => { setAperta(s); api.segnaSchedaLetta(s.id); }} />
-            ))}
-          </div>
-          <Paginatore p={pg} nome="schede" />
-        </React.Fragment>
-      )}
+      {/* `data-giro` sul contenitore e non sulla griglia: il giro deve trovare
+          qualcosa da illuminare anche quando l'elenco è vuoto. */}
+      <div data-giro="schede">
+        {viste.length === 0 ? (
+          <p className="dip-vuoto">
+            {cerca ? `Nessuna scheda per «${cerca}».` : "Nessuna scheda."}
+          </p>
+        ) : (
+          <React.Fragment>
+            <div className="dip-schede">
+              {pg.viste.map((s, i) => (
+                <SchedaCard key={s.id} s={s} i={i}
+                  onApri={() => { setAperta(s); api.segnaSchedaLetta(s.id); }} />
+              ))}
+            </div>
+            <Paginatore p={pg} nome="schede" />
+          </React.Fragment>
+        )}
+      </div>
 
       <AnimatePresence>
         {aperta && (
@@ -2075,52 +2242,56 @@ function MieiClienti({ setErr }) {
         </AnimatePresence>
       </div>
 
-      {righe.length === 0 ? (
-        <p className="dip-vuoto">Non hai ancora clienti. Usa «Prendi in carico un cliente» qui sopra.</p>
-      ) : (
-        <React.Fragment>
-          <div className="adm-filtri">
-            <input type="search" value={q} placeholder="Cerca fra i tuoi clienti…"
-              onChange={(e) => setQ(e.target.value)} />
-            <span className="dip-sub" style={{ marginLeft: "auto" }}>
-              {viste.length} di {righe.length} client{righe.length === 1 ? "e" : "i"}
-            </span>
-          </div>
-          <div className="dip-tab-scroll">
-            {/* `a-schede`: sul telefono ogni riga diventa una scheda con le
-                etichette accanto ai valori. Cinque colonne su 390 pixel non
-                si leggono, e scorrere di lato per vedere il telefono di un
-                cliente è un lavoro, non una consultazione. */}
-            <table className="dip-tabella a-schede">
-              <thead><tr><th>Cliente</th><th>Codice</th><th>Dove</th><th>Contatti</th><th /></tr></thead>
-              <tbody>
-                {viste.map((r, i) => (
-                  <motion.tr key={r.officina_id} {...entra(i)}>
-                    <td>{r.ragione_sociale}</td>
-                    <td className="dip-sub" data-etichetta="Codice">{r.codice_cliente || "—"}</td>
-                    <td className="dip-sub" data-etichetta="Dove">
-                      {r.citta || "—"}{r.provincia ? ` (${r.provincia})` : ""}
-                    </td>
-                    <td className="dip-sub" data-etichetta="Contatti">
-                      {r.telefono
-                        ? <a href={`tel:${String(r.telefono).replace(/\s+/g, "")}`}>{r.telefono}</a>
-                        : "—"}
-                      {r.email ? <br /> : null}
-                      {r.email ? <a href={`mailto:${r.email}`}>{r.email}</a> : ""}
-                    </td>
-                    <td className="dip-tab-azioni" style={{ textAlign: "right" }}>
-                      <button className="adm-btn rosso mini" disabled={busy === r.officina_id}
-                        onClick={() => lascia(r)} aria-label={`Lascia ${r.ragione_sociale}`}>
-                        <Icon name="x" size={12} /> Lascia
-                      </button>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </React.Fragment>
-      )}
+      {/* Come nel Card Center: l'ancora del giro sta sul contenitore, così
+          esiste anche per chi non ha ancora nessun cliente. */}
+      <div data-giro="clienti">
+        {righe.length === 0 ? (
+          <p className="dip-vuoto">Non hai ancora clienti. Usa «Prendi in carico un cliente» qui sopra.</p>
+        ) : (
+          <React.Fragment>
+            <div className="adm-filtri">
+              <input type="search" value={q} placeholder="Cerca fra i tuoi clienti…"
+                onChange={(e) => setQ(e.target.value)} />
+              <span className="dip-sub" style={{ marginLeft: "auto" }}>
+                {viste.length} di {righe.length} client{righe.length === 1 ? "e" : "i"}
+              </span>
+            </div>
+            <div className="dip-tab-scroll">
+              {/* `a-schede`: sul telefono ogni riga diventa una scheda con le
+                  etichette accanto ai valori. Cinque colonne su 390 pixel non
+                  si leggono, e scorrere di lato per vedere il telefono di un
+                  cliente è un lavoro, non una consultazione. */}
+              <table className="dip-tabella a-schede">
+                <thead><tr><th>Cliente</th><th>Codice</th><th>Dove</th><th>Contatti</th><th /></tr></thead>
+                <tbody>
+                  {viste.map((r, i) => (
+                    <motion.tr key={r.officina_id} {...entra(i)}>
+                      <td>{r.ragione_sociale}</td>
+                      <td className="dip-sub" data-etichetta="Codice">{r.codice_cliente || "—"}</td>
+                      <td className="dip-sub" data-etichetta="Dove">
+                        {r.citta || "—"}{r.provincia ? ` (${r.provincia})` : ""}
+                      </td>
+                      <td className="dip-sub" data-etichetta="Contatti">
+                        {r.telefono
+                          ? <a href={`tel:${String(r.telefono).replace(/\s+/g, "")}`}>{r.telefono}</a>
+                          : "—"}
+                        {r.email ? <br /> : null}
+                        {r.email ? <a href={`mailto:${r.email}`}>{r.email}</a> : ""}
+                      </td>
+                      <td className="dip-tab-azioni" style={{ textAlign: "right" }}>
+                        <button className="adm-btn rosso mini" disabled={busy === r.officina_id}
+                          onClick={() => lascia(r)} aria-label={`Lascia ${r.ragione_sociale}`}>
+                          <Icon name="x" size={12} /> Lascia
+                        </button>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </React.Fragment>
+        )}
+      </div>
     </React.Fragment>
   );
 }
@@ -2743,7 +2914,7 @@ function Traguardo({ t, i }) {
   );
 }
 
-function Profilo({ dipendente, ruolo, setErr, schedeVisibili = [] }) {
+function Profilo({ dipendente, ruolo, setErr, schedeVisibili = [], rivediGiro }) {
   const [scheda, setScheda] = useState(null);
   const [numeri, setNumeri] = useState(null);
   const [traguardi, setTraguardi] = useState([]);
@@ -2799,7 +2970,7 @@ function Profilo({ dipendente, ruolo, setErr, schedeVisibili = [] }) {
 
   return (
     <React.Fragment>
-      <div className="dip-profilo">
+      <div className="dip-profilo" data-giro="profilo">
         <div className="dip-profilo-testa">
           <label className="dip-avatar" title="Cambia immagine">
             {avatar ? <img src={avatar} alt="" /> : <span>{iniziali || "—"}</span>}
@@ -2857,6 +3028,14 @@ function Profilo({ dipendente, ruolo, setErr, schedeVisibili = [] }) {
             <button className="adm-btn" onClick={salva} disabled={busy}>
               <Icon name="save" size={14} /> {busy ? "Salvo…" : "Salva"}
             </button>
+            {/* La presentazione parte da sola una volta sola: chi la salta, o
+                chi dopo un mese non ricorda dov'era una cosa, la richiama da
+                qui. Discreta, accanto al salvataggio. */}
+            {rivediGiro && (
+              <button className="adm-btn ghost mini" onClick={rivediGiro}>
+                <Icon name="info" size={13} /> Rivedi la presentazione
+              </button>
+            )}
             <AnimatePresence>
               {salvato && (
                 <motion.span className="dip-sub" style={{ color: "#2e7d4f" }}
