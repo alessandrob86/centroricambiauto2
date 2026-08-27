@@ -2879,8 +2879,18 @@ function PannelloAdmin() {
                   <b style={{ fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", textTransform: "uppercase", fontSize: "var(--fs-xs)", letterSpacing: "var(--ls-caps)" }}>
                     Da creare a catalogo ({ultimoSync.non_trovati.length})
                   </b>
+                  {/* Questo elenco è una FOTOGRAFIA dell'ultimo aggiornamento,
+                      non un controllo dal vivo: se un codice viene creato dopo,
+                      resta scritto qui finché non si riaggiorna. Senza la data
+                      sembra una segnalazione di adesso, e si va a cercare un
+                      problema che non c'è più. */}
                   <p className="adm-sub" style={{ margin: "4px 0 8px" }}>
-                    Codici presenti nel foglio ma non nel catalogo CRA. Il foglio non crea prodotti: li crei tu.
+                    Codici che al momento dell'ultimo aggiornamento
+                    {ultimoSync?.quando
+                      ? ` — ${new Date(ultimoSync.quando).toLocaleString("it-IT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} — `
+                      : " "}
+                    erano nel foglio ma non a catalogo. Il foglio non crea prodotti: li crei tu.
+                    Se li hai creati dopo, <b>riaggiorna</b> e spariscono.
                   </p>
                   <div style={{ maxHeight: "220px", overflow: "auto", border: "1px solid var(--border-subtle, #e2e0da)" }}>
                     {ultimoSync.non_trovati.slice(0, 200).map((n, i) => {
