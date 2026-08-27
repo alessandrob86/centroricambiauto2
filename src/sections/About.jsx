@@ -3,12 +3,12 @@ import { Button } from "../components/ds/Button.jsx";
 import { StatBlock } from "../components/ds/StatBlock.jsx";
 import { Icon } from "../components/Icon.jsx";
 import { Container, Eyebrow, Reveal } from "../components/shared.jsx";
-import sfondo2 from "../assets/backgrounds/cra-sfondo-2.png";
+import sfondo2 from "../assets/backgrounds/cra-sfondo-2.webp";
 import fotoNapoli from "../assets/photos/sede-napoli-vetrina.jpg";
-import fotoBrandWall from "../assets/photos/collecchio-brand-wall.png";
-import fotoBanco from "../assets/photos/collecchio-banco.png";
-import fotoThule from "../assets/photos/collecchio-thule.png";
-import fotoBanco2 from "../assets/photos/collecchio-banco-2.png";
+import fotoBrandWall from "../assets/photos/collecchio-brand-wall.webp";
+import fotoBanco from "../assets/photos/collecchio-banco.webp";
+import fotoThule from "../assets/photos/collecchio-thule.webp";
+import fotoBanco2 from "../assets/photos/collecchio-banco-2.webp";
 
 const { useState, useEffect, useRef, useCallback } = React;
 

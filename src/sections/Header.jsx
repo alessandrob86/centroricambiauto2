@@ -4,7 +4,7 @@ import { Button } from "../components/ds/Button.jsx";
 import { Icon } from "../components/Icon.jsx";
 import { Container, ChromeButton } from "../components/shared.jsx";
 import { useAuth } from "../lib/auth.jsx";
-import l2fLogo from "../assets/brands/l2f.png";
+import l2fLogo from "../assets/brands/l2f.webp";
 
 const B2B_URL = "https://centroricambiautosrl.blusys.it/";
 

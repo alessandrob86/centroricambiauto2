@@ -4,13 +4,13 @@ import { Badge } from "../components/ds/Badge.jsx";
 import { Container, Eyebrow, CountUp, Magnetic } from "../components/shared.jsx";
 
 /* ============================================================
-   HERO video-scrub "scrollytelling": 48 frame (assets/hero-seq/)
+   HERO video-scrub "scrollytelling": 48 frame webp (assets/hero-seq/)
    su canvas. Desktop: binario 520vh con quattro tappe.
    Mobile (≤820px): binario 260vh, solo tappa 1 + tappa finale —
    l'utente raggiunge i contenuti reali molto prima.
    ============================================================ */
 const FRAME_URLS = Object.entries(
-  import.meta.glob("../assets/hero-seq/frame-*.jpg", { eager: true, query: "?url", import: "default" })
+  import.meta.glob("../assets/hero-seq/frame-*.webp", { eager: true, query: "?url", import: "default" })
 ).sort(([a], [b]) => a.localeCompare(b)).map(([, url]) => url);
 const FRAME_COUNT = FRAME_URLS.length;
 

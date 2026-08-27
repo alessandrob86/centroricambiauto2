@@ -162,8 +162,13 @@ const BRANDS = [
 ];
 
 const BRAND_LOGOS = Object.fromEntries(
-  Object.entries(import.meta.glob("../assets/brands/*.{svg,png}", { eager: true, query: "?url", import: "default" }))
-    .map(([path, url]) => [path.match(/([^/]+)\.(svg|png)$/)[1], url])
+  Object.entries(import.meta.glob("../assets/brands/*.{svg,png,webp}", { eager: true, query: "?url", import: "default" }))
+    /* L'elenco delle estensioni sta in due posti — il glob qui sopra e questa
+       espressione — e devono dire la stessa cosa. Aggiungendo webp al primo e
+       dimenticando il secondo, il nome del marchio veniva `null` e la fascia
+       dei loghi portava giù l'intera home. Meglio non elencarle affatto: si
+       taglia l'ultima estensione, qualunque sia. */
+    .map(([path, url]) => [path.split("/").pop().replace(/\.[^.]+$/, ""), url])
 );
 
 function BrandChip({ b }) {

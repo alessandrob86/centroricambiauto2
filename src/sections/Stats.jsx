@@ -2,7 +2,7 @@ import React from "react";
 import { Icon } from "../components/Icon.jsx";
 import { craMark } from "../components/ds/Logo.jsx";
 import { Container, Eyebrow, Reveal, CountUp } from "../components/shared.jsx";
-import sfondo2 from "../assets/backgrounds/cra-sfondo-2.png";
+import sfondo2 from "../assets/backgrounds/cra-sfondo-2.webp";
 
 /* Featured trio — huge figures with draw-in keylines */
 const FEATURED = [

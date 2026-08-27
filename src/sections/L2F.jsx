@@ -1,7 +1,7 @@
 import React from "react";
 import { Container, Eyebrow, Reveal } from "../components/shared.jsx";
 import { Icon } from "../components/Icon.jsx";
-import l2fLogo from "../assets/brands/l2f.png";
+import l2fLogo from "../assets/brands/l2f.webp";
 import officinaBg from "../assets/photos/l2f-officina.webp";
 
 /* Fascia "Il nostro marchio" — presenta L2F (linea ricambi premium di Centro
