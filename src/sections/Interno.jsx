@@ -239,7 +239,7 @@ function InternoInner({ onNavigate, tab: tabUrl }) {
   };
 
   /* Cambiare scheda dal menu azzera il fuoco. Senza, toccando una promozione
-     nel Cruscotto e poi «Card Center» dalla barra si riapriva quella di
+     nel Desk e poi «Card Center» dalla barra si riapriva quella di
      prima: il fuoco serve al salto mirato, non deve sopravvivergli. */
   const vaiScheda = (destinazione) => {
     setFuoco(null);
@@ -323,7 +323,7 @@ function InternoInner({ onNavigate, tab: tabUrl }) {
    su 390 pixel ognuna ha settanta pixel scarsi. Il nome per esteso resta
    ovunque altro — qui serve riconoscere, non leggere. */
 const NOME_CORTO = {
-  home: "Cruscotto", bacheca: "Bacheca", schede: "Card",
+  home: "Desk", bacheca: "Bacheca", schede: "Card",
   clienti: "Clienti", statistiche: "Dati", profilo: "Profilo",
   gestione: "Gestione",
 };

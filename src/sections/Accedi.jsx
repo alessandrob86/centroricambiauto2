@@ -87,7 +87,7 @@ export function Accedi({ onNavigate }) {
     setBusy(false);
     if (error) { setErr(traduciErrore(error)); return; }
     /* Ognuno dove gli serve: il cliente in home, dove trova lo Store; chi è
-       interno dove ha scelto lui o il suo ruolo — di solito il Cruscotto o
+       interno dove ha scelto lui o il suo ruolo — di solito il Desk o
        il Card Center, che è la prima cosa che apre la mattina. Restare qui
        non è mai giusto: un dipendente non ha una riga officine e si vedeva
        ricomparire il modulo di accesso come se il login fosse fallito. */

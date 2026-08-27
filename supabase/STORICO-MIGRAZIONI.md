@@ -153,6 +153,7 @@ repository e ci resta.
 | 126 | 2026-08-27 | inviti_anche_per_il_personale | 6.900 |
 | 127 | 2026-08-27 | invito_personale_solo_a_email_confermata | 3.500 |
 | 128 | 2026-08-27 | inviti_traccia_l_invio | 260 |
+| 129 | 2026-08-27 | desk_e_clienti_solo_a_chi_vende | 1.400 |
 
 ## Dove guardare per capire una cosa
 
