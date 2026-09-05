@@ -123,7 +123,17 @@ export const AuthProvider = ({ children }) => {
     [loadProfilo, session],
   );
 
-  const craActive = officina?.stato === "attiva" && officina?.cra_abilitata === true;
+  /* Due domande diverse, che prima erano una sola.
+     ENTRARE nel negozio: un'officina attiva e abilitata, oppure un
+     dipendente a cui l'amministratore ha aperto il CRA Store — quello vede
+     i prezzi base, e serve per consultare stando al telefono con un cliente.
+     PROPORRE un ordine: solo un'officina. La proposta è intestata a un
+     cliente, e un dipendente non è un cliente: lasciargli riempire il
+     carrello per poi fermarlo all'ultimo passo sarebbe peggio che non
+     mostrarglielo. */
+  const officinaAttiva = officina?.stato === "attiva" && officina?.cra_abilitata === true;
+  const internoAlNegozio = dipendente?.attivo === true && dipendente?.cra_abilitata === true;
+  const craActive = officinaAttiva || internoAlNegozio;
   const isStaff = !!dipendente;
 
   const value = {
@@ -133,14 +143,21 @@ export const AuthProvider = ({ children }) => {
     /** Riga `dipendenti` con la filiale agganciata, o null se non è personale CRA. */
     dipendente,
     loading,
-    /** Officina approvata E abilitata a CRA: può inviare proposte d'ordine. */
+    /** Può ENTRARE nel CRA Store: officina abilitata, oppure personale a cui
+     *  è stato aperto. Non basta per ordinare: vedi `puoProporre`. */
     isActive: craActive,
+    /** Può inviare una proposta d'ordine. Solo un'officina: l'ordine porta il
+     *  nome di un cliente, e la funzione che manda l'email verifica che
+     *  quell'officina sia di chi la sta mandando. */
+    puoProporre: officinaAttiva,
     /** Loggato ma non ancora operativo su CRA. Il personale NON ci finisce:
      *  quel cancello è per i clienti in attesa di approvazione. */
     isPending: !!session && !craActive && !isStaff,
     /** Personale CRA: ha accesso al modulo interno. */
     isStaff,
-    /** admin | manager | rappresentante | centralino | dipendente | null */
+    /** admin | manager | finanza | rappresentante | centralino | dipendente | null.
+     *  Finanza fa quello che fa un manager: i due viaggiano insieme ovunque,
+     *  e nel database la domanda si fa con is_manager(), non col nome. */
     ruolo: dipendente?.ruolo ?? null,
     /** Filiale di appartenenza: è il filtro dei contenuti interni. */
     zona: dipendente?.zone ?? null,

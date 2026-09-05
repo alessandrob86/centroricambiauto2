@@ -135,7 +135,8 @@ Deno.serve(async (req) => {
        tutta l'azienda. Chi non è admin né manager può mandare solo a se
        stesso, cioè la prova del pulsante di verifica: ogni altra
        combinazione, per lui, è un 403. */
-    if (dip.ruolo !== "admin" && dip.ruolo !== "manager" && !b.prova) {
+    const COMANDA = ["admin", "manager", "finanza"];
+    if (!COMANDA.includes(dip.ruolo) && !b.prova) {
       return json({ error: "solo admin e manager possono mandare ad altri" }, 403);
     }
 

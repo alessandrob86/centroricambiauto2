@@ -67,6 +67,56 @@ export async function agganciaOfficina(registrazione, anagrafica) {
   return data;
 }
 
+/* ============ Chi segue un cliente ============
+
+   `prendi_cliente` prende SE STESSI: è il gesto del rappresentante che si
+   costruisce il portafoglio. Queste tre servono a chi amministra, che deve
+   poter dire «questo cliente lo segue lui» — senza quello un area manager
+   non può ricevere clienti. */
+
+/** Le persone che seguono questo cliente, dalla più vecchia. */
+export async function agentiDelCliente(officinaId) {
+  const { data, error } = await supabase.rpc("agenti_del_cliente", { p_officina: officinaId });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Lo affida a una persona. Se qualcun altro lo seguiva già, torna
+ *  `condiviso` e parte l'avviso all'amministrazione: la condivisione è
+ *  ammessa, ma non deve succedere di nascosto. */
+export async function affidaCliente(officinaId, dipendenteId) {
+  const { data, error } = await supabase.rpc("affida_cliente", {
+    p_officina: officinaId, p_dipendente: dipendenteId,
+  });
+  if (error) throw error;
+  const esito = data ?? {};
+  if (esito.condiviso) {
+    try {
+      await supabase.functions.invoke("avvisa-cliente-condiviso", {
+        body: { officina_id: officinaId },
+      });
+    } catch { /* l'avviso è un di più: la notifica interna è già partita */ }
+  }
+  return esito;
+}
+
+/** Toglie una persona precisa. Diverso da «lascia», che riguarda solo sé. */
+export async function togliAffido(officinaId, dipendenteId) {
+  const { error } = await supabase.rpc("togli_affido", {
+    p_officina: officinaId, p_dipendente: dipendenteId,
+  });
+  if (error) throw error;
+}
+
+/** Chi si può mettere su un cliente: il personale in squadra. */
+export async function getPersoneAttive() {
+  const { data, error } = await supabase
+    .from("dipendenti").select("id, nome, cognome, ruolo, zone(nome)")
+    .eq("attivo", true).order("cognome").order("nome");
+  if (error) throw error;
+  return data ?? [];
+}
+
 /** Il contrario, per rimediare a un aggancio sbagliato. */
 export async function staccaOfficina(id) {
   const { error } = await supabase.rpc("stacca_officina", { p_officina: id });
@@ -545,6 +595,53 @@ export async function uploadProductImage(file) {
   const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${Date.now()}-${safe}`;
   const { error } = await supabase.storage.from("cra-prodotti").upload(path, file, { upsert: false });
+  if (error) throw error;
+  const { data } = supabase.storage.from("cra-prodotti").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+/* ============ Schede tecniche e di sicurezza ============
+
+   Le ventisei schede che ci sono arrivarono tutte in una volta, con una
+   migrazione: dal sito non c'era modo di aggiungerne una. Il primo prodotto
+   nuovo con un PDF da attaccare — lo 0W-20 Hybrid — ha reso evidente il
+   buco: il catalogo sapeva mostrare le schede ma non riceverle.
+
+   Il nome del file lo decide il prodotto, non chi carica: «Olio motore
+   0W-20 Hybrid - Scheda tecnica.pdf». È la stessa convenzione delle altre
+   ventisei, e serve a poterle riconoscere nel deposito senza aprirle. Il
+   nome del fornitore — T-1612-L2F_0W20 Hybrid — non dice niente a nessuno
+   fra sei mesi. */
+
+/** Come si chiama, nel deposito, la scheda di un prodotto. */
+function nomeScheda(nomeProdotto, genere) {
+  /* Il deposito non accetta tutti i caratteri, e una barra dentro il nome
+     creerebbe una cartella. Si tiene la punteggiatura leggibile e si toglie
+     il resto. */
+  const pulito = String(nomeProdotto ?? "").trim()
+    .replace(/[/\\?%*:|"<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 90);
+  const coda = genere === "sicurezza" ? "Scheda di sicurezza" : "Scheda tecnica";
+  return `chimico/${pulito} - ${coda}.pdf`;
+}
+
+/** Carica il PDF e ritorna l'indirizzo pubblico da mettere sul prodotto.
+ *  `upsert`: ricaricare la stessa scheda la sostituisce invece di lasciarne
+ *  due, e chi apre il prodotto vede subito quella nuova — l'indirizzo non
+ *  cambia. */
+export async function caricaSchedaProdotto(file, nomeProdotto, genere) {
+  if (!file) throw new Error("nessun file");
+  if (file.type && file.type !== "application/pdf") {
+    throw new Error("la scheda dev'essere un PDF");
+  }
+  if (!String(nomeProdotto ?? "").trim()) {
+    throw new Error("scrivi prima il nome del prodotto: dà il nome al file");
+  }
+  const path = nomeScheda(nomeProdotto, genere);
+  const { error } = await supabase.storage
+    .from("cra-prodotti")
+    .upload(path, file, { upsert: true, contentType: "application/pdf" });
   if (error) throw error;
   const { data } = supabase.storage.from("cra-prodotti").getPublicUrl(path);
   return data.publicUrl;

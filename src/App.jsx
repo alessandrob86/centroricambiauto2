@@ -12,6 +12,7 @@ import { Accedi } from "./sections/Accedi.jsx";
 import { ScrollProgress, BackToTop, Container } from "./components/shared.jsx";
 import { BarraAnnunci } from "./components/BarraAnnunci.jsx";
 import { Campanella } from "./components/Campanella.jsx";
+import { Feedback } from "./components/Feedback.jsx";
 import { tracciaVisita } from "./lib/traccia.js";
 
 /* Sezioni ecommerce e back-office: lazy per non appesantire la vetrina. */
@@ -202,6 +203,10 @@ export default function App() {
           e non deve sporcare la navigazione pubblica. Si nasconde da sola
           per chi non è staff. */}
       <Campanella onNavigate={navigate} />
+      {/* Sopra la campanella, stessa famiglia: la campanella porta le
+          notizie dentro, questa le porta fuori. Si nasconde da sola per
+          chi non e' staff. */}
+      <Feedback />
       <BackToTop />
     </React.Fragment>
   );

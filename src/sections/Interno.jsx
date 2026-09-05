@@ -21,9 +21,12 @@ const { useState, useEffect, useCallback, useMemo, useRef } = React;
    (MotionConfig reducedMotion="user").
    ============================================================ */
 
+/* Finanza sta accanto a Manager, non in fondo: nell'elenco a tendina la
+   posizione racconta il grado, e vederlo dopo «Dipendente» farebbe pensare
+   a un ruolo minore. Fa esattamente le stesse cose di un manager. */
 const RUOLI = {
-  admin: "Amministratore", manager: "Manager", rappresentante: "Rappresentante",
-  centralino: "Centralino", dipendente: "Dipendente",
+  admin: "Amministratore", manager: "Manager", finanza: "Finanza",
+  rappresentante: "Rappresentante", centralino: "Centralino", dipendente: "Dipendente",
 };
 /* Due esiti soli, più l'assenza. «Accettata» non è un giudizio dell'agente:
    la scrive l'invio, perché mandare la proposta su ordini@ significa che il
@@ -298,8 +301,8 @@ function passiDelGiro(dipendente, ruolo, schede, mobile) {
        annunci, sposta i clienti fra agenti)? Sono le stesse due condizioni
        che il resto del modulo usa già per decidere cosa mostrare, quindi il
        giro racconta esattamente il sito che quella persona si troverà. */
-    vende: ["admin", "manager", "rappresentante"].includes(ruolo),
-    gestisce: ["admin", "manager"].includes(ruolo),
+    vende: ["admin", "manager", "finanza", "rappresentante"].includes(ruolo),
+    gestisce: ["admin", "manager", "finanza"].includes(ruolo),
   };
   return PASSI_GIRO
     .filter((p) => !p.scheda || schede.some((m) => m.codice === p.scheda))
@@ -384,7 +387,11 @@ function InternoInner({ onNavigate, tab: tabUrl }) {
     setTab((t) => esiste(tabUrl) ?? t ?? esiste(avvio) ?? moduli.schede[0]?.codice ?? null);
   }, [moduli, tabUrl, avvio]);
 
-  const puoGestire = isAdmin || ruolo === "manager";
+  /* Chi gestisce: amministratore, manager e finanza — lo stesso grado.
+     Il centralino non gestisce, ma cura le schede Education: e' un permesso
+     stretto sul tipo di scheda, non sulla persona, e viaggia a parte. */
+  const puoGestire = isAdmin || ruolo === "manager" || ruolo === "finanza";
+  const curaEducation = ruolo === "centralino";
   /* Prima di ogni uscita anticipata: React conta gli hook a ogni disegno e
      pretende sempre lo stesso numero. Chiamandolo dopo il `return` di
      «Caricamento…» il primo disegno ne aveva uno in meno del secondo, e il
@@ -444,7 +451,7 @@ function InternoInner({ onNavigate, tab: tabUrl }) {
      giorno. Alla fine `chiudiGiro` la riscrive comunque. */
   const rivediGiro = () => setGiro(true);
 
-  const comuni = { dipendente, ruolo, isAdmin, puoGestire, zone, setErr, onNavigate, vaiA,
+  const comuni = { dipendente, ruolo, isAdmin, puoGestire, curaEducation, zone, setErr, onNavigate, vaiA,
     schedeVisibili: moduli.schede, rivediGiro };
 
   return (
@@ -1516,7 +1523,7 @@ function Bacheca({ dipendente, puoGestire, zone, setErr, onConteggio, fuoco }) {
 /* ============================================================
    CARD CENTER — il materiale. Il tipo decide cosa si può farci.
    ============================================================ */
-function CardCenter({ dipendente, ruolo, puoGestire, zone, setErr, fuoco }) {
+function CardCenter({ dipendente, ruolo, puoGestire, curaEducation, zone, setErr, fuoco }) {
   const [tipi, setTipi] = useState([]);
   const [righe, setRighe] = useState(null);
   const [filtro, setFiltro] = useState("");
@@ -1528,18 +1535,15 @@ function CardCenter({ dipendente, ruolo, puoGestire, zone, setErr, fuoco }) {
   const [filiale, setFiliale] = useState("");
 
   /* Chi gestisce vede anche bozze e archiviate, per poterle riprendere in
-     mano; gli altri solo quello che è pubblicato e valido adesso. */
+     mano; gli altri solo quello che è pubblicato e valido adesso.
+     Il centralino sta in mezzo: il Card Center lo legge come tutti, ma delle
+     Education — le sue — vede anche le bozze e le scadute. Una bozza che
+     sparisce nel momento esatto in cui la salvi non la ritrova più nessuno. */
   const carica = useCallback(async () => {
     const t = await api.getTipiScheda();
     setTipi(t);
-    if (!puoGestire) {
-      const mie = await api.getSchede();
-      setRighe(mie.map((s) => ({ ...s, zone: s.zone_ids ?? [], zone_nomi: s.zone_nomi ?? [] })));
-      return;
-    }
-    const [tutte, conteggi] = await Promise.all([api.getSchedeGestione(), api.getConteggiDestinatari()]);
     const nomeDi = Object.fromEntries((zone ?? []).map((z) => [z.id, z.nome]));
-    setRighe(tutte.map((s) => ({
+    const daGestione = (s, conteggi) => ({
       ...s,
       tipo_nome: s.tipi_scheda?.nome ?? s.tipo,
       tipo_colore: s.tipi_scheda?.colore ?? null,
@@ -1548,9 +1552,42 @@ function CardCenter({ dipendente, ruolo, puoGestire, zone, setErr, fuoco }) {
       /* Chi gestisce legge dalla tabella, non dalla funzione filtrata: i nomi
          delle filiali se li ricava dall'elenco che ha già in mano. */
       zone_nomi: (s.zone ?? []).map((id) => nomeDi[id]).filter(Boolean),
-      destinatari: conteggi[s.id] ?? 0,
-    })));
-  }, [puoGestire, zone]);
+      destinatari: conteggi?.[s.id] ?? 0,
+    });
+
+    if (puoGestire) {
+      const [tutte, conteggi] = await Promise.all([api.getSchedeGestione(), api.getConteggiDestinatari()]);
+      setRighe(tutte.map((x) => daGestione(x, conteggi)));
+      return;
+    }
+
+    const mie = (await api.getSchede())
+      .map((x) => ({ ...x, zone: x.zone_ids ?? [], zone_nomi: x.zone_nomi ?? [] }));
+    if (!curaEducation) { setRighe(mie); return; }
+
+    // Le due letture si sovrappongono sulle Education pubblicate: vince
+    // quella di gestione, che porta con sé lo stato e le filiali.
+    const edu = (await api.getSchedeGestione())
+      .filter((x) => x.tipo === "education")
+      .map((x) => daGestione(x, null));
+    const per = new Map(mie.map((x) => [x.id, x]));
+    for (const x of edu) per.set(x.id, x);
+    setRighe([...per.values()]
+      .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""))));
+  }, [puoGestire, curaEducation, zone]);
+
+  /* Da qui in giù la domanda non è più «puoi gestire?» ma «puoi toccare
+     QUESTA scheda?»: per chi gestisce è sempre sì, per il centralino è sì
+     solo sulle Education. Il permesso è stretto sul tipo, non sulla persona. */
+  const puoScrivere = puoGestire || curaEducation;
+  const posso = useCallback(
+    (x) => puoGestire || (curaEducation && x?.tipo === "education"),
+    [puoGestire, curaEducation],
+  );
+  const tipiCreabili = useMemo(
+    () => (puoGestire ? tipi : tipi.filter((t) => t.id === "education")),
+    [tipi, puoGestire],
+  );
   useEffect(() => { carica().catch(() => setErr("Non riesco a leggere il Card Center.")); }, [carica, setErr]);
 
   /* Arrivo da un riquadro della home su una scheda precisa: si apre quella,
@@ -1674,7 +1711,7 @@ function CardCenter({ dipendente, ruolo, puoGestire, zone, setErr, fuoco }) {
 
       <div className="dip-barra-filtri">
         <div className="dip-filtro-riga">
-          {puoGestire && (
+          {puoScrivere && (
             <div className="dip-filtro-periodo">
               {[["corso", "In corso"], ["scadute", "Scadute"], ["tutte", "Tutte"]].map(([id, nome]) => (
                 <button key={id} className={`adm-tab ${stato === id ? "attivo" : ""}`}
@@ -1686,7 +1723,7 @@ function CardCenter({ dipendente, ruolo, puoGestire, zone, setErr, fuoco }) {
           )}
           {/* Chi vede le schede di tutte le filiali deve poter restringere:
               vedere tutto senza poter filtrare è rumore, non informazione. */}
-          {puoGestire && zone?.length > 1 && (
+          {puoScrivere && zone?.length > 1 && (
             <label className="dip-campo">
               <span>Filiale</span>
               <select value={filiale} onChange={(e) => setFiliale(e.target.value)}>
@@ -1724,12 +1761,13 @@ function CardCenter({ dipendente, ruolo, puoGestire, zone, setErr, fuoco }) {
         })}
       </div>
 
-      {puoGestire && (
+      {puoScrivere && (
         <div className="adm-form">
           <button className="adm-btn ghost" style={{ alignSelf: "flex-start" }}
-            onClick={() => setForm((f) => (f ? null : { ...VUOTA }))}>
+            onClick={() => setForm((f) => (f ? null : { ...VUOTA, tipo: tipiCreabili[0]?.id ?? "education" }))}>
             <Icon name={form ? "chevron-up" : "plus"} size={14} />
-            {form?.id ? "Chiudi la modifica" : "Nuova scheda"}
+            {form?.id ? "Chiudi la modifica"
+              : puoGestire ? "Nuova scheda" : "Nuova scheda Education"}
           </button>
           <AnimatePresence>
             {form && (
@@ -1742,13 +1780,23 @@ function CardCenter({ dipendente, ruolo, puoGestire, zone, setErr, fuoco }) {
                   </label>
                   <label className="adm-fld">
                     <span>Tipo</span>
-                    <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-                      {tipi.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-                    </select>
+                    {/* Con una sola scelta possibile un menù a tendina è una
+                        bugia gentile: sembra che si possa cambiare. Meglio
+                        dire com'è. */}
+                    {tipiCreabili.length > 1 ? (
+                      <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
+                        {tipiCreabili.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
+                      </select>
+                    ) : (
+                      <input type="text" readOnly value={tipiCreabili[0]?.nome ?? "Education"}
+                        style={{ cursor: "default" }} />
+                    )}
                     <span className="dip-sub">
-                      {tipi.find((t) => t.id === form.tipo)?.inoltrabile
-                        ? "i rappresentanti potranno inoltrarla come proposta d'ordine"
-                        : "di sola consultazione"}
+                      {tipiCreabili.length > 1
+                        ? (tipi.find((t) => t.id === form.tipo)?.inoltrabile
+                            ? "i rappresentanti potranno inoltrarla come proposta d'ordine"
+                            : "di sola consultazione")
+                        : "le informazioni tecniche sui ricambi: di sola consultazione"}
                     </span>
                   </label>
                   <label className="adm-fld"><span>Valida da</span>
@@ -1837,7 +1885,7 @@ function CardCenter({ dipendente, ruolo, puoGestire, zone, setErr, fuoco }) {
       <AnimatePresence>
         {aperta && (
           <DettaglioScheda scheda={aperta} ruolo={ruolo} dipendente={dipendente}
-            puoGestire={puoGestire} setErr={setErr} onChiudi={() => setAperta(null)}
+            puoGestire={posso(aperta)} setErr={setErr} onChiudi={() => setAperta(null)}
             onModifica={() => apriModifica(aperta)} onElimina={() => elimina(aperta)} />
         )}
       </AnimatePresence>
@@ -2204,6 +2252,14 @@ function MieiClienti({ setErr }) {
   const gia = useMemo(() => new Set((righe ?? []).map((r) => r.officina_id)), [righe]);
 
   const prendi = async (o) => {
+    /* Non si toglie più niente a nessuno: ci si aggiunge. Ma è giusto sapere
+       prima che quel cliente lo lavora già qualcun altro — e che la cosa
+       verrà detta a chi di dovere, così non la si scopre dopo. */
+    if (o.seguito_da_altri && !o.e_mio && !window.confirm(
+      `${o.ragione_sociale} lo segue già ${(o.agenti ?? []).join(", ") || "un collega"}.\n\n`
+      + "Lo prendi anche tu? Non gli togli niente: lo vedete tutti e potete "
+      + "mandargli proposte. Ad Alessandro arriva un avviso, così ne parlate.",
+    )) return;
     setBusy(o.id);
     try {
       await api.prendiCliente(o.id);
@@ -2214,8 +2270,13 @@ function MieiClienti({ setErr }) {
   };
 
   const lascia = async (r) => {
+    const altri = (r.condiviso_con ?? []).length;
     if (!window.confirm(
-      `Lascio ${r.ragione_sociale}?\n\nTorna disponibile per un altro rappresentante. Gli esiti già registrati restano.`,
+      `Lascio ${r.ragione_sociale}?\n\n`
+      + (altri
+        ? `Resta a ${r.condiviso_con.join(", ")}: esci solo tu. `
+        : "Torna disponibile per chiunque. ")
+      + "Gli esiti già registrati restano.",
     )) return;
     setBusy(r.officina_id);
     try { await api.lasciaCliente(r.officina_id); await carica(); }
@@ -2236,9 +2297,11 @@ function MieiClienti({ setErr }) {
   return (
     <React.Fragment>
       <p className="dip-regola">
-        Il tuo portafoglio: i clienti che segui tu. Le promozioni non si assegnano
-        cliente per cliente — <b>aprendo una promozione nel Card Center trovi questo elenco</b> e
-        scegli a chi mandarla.
+        Il tuo portafoglio: i clienti che segui tu. Un cliente può essere seguito
+        anche da un collega — capita, e non toglie niente a nessuno: si vede
+        scritto sulla riga. Le promozioni non si assegnano cliente per cliente:
+        <b> aprendo una promozione nel Card Center trovi questo elenco</b> e scegli
+        a chi mandarla.
       </p>
 
       <div className="adm-form">
@@ -2256,7 +2319,10 @@ function MieiClienti({ setErr }) {
                   onChange={(e) => setCerca(e.target.value)} />
               </label>
               {cerca.trim() && trovate.length === 0 && (
-                <p className="dip-sub" style={{ marginTop: "8px" }}>Nessun cliente trovato.</p>
+                <p className="dip-sub" style={{ marginTop: "8px" }}>
+                  Nessun cliente con «{cerca.trim()}» nel nome, nel codice, nella città o nella
+                  partita IVA. Prova con meno lettere: la ricerca cerca il pezzo esatto.
+                </p>
               )}
               {/* Un risultato per riga, col pulsante che sul telefono prende
                   tutta la larghezza: prendere un cliente è il gesto che si fa
@@ -2269,13 +2335,27 @@ function MieiClienti({ setErr }) {
                       {o.codice_cliente ?? "—"}{o.citta ? ` · ${o.citta}` : ""}{o.provincia ? ` (${o.provincia})` : ""}
                     </span>
                   </span>
-                  {gia.has(o.id)
+                  {/* Tre situazioni, tre risposte. Prima ce n'era una sola:
+                      i clienti già affidati non uscivano nemmeno dalla
+                      ricerca, e il pannello diceva «nessun cliente trovato»
+                      di uno che c'era. */}
+                  {gia.has(o.id) || o.e_mio
                     ? <span className="dip-esito accettata">già tuo</span>
-                    : (
-                      <button className="adm-btn" disabled={busy === o.id} onClick={() => prendi(o)}>
-                        <Icon name="plus" size={14} /> {busy === o.id ? "Prendo…" : "Prendi in carico"}
-                      </button>
-                    )}
+                    : o.seguito_da_altri
+                      ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                          <span className="dip-sub">lo segue <b>{(o.agenti ?? []).join(", ") || "un collega"}</b></span>
+                          <button className="adm-btn ghost mini" disabled={busy === o.id}
+                            onClick={() => prendi(o)}>
+                            <Icon name="plus" size={13} /> {busy === o.id ? "Prendo…" : "Prendilo anche tu"}
+                          </button>
+                        </span>
+                      )
+                      : (
+                        <button className="adm-btn" disabled={busy === o.id} onClick={() => prendi(o)}>
+                          <Icon name="plus" size={14} /> {busy === o.id ? "Prendo…" : "Prendi in carico"}
+                        </button>
+                      )}
                 </motion.div>
               ))}
             </motion.div>
@@ -2307,7 +2387,17 @@ function MieiClienti({ setErr }) {
                 <tbody>
                   {viste.map((r, i) => (
                     <motion.tr key={r.officina_id} {...entra(i)}>
-                      <td>{r.ragione_sociale}</td>
+                      <td>
+                        {r.ragione_sociale}
+                        {/* Sapere che un cliente lo lavora anche un collega
+                            cambia come ci si va: meglio leggerlo qui che
+                            scoprirlo davanti all'officina. */}
+                        {(r.condiviso_con ?? []).length > 0 && (
+                          <span className="dip-sub" style={{ display: "block" }}>
+                            <Icon name="users" size={11} /> anche {r.condiviso_con.join(", ")}
+                          </span>
+                        )}
+                      </td>
                       <td className="dip-sub" data-etichetta="Codice">{r.codice_cliente || "—"}</td>
                       <td className="dip-sub" data-etichetta="Dove">
                         {r.citta || "—"}{r.provincia ? ` (${r.provincia})` : ""}
@@ -2531,7 +2621,7 @@ const ORDINI_AGENTE = [
   { id: "rendimento", nome: "Rendimento" },
 ];
 
-function Statistiche({ setErr }) {
+function Statistiche({ setErr, puoGestire }) {
   const [periodo, setPeriodo] = useState("12");
   const [da, setDa] = useState("");
   const [a, setA] = useState("");
@@ -2639,8 +2729,11 @@ function Statistiche({ setErr }) {
           {voci.agenti.length > 1 && (
             <label className="dip-campo">
               <span>Agente</span>
+              {/* Per chi gestisce, «Tutti» è tutta la rete. Per un area
+                  manager sono lui e i suoi: chiamarlo «Tutti» gli farebbe
+                  credere di star guardando numeri che non sono i suoi. */}
               <select value={agente} onChange={(e) => setAgente(e.target.value)}>
-                <option value="">Tutti</option>
+                <option value="">{puoGestire ? "Tutti" : "Io e la mia squadra"}</option>
                 {voci.agenti.map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)}
               </select>
             </label>
@@ -2914,7 +3007,7 @@ const GRADI = ["Bronzo", "Argento", "Oro", "Platino"];
    stessero nel sito, una medaglia sarebbe un'affermazione del browser.
    La funzione `miei_traguardi()` restituisce già la scala filtrata per ruolo,
    il valore raggiunto, il grado e la data. */
-const VENDONO = ["admin", "manager", "rappresentante"];
+const VENDONO = ["admin", "manager", "finanza", "rappresentante"];
 
 function Traguardo({ t, i }) {
   const mostra = (v) => (t.formato === "soldi" ? euro(v) : t.formato === "percento" ? pct(v) : numero(v));

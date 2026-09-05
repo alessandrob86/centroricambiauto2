@@ -12,6 +12,7 @@ const { useState, useEffect } = React;
 const RUOLO_ESTESO = {
   admin: "amministratore",
   manager: "manager",
+  finanza: "amministrazione",
   rappresentante: "rappresentante",
   centralino: "centralino",
   dipendente: "parte della squadra",

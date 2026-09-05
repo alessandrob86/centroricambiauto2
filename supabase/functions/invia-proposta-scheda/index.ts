@@ -40,7 +40,7 @@ const MAX_FOTO = 6_000_000;
    Il centralino c'è perché risponde per tutti, non perché abbia clienti suoi:
    è anche l'unico ruolo che di suo non potrebbe scrivere su `scheda_esiti` e
    `scheda_ordini`, dove la RLS ammette solo admin e manager. */
-const RUOLI_SENZA_PORTAFOGLIO = ["admin", "manager", "centralino"];
+const RUOLI_SENZA_PORTAFOGLIO = ["admin", "manager", "finanza", "centralino"];
 
 const esc = (s: unknown) =>
   String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c] as string));

@@ -8,6 +8,7 @@ import {
   getOfficine, getContaOfficine, getContaPerCategoria, getProvinceOfficine,
   getCraOrders, updateOrderStato, ORDER_STATI, statoLabel,
   getAllProducts, getCategories, createProduct, updateProduct, deleteProduct, uploadProductImage,
+  caricaSchedaProdotto,
   bulkUpdatePrices, syncCatalogo, ordersToCsv, downloadCsv,
   getCategorieCliente, createCategoriaCliente, updateCategoriaCliente, deleteCategoriaCliente,
   getListini, createListino, updateListino, deleteListino, setListinoCategorie,
@@ -19,6 +20,7 @@ import {
   contaDocumentiLocali, caricaDocumenti, spostaDocumenti, baseDocumenti,
   rinominaMedia, getTipiDocumento, mediaNonUsati, togliMediaNonUsati, mediaAppenaCaricati,
   creaInvito, getInviti, annullaInvito, inviaInvito, agganciaOfficina, staccaOfficina,
+  agentiDelCliente, affidaCliente, togliAffido, getPersoneAttive,
 } from "../lib/adminApi.js";
 
 /* ============================================================
@@ -104,8 +106,13 @@ function Trasloco({ titolo, spiega, cartella, base, conta, carica, sposta, esito
       {stato?.riferimenti === 0 && (
         <p className="adm-sub">
           <Icon name="check-circle-2" size={14} color="#2E7D4F" />{" "}
-          Nessun prodotto punta più a un percorso locale. Il pulsante resta:
-          è ripetibile, e serve quando arrivano file nuovi o aggiornati.
+          Nessun prodotto punta più a un percorso locale: il trasloco è finito.
+          Il pulsante serve ancora per <b>sostituire</b> un file già collegato —
+          stesso nome, contenuto nuovo — e in quel caso il prodotto se ne accorge
+          da solo. Per <b>attaccare</b> una scheda a un prodotto che non ce l'ha,
+          invece, non basta: il file salirebbe col nome del fornitore e resterebbe
+          scollegato, come i {inutili?.length ?? "file"} qui sotto. Si fa da
+          <b> Prodotti → Modifica → Schede in PDF</b>.
         </p>
       )}
 
@@ -515,6 +522,7 @@ const { useEffect, useState, useRef, useMemo, useCallback } = React;
    foglio). Il marchio va scritto: "L2F" solo se è davvero private label. */
 const EMPTY_FORM = {
   codice: "", nome: "", categoria: "", prezzo: "", descrizione: "", immagine: "", tags: "",
+  scheda_tecnica: "", scheda_sicurezza: "",
   marchio: "", su_l2f: false, su_cra: true,
   cra_taglia: "normale", cra_offerta_da: "", cra_offerta_a: "", cra_offerta_prezzo: "", cra_offerta_etichetta: "",
   attrs: [], attrsExtra: {},
@@ -946,11 +954,18 @@ function PrezziCliente({ officina, righe, categoriaNome, prezzoCorrente, onCambi
  * componenti gli hook del pannello girano solo quando il cancello è già
  * passato: è la stessa condizione di prima, ma senza rami dentro. */
 export function Admin({ onNavigate }) {
-  const { loading, isAdmin } = useAuth();
+  const { loading, isAdmin, ruolo } = useAuth();
+  /* Il back-office non è più una porta sola. Manager e Finanza entrano, ma
+     trovano dentro una stanza sola: i clienti. Prezzi, prodotti, proposte,
+     impostazioni e personale restano dell'amministratore — e non sono
+     nascosti col foglio di stile: le chiamate che li riempiono, per loro, il
+     database le respinge comunque. */
+  const soloClienti = !isAdmin && (ruolo === "manager" || ruolo === "finanza");
+
   if (loading) {
     return <section className="adm-page"><div className="adm-wrap"><p className="adm-state">Caricamento…</p></div></section>;
   }
-  if (!isAdmin) {
+  if (!isAdmin && !soloClienti) {
     return (
       <section className="adm-page">
         <div className="adm-wrap">
@@ -972,7 +987,9 @@ export function Admin({ onNavigate }) {
    forza vero: se li ricontrollasse sarebbe un dubbio senza motivo. */
 function PannelloAdmin() {
   const { isAdmin, officina: mia, refreshOfficina } = useAuth();
-  const [tab, setTab] = useState("prezzi");
+  // Chi entra per i clienti si apre direttamente sui clienti: aprirsi su una
+  // scheda che poi non esiste sarebbe un pannello vuoto al primo sguardo.
+  const [tab, setTab] = useState(isAdmin ? "prezzi" : "officine");
   const [err, setErr] = useState(null);
 
   // officine — l'elenco è UNA PAGINA di risultati, non tutta l'anagrafica:
@@ -1072,6 +1089,22 @@ function PannelloAdmin() {
       .catch(() => setErr("Errore di caricamento. Ricarica la pagina."));
   }, [isAdmin]);
 
+  /* Chi entra per i clienti scarica solo quello che i clienti richiedono:
+     i nomi delle categorie e i tre contatori dei filtri. Chiedere anche
+     prezzi, prodotti e proposte vorrebbe dire cinque richieste respinte dal
+     database e un errore rosso in cima al pannello, per roba che comunque
+     non gli si mostra. */
+  useEffect(() => {
+    if (isAdmin) return;
+    Promise.all([
+      getCategorieCliente(), getContaOfficine(), getContaPerCategoria(), getProvinceOfficine(),
+    ])
+      .then(([cc, cs, ccat, pr]) => {
+        setCategorieCli(cc); setContaStati(cs); setContaCat(ccat); setProvince(pr);
+      })
+      .catch(() => setErr("Errore di caricamento. Ricarica la pagina."));
+  }, [isAdmin]);
+
   /* L'elenco clienti si chiede al server a ogni cambio di filtro o di pagina,
      non si filtra in memoria: le anagrafiche sono migliaia e PostgREST ne
      restituisce comunque al massimo 1000 per chiamata. */
@@ -1085,7 +1118,7 @@ function PannelloAdmin() {
   useEffect(() => { setCliPagina(0); }, [filtriCli, cliPerPagina]);
 
   useEffect(() => {
-    if (!isAdmin || tab !== "officine") return undefined;
+    if (tab !== "officine") return undefined;
     let vivo = true;
     setCliBusy(true);
     // Attesa mentre si digita: senza, ogni lettera sarebbe una richiesta.
@@ -1099,7 +1132,7 @@ function PannelloAdmin() {
         .finally(() => vivo && setCliBusy(false));
     }, cliQ ? 400 : 0);
     return () => { vivo = false; clearTimeout(t); };
-  }, [isAdmin, tab, filtriCli, cliPagina, cliPerPagina, cliQ]);
+  }, [tab, filtriCli, cliPagina, cliPerPagina, cliQ]);
 
   /** Rilegge la pagina corrente e i conteggi dopo una modifica. */
   const ricaricaOfficine = useCallback(async () => {
@@ -1206,6 +1239,8 @@ function PannelloAdmin() {
       cra_offerta_etichetta: form.cra_offerta_etichetta.trim() || null,
       descrizione: form.descrizione.trim() || null,
       immagine: form.immagine || null,
+      scheda_tecnica_url: form.scheda_tecnica || null,
+      scheda_sicurezza_url: form.scheda_sicurezza || null,
       tags: form.tags.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean),
       // attrsExtra preserva le parti non modificabili da qui (es. schede annidate)
       attributi: {
@@ -1285,6 +1320,7 @@ function PannelloAdmin() {
     setForm({
       codice: p.codice, nome: p.nome, categoria: p.categoria ?? "",
       prezzo: "", descrizione: p.descrizione ?? "", immagine: p.immagine ?? "",
+      scheda_tecnica: p.scheda_tecnica_url ?? "", scheda_sicurezza: p.scheda_sicurezza_url ?? "",
       tags: (p.tags ?? []).join(", "),
       marchio: p.marchio ?? "", su_l2f: !!p.su_l2f, su_cra: !!p.su_cra,
       cra_taglia: p.cra_taglia ?? "normale",
@@ -1313,6 +1349,49 @@ function PannelloAdmin() {
     try { setForm((f) => ({ ...f, immagine: null })); const url = await uploadProductImage(file); setForm((f) => ({ ...f, immagine: url })); }
     catch { setErr("Upload foto non riuscito."); }
     finally { setUploading(false); }
+  };
+
+  /* Le due schede in PDF. Il file prende il nome dal prodotto, non da come
+     l'ha chiamato il fornitore: «T-1612-L2F_0W20 Hybrid» nel deposito, fra
+     sei mesi, non lo riconosce nessuno. */
+  const [schedaSu, setSchedaSu] = useState(null);   // 'tecnica' | 'sicurezza'
+  const onUploadScheda = async (file, genere) => {
+    if (!file) return;
+    if (!form.nome.trim()) {
+      setErr("Scrivi prima il nome del prodotto: dà il nome al file della scheda.");
+      return;
+    }
+    setSchedaSu(genere);
+    setErr(null);
+    try {
+      const url = await caricaSchedaProdotto(file, form.nome, genere);
+      /* Il PDF sta nel deposito ma il prodotto non lo sa ancora: si scrive
+         subito anche sulla riga, così chi carica e chiude senza premere
+         Salva non si ritrova un file orfano e un prodotto senza scheda. */
+      const campo = genere === "sicurezza" ? "scheda_sicurezza" : "scheda_tecnica";
+      setForm((f) => ({ ...f, [campo]: url }));
+      if (editingId) {
+        const colonna = genere === "sicurezza" ? "scheda_sicurezza_url" : "scheda_tecnica_url";
+        await updateProduct(editingId, { [colonna]: url });
+        setProducts((prev) => prev?.map((p) => (p.id === editingId ? { ...p, [colonna]: url } : p)) ?? prev);
+      }
+    } catch (e) {
+      setErr(String(e?.message || "Caricamento della scheda non riuscito."));
+    } finally { setSchedaSu(null); }
+  };
+
+  const togliScheda = async (genere) => {
+    const campo = genere === "sicurezza" ? "scheda_sicurezza" : "scheda_tecnica";
+    const colonna = genere === "sicurezza" ? "scheda_sicurezza_url" : "scheda_tecnica_url";
+    setForm((f) => ({ ...f, [campo]: "" }));
+    // Il PDF resta nel deposito: staccarlo dal prodotto non è cancellarlo,
+    // e un file di sicurezza non si butta per un clic sbagliato.
+    if (editingId) {
+      try {
+        await updateProduct(editingId, { [colonna]: null });
+        setProducts((prev) => prev?.map((p) => (p.id === editingId ? { ...p, [colonna]: null } : p)) ?? prev);
+      } catch { setErr("Non riesco a togliere la scheda."); }
+    }
   };
   const doSync = async () => {
     setSyncBusy(true);
@@ -1775,7 +1854,7 @@ function PannelloAdmin() {
             <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", fontSize: "var(--fs-2xs)", letterSpacing: "var(--ls-eyebrow)", textTransform: "uppercase", color: "var(--cra-red)" }}>
               <Icon name="shield-check" size={14} /> Back-office CRA
             </span>
-            <h1 className="adm-title">Amministrazione</h1>
+            <h1 className="adm-title">{isAdmin ? "Amministrazione" : "Clienti"}</h1>
           </div>
           {tab === "ordini" && orders?.length > 0 && (
             <button className="adm-btn ghost" onClick={exportCsv}><Icon name="download" size={15} /> Esporta CSV</button>
@@ -1783,42 +1862,50 @@ function PannelloAdmin() {
         </header>
 
         <div className="adm-tabs">
-          <button className={`adm-tab ${tab === "prezzi" ? "active" : ""}`} onClick={() => setTab("prezzi")}>
-            <Icon name="tag" size={15} /> Prezzi
-          </button>
-          <button className={`adm-tab ${tab === "prodotti" ? "active" : ""}`} onClick={() => setTab("prodotti")}>
-            <Icon name="store" size={15} /> Prodotti {products && <span className="adm-count">{products.length}</span>}
-          </button>
+          {isAdmin && (
+            <React.Fragment>
+              <button className={`adm-tab ${tab === "prezzi" ? "active" : ""}`} onClick={() => setTab("prezzi")}>
+                <Icon name="tag" size={15} /> Prezzi
+              </button>
+              <button className={`adm-tab ${tab === "prodotti" ? "active" : ""}`} onClick={() => setTab("prodotti")}>
+                <Icon name="store" size={15} /> Prodotti {products && <span className="adm-count">{products.length}</span>}
+              </button>
+            </React.Fragment>
+          )}
           <button className={`adm-tab ${tab === "officine" ? "active" : ""}`} onClick={() => setTab("officine")}>
             <Icon name="building-2" size={15} /> Officine
             {nConAccesso + nAnagrafiche > 0 && <span className="adm-count">{nConAccesso + nAnagrafiche}</span>}
           </button>
-          <button className={`adm-tab ${tab === "ordini" ? "active" : ""}`} onClick={() => setTab("ordini")}>
-            <Icon name="package-check" size={15} /> Proposte {orders && <span className="adm-count">{orders.length}</span>}
-          </button>
-          <button className={`adm-tab ${tab === "attivita" ? "active" : ""}`} onClick={() => setTab("attivita")}>
-            <Icon name="users" size={15} /> Attività
-          </button>
-          <button className={`adm-tab ${tab === "impostazioni" ? "active" : ""}`} onClick={() => setTab("impostazioni")}>
-            <Icon name="cog" size={15} /> Impostazioni
-          </button>
-          {/* Persone e permessi: stava nell'area interna, ma la vedeva solo
-              l'amministratore — sta con le altre cose che fa solo lui. */}
-          <button className={`adm-tab ${tab === "personale" ? "active" : ""}`} onClick={() => setTab("personale")}>
-            <Icon name="user-plus" size={15} /> Personale
-          </button>
-          <span className="adm-foglio-stato">
-            <Icon name="refresh-cw" size={13} />
-            Foglio MASTER · {ultimoSync?.quando
-              ? `ultimo aggiornamento ${new Date(ultimoSync.quando).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
-              : "mai aggiornato"}
-          </span>
+          {isAdmin && (
+            <React.Fragment>
+              <button className={`adm-tab ${tab === "ordini" ? "active" : ""}`} onClick={() => setTab("ordini")}>
+                <Icon name="package-check" size={15} /> Proposte {orders && <span className="adm-count">{orders.length}</span>}
+              </button>
+              <button className={`adm-tab ${tab === "attivita" ? "active" : ""}`} onClick={() => setTab("attivita")}>
+                <Icon name="users" size={15} /> Attività
+              </button>
+              <button className={`adm-tab ${tab === "impostazioni" ? "active" : ""}`} onClick={() => setTab("impostazioni")}>
+                <Icon name="cog" size={15} /> Impostazioni
+              </button>
+              {/* Persone e permessi: stava nell'area interna, ma la vedeva solo
+                  l'amministratore — sta con le altre cose che fa solo lui. */}
+              <button className={`adm-tab ${tab === "personale" ? "active" : ""}`} onClick={() => setTab("personale")}>
+                <Icon name="user-plus" size={15} /> Personale
+              </button>
+              <span className="adm-foglio-stato">
+                <Icon name="refresh-cw" size={13} />
+                Foglio MASTER · {ultimoSync?.quando
+                  ? `ultimo aggiornamento ${new Date(ultimoSync.quando).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
+                  : "mai aggiornato"}
+              </span>
+            </React.Fragment>
+          )}
         </div>
 
         {err && <div className="adm-err" role="alert"><Icon name="alert-circle" size={15} /> {err}</div>}
 
         {/* Nota una tantum: la scheda Listini è sparita, va detto perché. */}
-        {notaVisibile && (
+        {notaVisibile && isAdmin && (
           <div className="adm-avviso">
             <Icon name="alert-circle" size={16} />
             <div style={{ flex: 1 }}>
@@ -2177,13 +2264,19 @@ function PannelloAdmin() {
                         </span>
 
                         <span className="adm-cli-azioni">
-                          <button className="adm-btn ghost mini" aria-expanded={prezzi}
-                            onClick={() => { setCliPrezzi(prezzi ? null : o.id); setCliAperta(null); }}
-                            title="Prezzi validi solo per questo cliente">
-                            <Icon name="tag" size={13} /> Prezzi
-                            {nDedicati > 0 && <span className="adm-count">{nDedicati}</span>}
-                            <Icon name={prezzi ? "chevron-up" : "chevron-down"} size={13} />
-                          </button>
+                          {/* Il prezzo concordato con un cliente è la cosa più
+                              delicata che ci sia qui dentro: resta a chi
+                              amministra. Chi gestisce i clienti cambia
+                              anagrafica, stato, categoria e agente. */}
+                          {isAdmin && (
+                            <button className="adm-btn ghost mini" aria-expanded={prezzi}
+                              onClick={() => { setCliPrezzi(prezzi ? null : o.id); setCliAperta(null); }}
+                              title="Prezzi validi solo per questo cliente">
+                              <Icon name="tag" size={13} /> Prezzi
+                              {nDedicati > 0 && <span className="adm-count">{nDedicati}</span>}
+                              <Icon name={prezzi ? "chevron-up" : "chevron-down"} size={13} />
+                            </button>
+                          )}
                           <button className="adm-btn ghost mini" aria-expanded={anagrafica}
                             onClick={() => { setCliAperta(anagrafica ? null : o.id); setCliPrezzi(null); }}>
                             <Icon name="pencil" size={13} /> Anagrafica
@@ -2300,7 +2393,7 @@ function PannelloAdmin() {
                                 </label>
                               </div>
                             </div>
-                            <div className="adm-fld">
+                            <div className="adm-fld" style={isAdmin ? undefined : { display: "none" }}>
                               <span>Ruolo</span>
                               <div style={{ padding: "8px 0" }}>
                                 <label className="adm-check" title={o.id === mia?.id ? "Non puoi rimuovere il ruolo admin a te stesso" : "Accesso completo ai back-office CRA e L2F"}>
@@ -2324,6 +2417,7 @@ function PannelloAdmin() {
                             </p>
                           )}
                           <Accesso officina={o} setErr={setErr} onCambio={ricaricaOfficine} />
+                          <Agenti officina={o} setErr={setErr} />
                         </div>
                       )}
 
@@ -2606,6 +2700,41 @@ function PannelloAdmin() {
               </div>
               <label className="adm-fld"><span>Descrizione</span>
                 <textarea rows={3} value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} placeholder="Caratteristiche, compatibilità, contenuto della confezione…" /></label>
+              {/* Schede tecniche e di sicurezza. Stanno qui e non in fondo
+                  perché sono documenti del prodotto come la foto: chi carica
+                  l'una si ricorda delle altre. */}
+              <div className="adm-fld">
+                <span>Schede in PDF</span>
+                <div style={{ display: "flex", gap: "18px", flexWrap: "wrap", padding: "6px 0" }}>
+                  {[["tecnica", "Scheda tecnica", "file-text", form.scheda_tecnica],
+                    ["sicurezza", "Scheda di sicurezza", "triangle-alert", form.scheda_sicurezza]].map(
+                    ([genere, etichetta, icona, url]) => (
+                      <div key={genere} style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        <label className="adm-btn ghost mini" style={{ cursor: "pointer" }}>
+                          <Icon name={icona} size={14} />
+                          {schedaSu === genere ? "Carico…" : url ? `Cambia ${etichetta.toLowerCase()}` : etichetta}
+                          <input type="file" accept="application/pdf" hidden
+                            onChange={(e) => onUploadScheda(e.target.files?.[0], genere)} />
+                        </label>
+                        {url && (
+                          <React.Fragment>
+                            <a href={url} target="_blank" rel="noopener noreferrer" className="adm-sub"
+                              style={{ textTransform: "none", letterSpacing: 0 }}>apri</a>
+                            <button type="button" className="adm-btn ghost mini"
+                              onClick={() => togliScheda(genere)} aria-label={`Togli la ${etichetta.toLowerCase()}`}>
+                              <Icon name="x" size={12} />
+                            </button>
+                          </React.Fragment>
+                        )}
+                      </div>
+                    ))}
+                </div>
+                <span className="adm-sub" style={{ textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>
+                  Il file prende il nome dal prodotto — «{form.nome.trim() || "Nome prodotto"} - Scheda tecnica.pdf» —
+                  e compare nella pagina del prodotto sul CRA Store. Togliendola non si cancella il PDF: si stacca e basta.
+                </span>
+              </div>
+
               <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
                 <label className="adm-btn ghost" style={{ cursor: "pointer" }}>
                   <Icon name="image-plus" size={15} /> {uploading ? "Carico…" : form.immagine ? "Cambia foto" : "Carica foto"}
@@ -3076,6 +3205,111 @@ function PannelloAdmin() {
 }
 
 /* ============================================================
+   CHI SEGUE QUESTO CLIENTE
+
+   Fino a ieri l'affido si poteva solo PRENDERE: un rappresentante si
+   costruiva il portafoglio da sé, e non c'era modo, per chi amministra, di
+   dire «questo lo segue lui». Senza quello un area manager non può ricevere
+   clienti, che era il punto della richiesta.
+
+   Più nomi sulla stessa officina sono ammessi — capita che la lavorino in
+   due — e ogni volta che succede parte un avviso: la condivisione va bene,
+   ma non deve succedere di nascosto.
+   ============================================================ */
+function Agenti({ officina, setErr }) {
+  const [chi, setChi] = React.useState(null);
+  const [persone, setPersone] = React.useState([]);
+  const [scelta, setScelta] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+
+  const carica = React.useCallback(async () => {
+    try { setChi(await agentiDelCliente(officina.id)); } catch { setChi([]); }
+  }, [officina.id]);
+
+  React.useEffect(() => { carica(); }, [carica]);
+  React.useEffect(() => {
+    getPersoneAttive().then(setPersone).catch(() => setPersone([]));
+  }, []);
+
+  /* Chi lo segue già sparisce dall'elenco: offrire di affidarlo a chi ce
+     l'ha già è un'azione che non fa niente, e non si capisce perché. */
+  const disponibili = React.useMemo(() => {
+    const presi = new Set((chi ?? []).map((x) => x.dipendente_id));
+    return persone.filter((x) => !presi.has(x.id));
+  }, [persone, chi]);
+
+  const affida = async () => {
+    if (!scelta) return;
+    const nome = persone.find((x) => x.id === scelta);
+    const etichetta = nome ? `${nome.nome ?? ""} ${nome.cognome ?? ""}`.trim() : "questa persona";
+    if ((chi ?? []).length > 0 && !window.confirm(
+      `${officina.ragione_sociale} lo segue già ${(chi ?? []).map((x) => x.persona).join(", ")}.\n\n`
+      + `Lo affido anche a ${etichetta}? Non toglie niente a nessuno: lo vedono tutti. `
+      + "Parte un avviso all'amministrazione.",
+    )) return;
+    setBusy(true); setErr(null);
+    try { await affidaCliente(officina.id, scelta); setScelta(""); await carica(); }
+    catch (e) { setErr(String(e?.message || "Non riesco ad affidare il cliente.")); }
+    finally { setBusy(false); }
+  };
+
+  const togli = async (r) => {
+    if (!window.confirm(
+      `Tolgo ${officina.ragione_sociale} a ${r.persona}?\n\n`
+      + "Non lo vedrà più nel suo elenco e non potrà mandargli proposte. "
+      + "Gli esiti già registrati restano.",
+    )) return;
+    setBusy(true); setErr(null);
+    try { await togliAffido(officina.id, r.dipendente_id); await carica(); }
+    catch (e) { setErr(String(e?.message || "Non riesco a togliere l'affido.")); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="adm-accesso">
+      <b className="adm-accesso-titolo">
+        <Icon name="users" size={13} color="var(--cra-red)" /> Chi lo segue
+      </b>
+
+      {chi === null ? <p className="adm-sub adm-accesso-testo">Carico…</p>
+        : chi.length === 0 ? (
+          <p className="adm-sub adm-accesso-testo">
+            Nessuno. Un rappresentante può prenderselo da solo dall'area interna,
+            oppure lo affidi tu qui sotto.
+          </p>
+        ) : (
+          chi.map((r) => (
+            <div key={r.dipendente_id} className="adm-invito">
+              <b>{r.persona}</b>
+              <span className="adm-sub">
+                {r.ruolo}{r.filiale ? ` · ${r.filiale}` : ""} · dal {dataInvito(r.dal)}
+              </span>
+              <button className="adm-btn ghost mini" style={{ marginLeft: "auto" }}
+                disabled={busy} onClick={() => togli(r)} aria-label={`Togli ${officina.ragione_sociale} a ${r.persona}`}>
+                <Icon name="x" size={12} />
+              </button>
+            </div>
+          ))
+        )}
+
+      <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "8px" }}>
+        <select value={scelta} onChange={(e) => setScelta(e.target.value)} style={{ minWidth: "200px" }}>
+          <option value="">— Affida a…</option>
+          {disponibili.map((x) => (
+            <option key={x.id} value={x.id}>
+              {`${x.nome ?? ""} ${x.cognome ?? ""}`.trim()}{x.zone?.nome ? ` · ${x.zone.nome}` : ""}
+            </option>
+          ))}
+        </select>
+        <button className="adm-btn" disabled={!scelta || busy} onClick={affida}>
+          <Icon name="plus" size={13} /> {busy ? "Affido…" : "Affida"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    ACCESSO — come un cliente entra, e a quale scheda finisce.
 
    Tre situazioni, tre facce diverse dello stesso riquadro:
@@ -3088,6 +3322,9 @@ function PannelloAdmin() {
    cliente vero, con dentro codice cliente, fascia di prezzo e agente.
    ============================================================ */
 function Accesso({ officina, onCambio, setErr }) {
+  /* Staccare un accesso è l'unico gesto di questo riquadro che resta
+     dell'amministratore: gli altri li fa anche chi gestisce i clienti. */
+  const { isAdmin } = useAuth();
   const [inviti, setInviti] = React.useState(null);
   const [busy, setBusy] = React.useState(false);
   const [copiato, setCopiato] = React.useState(null);
@@ -3256,10 +3493,15 @@ function Accesso({ officina, onCambio, setErr }) {
       {collegata && !daAgganciare && (
         <p className="adm-sub adm-accesso-testo">
           Account collegato all'anagrafica <b>{officina.codice_cliente}</b>.
-          <button type="button" className="adm-btn ghost mini" style={{ marginLeft: "10px" }}
-            disabled={busy} onClick={stacca}>
-            <Icon name="unlink" size={13} /> Stacca l'accesso
-          </button>
+          {/* Il pulsante compare solo a chi il database lascerà passare: un
+              tasto che risponde sempre «riservato all'amministratore» è un
+              tasto rotto, non un permesso. */}
+          {isAdmin && (
+            <button type="button" className="adm-btn ghost mini" style={{ marginLeft: "10px" }}
+              disabled={busy} onClick={stacca}>
+              <Icon name="unlink" size={13} /> Stacca l'accesso
+            </button>
+          )}
         </p>
       )}
     </div>

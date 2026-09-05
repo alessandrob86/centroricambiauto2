@@ -306,6 +306,74 @@
 .dip-camp-punto { flex: 0 0 auto; width: 8px; height: 8px; background: var(--cra-red); margin-top: 6px; }
 .dip-camp-vuoto { padding: 18px 14px; margin: 0; font-size: var(--fs-xs); color: var(--text-muted); text-align: center; }
 
+/* ============================================================
+   LA CASSETTA DEI SUGGERIMENTI — sopra la campanella.
+
+   Stesso bottone tondo, stessa distanza dal bordo, stesso pannello che si
+   apre verso l'alto: sono due strumenti della stessa famiglia, e devono
+   sembrarlo. Cambia il colore del filo in basso — oro invece che rosso —
+   perche' uno porta notizie dentro e l'altro le porta fuori.
+   ============================================================ */
+/* Un gradino sotto la campanella (95). I due pulsanti sono in colonna e i
+   loro pannelli si aprono entrambi verso l'alto: quello delle notifiche
+   passa proprio sopra questo bottone, e a parita' di quota avrebbe vinto il
+   bottone — un cerchio nero appiccicato in mezzo all'elenco. */
+.dip-feed { position: fixed; right: 20px; bottom: 134px; z-index: 94; }
+.dip-feed-btn {
+  position: relative; cursor: pointer;
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 1px solid var(--char-700); background: rgba(27, 32, 31, .92);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-lg);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--dur-base) var(--ease-standard),
+              border-color var(--dur-base) var(--ease-standard);
+}
+.dip-feed-btn:hover { background: var(--cra-charcoal); border-color: var(--cra-gold); }
+
+.dip-feed-pannello {
+  position: absolute; bottom: calc(100% + 10px); right: 0; z-index: 200;
+  width: min(380px, calc(100vw - 24px));
+  background: var(--surface-card, #fff); border: 1px solid var(--border-subtle, #e2e0da);
+  border-bottom: 3px solid var(--cra-gold);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, .26);
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.dip-feed-testa { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dip-feed-testa b {
+  font-family: var(--font-brand); font-weight: var(--fw-black); font-size: var(--fs-sm);
+  text-transform: uppercase; letter-spacing: .05em; color: var(--text-strong);
+}
+.dip-feed-x {
+  cursor: pointer; background: none; border: none; padding: 2px; line-height: 0;
+  color: var(--text-muted);
+}
+.dip-feed-x:hover { color: var(--cra-red); }
+.dip-feed-intro { margin: 0; font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.45; }
+.dip-feed-area {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  min-height: 116px; max-height: 40vh;
+  padding: 9px 10px;
+  font-family: var(--font-body); font-size: var(--fs-sm); line-height: 1.5;
+  color: var(--text-strong);
+  background: var(--surface-page, #f7f6f3);
+  border: 1px solid var(--border-subtle, #e2e0da);
+}
+.dip-feed-area:focus { outline: 2px solid var(--cra-gold); outline-offset: -1px; }
+.dip-feed-err { margin: 0; font-size: var(--fs-xs); color: var(--cra-red); }
+.dip-feed-piede { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dip-feed-conta { font-size: var(--fs-2xs, 11px); color: var(--text-muted); }
+.dip-feed-fatto {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px;
+  padding: 18px 10px;
+}
+.dip-feed-fatto b {
+  font-family: var(--font-brand); font-weight: var(--fw-black); font-size: var(--fs-base);
+  color: var(--text-strong);
+}
+.dip-feed-fatto span { font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.45; }
+
 /* ---- scelta dell'aspetto dell'avviso, con anteprima ---- */
 .dip-aspetto {
   display: flex; flex-direction: column; gap: 12px;
@@ -944,6 +1012,9 @@
   }
   body:has(.dip-giu) .dip-camp {
     bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+  }
+  body:has(.dip-giu) .dip-feed {
+    bottom: calc(188px + env(safe-area-inset-bottom, 0px));
   }
 }
 

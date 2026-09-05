@@ -86,7 +86,11 @@ Deno.serve(async (req) => {
     const { data: off } = await admin.from("officine")
       .select("is_admin").eq("user_id", ute.user.id).maybeSingle();
     const isAdmin = chiamante?.ruolo === "admin" || off?.is_admin === true;
-    const puoGestire = isAdmin || (chiamante?.attivo === true && chiamante?.ruolo === "manager");
+    /* Manager e Finanza sono lo stesso grado: dove c'era un ruolo scritto
+       alla lettera adesso c'e' un elenco, cosi' aggiungerne un terzo domani
+       non e' una caccia al tesoro fra le funzioni. */
+    const COMANDA = ["manager", "finanza"];
+    const puoGestire = isAdmin || (chiamante?.attivo === true && COMANDA.includes(chiamante?.ruolo ?? ""));
     if (!puoGestire) return json({ error: "riservato a chi gestisce i clienti" }, 403);
 
     const b = await req.json().catch(() => ({}));

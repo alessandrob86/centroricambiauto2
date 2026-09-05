@@ -337,7 +337,8 @@ export async function urlFirmato(path, secondi = 3600) {
 }
 
 /* ============ Clienti del rappresentante ============
-   Il cliente è dell'agente, non della promozione: `officine.agente_id`.
+   Il cliente è dell'agente, non della promozione: il legame sta in
+   `officina_agenti`, e ne ammette più d'uno sullo stesso cliente.
    Per ogni promozione si registra solo che cosa è successo. */
 
 /** I miei clienti, con l'esito sulla promozione indicata (se indicata). */
@@ -347,24 +348,41 @@ export async function getClientiAgente(schedaId = null) {
   return data ?? [];
 }
 
-/** Officine ancora senza rappresentante, per nome, codice, città o P.IVA.
+/** Ricerca in anagrafica per costruirsi il portafoglio: nome, codice,
+ *  città o P.IVA.
  *
- *  Passa da una funzione del database perché un cliente libero non è di
- *  nessuno, e quindi un rappresentante non lo vedrebbe: la ricerca tornava
- *  vuota proprio a chi doveva costruirsi il portafoglio. */
+ *  Passa da una funzione del database perché un cliente che non segui non
+ *  lo vedresti: la ricerca tornava vuota proprio a chi doveva costruirsi il
+ *  portafoglio. Escono anche quelli che segue già qualcuno, coi nomi: dire
+ *  «nessun risultato» di un cliente che esiste manda a cercarlo dove non è. */
 export async function cercaOfficineLibere(q, limite = 8) {
   const { data, error } = await supabase.rpc("officine_da_prendere", { p_q: q, p_limite: limite });
   if (error) throw error;
   return data ?? [];
 }
 
-/** Prendo in carico un cliente. Si prende solo ciò che è libero. */
+/** Prendo in carico un cliente. Non c'è più niente da contendere: se lo
+ *  segue già qualcuno ci si aggiunge, e chi c'era resta.
+ *
+ *  Torna { preso, condiviso, con: [nomi] }. Quando `condiviso` è vero parte
+ *  l'avviso all'amministrazione — e se quella chiamata fallisce non si fa
+ *  fallire il gesto: il cliente è preso comunque, e la notifica dentro il
+ *  sito l'ha già scritta il database. */
 export async function prendiCliente(officinaId) {
-  const { error } = await supabase.rpc("prendi_cliente", { p_officina: officinaId });
+  const { data, error } = await supabase.rpc("prendi_cliente", { p_officina: officinaId });
   if (error) throw error;
+  const esito = data ?? {};
+  if (esito.condiviso) {
+    try {
+      await supabase.functions.invoke("avvisa-cliente-condiviso", {
+        body: { officina_id: officinaId },
+      });
+    } catch { /* l'avviso è un di più: la notifica interna è già partita */ }
+  }
+  return esito;
 }
 
-/** Lo lascio: torna libero, non sparisce. */
+/** Lo lascio: esco io, gli altri restano. */
 export async function lasciaCliente(officinaId) {
   const { error } = await supabase.rpc("lascia_cliente", { p_officina: officinaId });
   if (error) throw error;
@@ -521,6 +539,8 @@ export async function creaDipendente(campi) {
     telefono: campi.telefono || null,
     ruolo: campi.ruolo || "dipendente",
     zona_id: campi.zona_id || null,
+    responsabile_id: campi.responsabile_id || null,
+    cra_abilitata: campi.cra_abilitata === true,
     attivo: true,
   }).select("id").single();
   if (error) throw error;
@@ -533,6 +553,10 @@ export async function aggiornaDipendente(id, patch) {
     email: (patch.email || "").trim().toLowerCase() || null,
     telefono: patch.telefono || null,
     ruolo: patch.ruolo, zona_id: patch.zona_id || null,
+    // A chi risponde: chi ha qualcuno che gli risponde è, di fatto, un area
+    // manager — nelle statistiche vede anche i numeri dei suoi.
+    responsabile_id: patch.responsabile_id || null,
+    cra_abilitata: patch.cra_abilitata === true,
     attivo: patch.attivo !== false,
     updated_at: new Date().toISOString(),
   }).eq("id", id);
@@ -769,12 +793,20 @@ export function movimentiToCsv(righe) {
 export async function getStatistiche() {
   const [schede, clienti, esiti, dip] = await Promise.all([
     supabase.from("schede").select("id, titolo, tipo, created_at").eq("tipo", "promozione").eq("stato", "attiva"),
-    supabase.from("officine").select("id, agente_id").not("agente_id", "is", null),
+    supabase.from("officina_agenti").select("officina_id, dipendente_id"),
     supabase.from("scheda_esiti").select("scheda_id, officina_id, esito, quantita"),
     supabase.from("dipendenti").select("id, nome, cognome, ruolo"),
   ]);
   const inCarico = clienti.data ?? [];
-  const agenteDi = Object.fromEntries(inCarico.map((o) => [o.id, o.agente_id]));
+  /* Un cliente può essere seguito da più persone: la mappa porta un elenco,
+     non un nome. Quando succede l'esito conta per tutti — l'hanno lavorato
+     in due, e attribuirlo a uno solo darebbe torto all'altro. */
+  const agentiDi = new Map();
+  for (const o of inCarico) {
+    const gia = agentiDi.get(o.officina_id) ?? [];
+    gia.push(o.dipendente_id);
+    agentiDi.set(o.officina_id, gia);
+  }
   const nome = Object.fromEntries((dip.data ?? []).map((d) => [d.id, `${d.nome ?? ""} ${d.cognome ?? ""}`.trim()]));
 
   const perScheda = new Map();
@@ -787,8 +819,7 @@ export async function getStatistiche() {
     else if (e.esito === "rifiutata") s.rifiutate++;
     perScheda.set(e.scheda_id, s);
 
-    const ag = agenteDi[e.officina_id];
-    if (ag) {
+    for (const ag of agentiDi.get(e.officina_id) ?? []) {
       const a = perAgente.get(ag) ?? base();
       if (e.esito === "accettata") { a.inviate++; a.pezzi += Number(e.quantita) || 0; }
       else if (e.esito === "rifiutata") a.rifiutate++;
@@ -797,8 +828,10 @@ export async function getStatistiche() {
   }
 
   const clientiDi = new Map();
-  for (const o of inCarico) clientiDi.set(o.agente_id, (clientiDi.get(o.agente_id) ?? 0) + 1);
-  const totaleInCarico = inCarico.length;
+  for (const o of inCarico) clientiDi.set(o.dipendente_id, (clientiDi.get(o.dipendente_id) ?? 0) + 1);
+  // I clienti seguiti, contati una volta sola: due persone sullo stesso
+  // cliente non fanno due clienti.
+  const totaleInCarico = new Set(inCarico.map((o) => o.officina_id)).size;
 
   return {
     schede: (schede.data ?? [])
@@ -814,4 +847,21 @@ export async function getStatistiche() {
       })
       .sort((a, b) => b.inviate - a.inviate),
   };
+}
+
+/* ============ La cassetta dei suggerimenti ============ */
+
+/** Manda un suggerimento. Non tocca il database da qui: la funzione lato
+ *  server scrive la riga E manda l'email, in quest'ordine, così un guasto
+ *  del mittente non si porta via quello che uno ha appena scritto.
+ *
+ *  Il destinatario non si passa: è scritto nella funzione. Un indirizzo che
+ *  arriva dal browser è un indirizzo che chiunque può cambiare. */
+export async function inviaFeedback(testo, pagina) {
+  const { data, error } = await supabase.functions.invoke("invia-feedback", {
+    body: { testo, pagina },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
 }

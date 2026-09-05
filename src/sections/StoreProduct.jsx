@@ -3,6 +3,7 @@ import { Container } from "../components/shared.jsx";
 import { Button } from "../components/ds/Button.jsx";
 import { Icon } from "../components/Icon.jsx";
 import { useCart } from "../lib/cart.jsx";
+import { useAuth } from "../lib/auth.jsx";
 import { getProductByCodice, formatEuro, confezioneLitri, unitaLabel, prezzoVisibile, ivaNota, PLACEHOLDER_IMG, statoOfferta, adesso } from "../lib/craCatalog.js";
 import { StoreHead, CartDrawer, StoreGate, NastroOfferta } from "./Store.jsx";
 import { tracciaProdotto, tracciaCarrello } from "../lib/traccia.js";
@@ -60,6 +61,7 @@ export function StoreProduct({ codice, onNavigate }) {
 
 function StoreProductInner({ codice, onNavigate }) {
   const { add, open, ivaIncl } = useCart();
+  const { puoProporre, isStaff } = useAuth();
   const [p, setP] = useState(undefined); // undefined = loading, null = non trovato
   const [qty, setQty] = useState(1);
   const [foto, setFoto] = useState(0);
@@ -246,6 +248,17 @@ function StoreProductInner({ codice, onNavigate }) {
                 </div>
               )}
 
+              {/* Quantità e carrello solo a chi può davvero mandare la
+                  proposta. Agli altri il prezzo, le specifiche e i documenti
+                  restano tutti: è per quelli che sono entrati. */}
+              {!puoProporre ? (
+                <p style={{ margin: "var(--space-2) 0 0", fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>
+                  <Icon name="info" size={14} color="var(--cra-gold)" />{" "}
+                  {isStaff
+                    ? <React.Fragment>Stai consultando il catalogo. La proposta d'ordine per un cliente si manda dall'<b>area interna</b>, aprendo una promozione nel Card Center.</React.Fragment>
+                    : "Per inviare una proposta d'ordine serve un account officina abilitato."}
+                </p>
+              ) : (
               <div style={{ display: "flex", alignItems: "center", gap: "14px", marginTop: "var(--space-2)", flexWrap: "wrap" }}>
                 <div style={{ display: "inline-flex", alignItems: "center", border: "var(--border-w-2) solid var(--border-strong)" }}>
                   <button onClick={() => setQty(Math.max(1, qty - 1))} aria-label="Diminuisci quantità" style={{ background: "none", border: "none", cursor: "pointer", padding: "12px 14px", display: "inline-flex" }}><Icon name="minus" size={15} /></button>
@@ -272,11 +285,14 @@ function StoreProductInner({ codice, onNavigate }) {
                   Aggiungi alla proposta
                 </Button>
               </div>
+              )}
 
-              <p style={{ margin: "var(--space-2) 0 0", fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>
-                <Icon name="check" size={13} color="var(--cra-gold)" /> Nessun pagamento online: invii una proposta d'ordine
-                e ti confermiamo noi disponibilità e tempi via email.
-              </p>
+              {puoProporre && (
+                <p style={{ margin: "var(--space-2) 0 0", fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>
+                  <Icon name="check" size={13} color="var(--cra-gold)" /> Nessun pagamento online: invii una proposta d'ordine
+                  e ti confermiamo noi disponibilità e tempi via email.
+                </p>
+              )}
             </div>
           </div>
         )}

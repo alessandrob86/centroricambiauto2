@@ -16,12 +16,18 @@ const { useState, useEffect, useCallback, useRef } = React;
 /* Copia locale dell'elenco ruoli. L'originale sta in Interno.jsx, che è un
    modulo caricato a parte: importarlo da qui vorrebbe dire scaricare tutta
    l'area interna ogni volta che si apre il back-office. */
+/* Finanza sta accanto a Manager, non in fondo: nell'elenco a tendina la
+   posizione racconta il grado, e vederlo dopo «Dipendente» farebbe pensare
+   a un ruolo minore. Fa esattamente le stesse cose di un manager. */
 const RUOLI = {
-  admin: "Amministratore", manager: "Manager", rappresentante: "Rappresentante",
-  centralino: "Centralino", dipendente: "Dipendente",
+  admin: "Amministratore", manager: "Manager", finanza: "Finanza",
+  rappresentante: "Rappresentante", centralino: "Centralino", dipendente: "Dipendente",
 };
 
-const VUOTO = { nome: "", cognome: "", email: "", telefono: "", ruolo: "dipendente", zona_id: "" };
+const VUOTO = {
+  nome: "", cognome: "", email: "", telefono: "", ruolo: "dipendente", zona_id: "",
+  responsabile_id: "", cra_abilitata: false,
+};
 
 /* Stessa data di prima: giorno, mese per esteso e anno. Su un codice che
    scade la forma breve «27/9/2026» si legge male e si confonde con il mese. */
@@ -78,6 +84,15 @@ export function Personale({ setErr }) {
       setErr(String(e?.message || "").includes("dipendenti_email_uk")
         ? "Esiste già una scheda con questa email." : "Salvataggio non riuscito.");
     } finally { setBusy(false); }
+  };
+
+  /** Quante persone rispondono a questa. Si conta sull'elenco che abbiamo
+   *  già in mano: chiederlo al database una volta per riga sarebbero
+   *  diciotto richieste per disegnare una tabella. */
+  const squadra = (id) => (dip ?? []).filter((x) => x.responsabile_id === id).length;
+  const nomeDi = (id) => {
+    const x = (dip ?? []).find((y) => y.id === id);
+    return x ? `${x.nome ?? ""} ${x.cognome ?? ""}`.trim() : "—";
   };
 
   const valore = (modulo, ruolo) => {
@@ -151,6 +166,42 @@ export function Personale({ setErr }) {
                       {zone.map((z) => <option key={z.id} value={z.id}>{z.nome}</option>)}
                     </select>
                   </label>
+                  {/* «Risponde a» è tutto quello che serve per fare un area
+                      manager: chi ha qualcuno sotto vede i numeri dei suoi
+                      nelle statistiche. Nessuna casella «è area manager» da
+                      tenere allineata: accesa su chi non ha nessuno sarebbe
+                      un interruttore che non accende niente. */}
+                  <label className="adm-fld">
+                    <span>Risponde a</span>
+                    <select value={form.responsabile_id ?? ""}
+                      onChange={(e) => setForm({ ...form, responsabile_id: e.target.value })}>
+                      <option value="">— Nessuno</option>
+                      {(dip ?? [])
+                        .filter((x) => x.id !== form.id && x.attivo)
+                        .map((x) => (
+                          <option key={x.id} value={x.id}>
+                            {`${x.nome ?? ""} ${x.cognome ?? ""}`.trim()} · {RUOLI[x.ruolo] ?? x.ruolo}
+                          </option>
+                        ))}
+                    </select>
+                    <span className="adm-sub" style={{ textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>
+                      chi compare qui sopra vedrà i numeri di questa persona nelle statistiche
+                    </span>
+                  </label>
+                  <label className="adm-fld">
+                    <span>CRA Store</span>
+                    <div style={{ padding: "8px 0" }}>
+                      <label className="adm-check" title="Apre il catalogo con i prezzi base: nessuno sconto riservato, nessun prezzo di un'altra officina">
+                        <input type="checkbox" checked={form.cra_abilitata === true}
+                          onChange={(e) => setForm({ ...form, cra_abilitata: e.target.checked })} />
+                        Può entrare nel CRA Store
+                      </label>
+                    </div>
+                    <span className="adm-sub" style={{ textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>
+                      vede catalogo e <b>prezzi base</b> per consultare. Le proposte d'ordine
+                      restano ai clienti: per loro si mandano dal Card Center.
+                    </span>
+                  </label>
                 </div>
                 <div style={{ display: "flex", gap: "10px" }}>
                   <button className="adm-btn" onClick={salvaPersona} disabled={busy || !form.nome.trim()}>
@@ -168,8 +219,28 @@ export function Personale({ setErr }) {
               <tbody>
                 {dip.map((d) => (
                   <tr key={d.id}>
-                    <td>{`${d.nome ?? ""} ${d.cognome ?? ""}`.trim()}<br /><span className="adm-sub">{d.email ?? "—"}</span></td>
-                    <td>{RUOLI[d.ruolo] ?? d.ruolo}</td>
+                    <td>
+                      {`${d.nome ?? ""} ${d.cognome ?? ""}`.trim()}
+                      <br /><span className="adm-sub">{d.email ?? "—"}</span>
+                      {/* Chi ha una squadra è un area manager: si legge qui,
+                          senza dover aprire la scheda. */}
+                      {squadra(d.id) > 0 && (
+                        <React.Fragment>
+                          <br /><span className="adm-sub">
+                            <Icon name="users" size={11} /> segue {squadra(d.id)} person{squadra(d.id) === 1 ? "a" : "e"}
+                          </span>
+                        </React.Fragment>
+                      )}
+                      {d.responsabile_id && (
+                        <React.Fragment>
+                          <br /><span className="adm-sub">risponde a {nomeDi(d.responsabile_id)}</span>
+                        </React.Fragment>
+                      )}
+                    </td>
+                    <td>
+                      {RUOLI[d.ruolo] ?? d.ruolo}
+                      {d.cra_abilitata && <><br /><span className="adm-pill">CRA Store</span></>}
+                    </td>
                     <td>{d.zone?.nome ?? <span className="adm-sub">nessuna</span>}</td>
                     <td>
                       {d.user_id
@@ -179,7 +250,12 @@ export function Personale({ setErr }) {
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <button className="adm-btn ghost mini"
-                        onClick={() => setForm({ ...d, zona_id: d.zona_id ?? "" })}>
+                        onClick={() => setForm({
+                          ...d,
+                          zona_id: d.zona_id ?? "",
+                          responsabile_id: d.responsabile_id ?? "",
+                          cra_abilitata: d.cra_abilitata === true,
+                        })}>
                         <Icon name="pencil" size={12} /> Modifica
                       </button>
                     </td>

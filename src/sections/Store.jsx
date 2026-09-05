@@ -360,6 +360,9 @@ function RfqStrip() {
 /* ---------- card prodotto ---------- */
 function ProductCard({ p, catNome, onNavigate, taglia = "normale", offerta = null, onScaduto }) {
   const { add, ivaIncl } = useCart();
+  /* Chi entra per consultare non riempie carrelli: il pulsante lo porta alla
+     scheda, dove ci sono formati, specifiche e documenti. */
+  const { puoProporre } = useAuth();
   const [hover, setHover] = useState(false);
   const grande = taglia !== "normale";
   return (
@@ -426,12 +429,14 @@ function ProductCard({ p, catNome, onNavigate, taglia = "normale", offerta = nul
           );
         })()}
         <button
-          aria-label={p.conVarianti ? `Scegli il formato di ${p.nome}` : `Aggiungi ${p.nome} alla proposta`}
-          title={p.conVarianti ? "Scegli il formato" : "Aggiungi alla proposta"}
+          aria-label={!puoProporre ? `Apri la scheda di ${p.nome}`
+            : p.conVarianti ? `Scegli il formato di ${p.nome}` : `Aggiungi ${p.nome} alla proposta`}
+          title={!puoProporre ? "Apri la scheda"
+            : p.conVarianti ? "Scegli il formato" : "Aggiungi alla proposta"}
           onClick={(e) => {
             // Con più formati non si può aggiungere alla cieca: si apre la scheda
-            // e si sceglie l'imballo.
-            if (p.conVarianti) { onNavigate(`store/${encodeURIComponent(p.codice)}`); return; }
+            // e si sceglie l'imballo. Lo stesso vale per chi non può proporre.
+            if (p.conVarianti || !puoProporre) { onNavigate(`store/${encodeURIComponent(p.codice)}`); return; }
             add({ product_id: p.id, variant_id: null, codice: p.codice, nome: p.nome, prezzo: p.prezzo, immagine: p.immagine });
             tracciaCarrello(p.codice, 1);
             // dal catalogo: nessun drawer, solo la miniatura che vola nel bottone Proposta.
@@ -459,7 +464,7 @@ function ProductCard({ p, catNome, onNavigate, taglia = "normale", offerta = nul
 /* ---------- drawer proposta d'ordine (riusato anche dal dettaglio) ---------- */
 export function CartDrawer({ onNavigate }) {
   const { items, totale, setQty, remove, clear, isOpen, close, ivaIncl } = useCart();
-  const { session, officina, isActive } = useAuth();
+  const { session, officina, isActive, puoProporre, isStaff } = useAuth();
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(null); // { numero }
@@ -515,6 +520,17 @@ export function CartDrawer({ onNavigate }) {
           Accedi per inviare
         </Button>
       </div>
+    );
+  } else if (isStaff && !puoProporre) {
+    /* Il personale entra per guardare. La proposta d'ordine porta il nome di
+       un cliente e parte dal suo account: quella per i clienti si manda
+       dall'area interna, aprendo una promozione nel Card Center. */
+    footer = (
+      <p style={{ margin: 0, fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>
+        <Icon name="info" size={14} color="var(--cra-gold)" /> Il CRA Store è aperto a te per
+        <b> consultare</b> catalogo e prezzi. Le proposte d'ordine partono dall'account di
+        un'officina: per un cliente, aprine una dal <b>Card Center</b> dell'area interna.
+      </p>
     );
   } else if (!isActive) {
     footer = (

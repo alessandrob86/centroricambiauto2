@@ -157,6 +157,22 @@ repository e ci resta.
 | 130 | 2026-08-27 | giro_di_presentazione_visto | 1.500 |
 | 131 | 2026-08-27 | il_personale_atterra_nell_area_interna | 1.100 |
 | 132 | 2026-08-27 | cancellare_un_accesso_non_cancella_la_persona | 1.600 |
+| 133 | 2026-08-29 | ruolo_finanza | 440 |
+| 134 | 2026-08-29 | chi_comanda_non_e_piu_una_stringa_sparsa | 10.150 |
+| 135 | 2026-08-29 | gli_inviti_ai_clienti_scrivevano_su_una_tabella_inesistente | 6.070 |
+| 136 | 2026-08-29 | i_clienti_li_gestisce_anche_il_manager | 6.697 |
+| 137 | 2026-08-29 | il_centralino_cura_le_schede_education | 2.924 |
+| 138 | 2026-08-29 | education_le_filiali_senza_girare_in_tondo | 1.326 |
+| 139 | 2026-08-29 | la_ricerca_diceva_nessun_cliente_trovato_di_uno_che_ce | 3.135 |
+| 140 | 2026-08-29 | finanza_al_suo_posto_e_la_cassetta_dei_suggerimenti | 5.106 |
+| 141 | 2026-08-29 | un_cliente_puo_avere_piu_agenti | 2.900 |
+| 142 | 2026-08-29 | tutto_passa_alla_tabella_degli_affidi | 14.500 |
+| 143 | 2026-08-29 | il_centralino_vede_le_card_di_tutte_le_filiali | 3.300 |
+| 144 | 2026-08-29 | l2f_i_pacchetti_hanno_un_livello | 2.700 |
+| 145 | 2026-08-29 | l2f_i_prezzi_veri_dei_pacchetti | 1.100 |
+| 146 | 2026-09-05 | affidare_un_cliente_a_qualcun_altro | 4.895 |
+| 147 | 2026-09-05 | chi_risponde_a_chi_e_i_numeri_della_squadra | 6.655 |
+| 148 | 2026-09-05 | il_cra_store_anche_al_personale | 3.684 |
 
 ## Dove guardare per capire una cosa
 
@@ -177,3 +193,15 @@ repository e ci resta.
 | Come entra un cliente o un collega (inviti) | 120-123, 126-128, 132 |
 | Ordini: numero, stato e totali imposti | 119 |
 | Notifiche: a chi arrivano e dove portano | 116, 124 |
+| Chi ha il grado di manager | 133-134, 136 — `is_manager()`, una domanda sola |
+| Il centralino e le schede Education | 137-138 |
+| Chi può creare e gestire i clienti | 136 |
+| I suggerimenti dal pulsante sopra la campanella | 140 |
+| Chi segue un cliente (più d'uno per volta) | 141-142 — `officina_agenti`, `seguo_cliente()` |
+| Gli affidi com'erano prima dell'azzeramento | `affidi_prima_del_reset`, creata in 141 |
+| Il centralino e le card delle altre filiali | 143 |
+| I pacchetti L2F e i cambi di piano | 144 — `packages.livello`, `richieste_piano` |
+| Quanto costano i pacchetti L2F | 145 — e il listino è scritto nel commento |
+| Assegnare un cliente a una persona | 146 — `affida_cliente()`, `togli_affido()` |
+| L'area manager e i numeri della squadra | 147 — `responsabile_id`, `mia_squadra()` |
+| Il CRA Store aperto a un dipendente | 148 — `dipendenti.cra_abilitata`, prezzi base |
