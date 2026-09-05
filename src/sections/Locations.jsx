@@ -3,7 +3,7 @@ import L from "leaflet";
 import { Logo, craMark } from "../components/ds/Logo.jsx";
 import { Button } from "../components/ds/Button.jsx";
 import { Icon } from "../components/Icon.jsx";
-import { Container, Eyebrow, Reveal } from "../components/shared.jsx";
+import { Container, Eyebrow, Reveal, B2B_URL } from "../components/shared.jsx";
 
 /* Le 5 sedi attive (Via Stadera, Milano — chiusa: trasferita a Rozzano).
    Coordinate e link Google Maps ufficiali forniti dall'azienda. */
@@ -209,6 +209,13 @@ export function Footer({ onNavigate }) {
       { t: "Ricambi microcar", go: "srv-auto" },
       { t: "Noleggio messa in fase", go: "srv-noleggio" },
       { t: "Auto di cortesia", go: "srv-cortesia" },
+      /* La porta del portale ricambi, aperta a chiunque passi di qui.
+         Stava solo nel menu che compare DOPO l'accesso: un'officina che ha
+         già le sue credenziali Blusys doveva prima farsi fare un account su
+         questo sito per trovare il link del portale su cui lavora tutti i
+         giorni. Qui non chiede niente a nessuno — le credenziali le chiede
+         il portale, che è il suo mestiere. */
+      { t: "B2B Store", href: B2B_URL, forte: true },
     ] },
     { h: "Azienda", items: [
       { t: "Chi siamo", go: "chisiamo" },
@@ -248,8 +255,21 @@ export function Footer({ onNavigate }) {
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
                 {c.items.map((i) => (
                   <li key={i.t}>
-                    <button onClick={() => { if (i.go) onNavigate(i.go); }}
-                      style={{ background: "none", border: "none", padding: "4px 0", cursor: "pointer", fontFamily: "var(--font-body)", color: "var(--char-300)", fontSize: "var(--fs-sm)", textAlign: "left" }}>{i.t}</button>
+                    {/* Un indirizzo esterno vuole un <a>, non un pulsante:
+                        così si apre col tasto centrale, si copia col destro e
+                        i lettori di schermo lo annunciano per quello che è. */}
+                    {i.href ? (
+                      <a href={i.href} target="_blank" rel="noopener noreferrer"
+                        style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 0", fontFamily: "var(--font-brand)", fontWeight: "var(--fw-bold)", letterSpacing: "0.03em", color: "var(--char-100)", fontSize: "var(--fs-sm)", textDecoration: "none" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--cra-gold)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--char-100)"; }}>
+                        {i.t}
+                        <Icon name="external-link" size={12} />
+                      </a>
+                    ) : (
+                      <button onClick={() => { if (i.go) onNavigate(i.go); }}
+                        style={{ background: "none", border: "none", padding: "4px 0", cursor: "pointer", fontFamily: "var(--font-body)", color: "var(--char-300)", fontSize: "var(--fs-sm)", textAlign: "left" }}>{i.t}</button>
+                    )}
                   </li>
                 ))}
               </ul>

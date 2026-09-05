@@ -2,11 +2,9 @@ import React from "react";
 import { Logo } from "../components/ds/Logo.jsx";
 import { Button } from "../components/ds/Button.jsx";
 import { Icon } from "../components/Icon.jsx";
-import { Container, ChromeButton } from "../components/shared.jsx";
+import { Container, ChromeButton, B2B_URL } from "../components/shared.jsx";
 import { useAuth } from "../lib/auth.jsx";
 import l2fLogo from "../assets/brands/l2f.webp";
-
-const B2B_URL = "https://centroricambiautosrl.blusys.it/";
 
 /* Voce del dropdown Ecom: <a> per link esterni, <button> per rotte interne. */
 function EcomItem({ href, onClick, icon, iconColor = "var(--cra-gold)", children, danger = false }) {

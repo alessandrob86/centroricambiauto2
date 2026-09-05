@@ -3,6 +3,11 @@ import { Icon } from "./Icon.jsx";
 
 /* Shared layout helpers for the Centro Ricambi Auto website */
 
+/* Il portale ricambi con le sue credenziali. Vive qui perché lo citano sia
+   l'intestazione sia il footer: un indirizzo scritto in due file è un
+   indirizzo che prima o poi ne diventa due diversi. */
+export const B2B_URL = "https://centroricambiautosrl.blusys.it/";
+
 export function Container({ children, style = {} }) {
   return (
     <div style={{ maxWidth: "var(--container-max)", margin: "0 auto", padding: "0 var(--space-5)", ...style }}>
