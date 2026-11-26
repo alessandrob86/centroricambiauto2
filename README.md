@@ -30,6 +30,6 @@ su qualsiasi hosting (Aruba, Netlify, Vercel, GitHub Pages…). Nessun server ri
 - **Form preventivo**: compone una email `mailto:` verso ordini@centroricambiautosrl.it.
 - **Testi legali**: Privacy e Cookie Policy sono incorporate da **iubenda** (policy 86943908) con embed diretto nel corpo pagina (`iub-body-embed`); si aggiornano da sole quando le modifichi sul portale iubenda.
 - **Banner cookie**: **iubenda Cookie Solution** (siteId 3034015), caricata da `index.html` — consenso per finalità, prova del consenso, bottone flottante di revoca. Il bottone "Modifica le preferenze cookie" nella Cookie Policy apre il pannello via `_iub.cs.api.openPreferences()`.
-- **Mappa**: tile CARTO light, nessuna API key.
+- **Mappa**: Leaflet con lo sfondo Positron di OpenFreeMap (tessere vettoriali disegnate da MapLibre, che si scarica solo quando la mappa sta per comparire), nessuna API key. CARTO dal 2026 la chiede.
 - Tutte le animazioni rispettano `prefers-reduced-motion`.
 - `node_modules` deve restare su disco locale: `npm install` fallisce nelle cartelle sincronizzate Google Drive.

@@ -57,12 +57,36 @@ export function Locations() {
 
   React.useEffect(() => {
     if (!mapRef.current || mapObj.current) return;
-    const map = L.map(mapRef.current, { scrollWheelZoom: false, zoomControl: true });
+    /* maxZoom sta sulla mappa: lo sfondo vettoriale, a differenza delle
+       vecchie tessere, non mette un limite e si potrebbe ingrandire all'infinito. */
+    const map = L.map(mapRef.current, { scrollWheelZoom: false, zoomControl: true, maxZoom: 19 });
     mapObj.current = map;
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: "abcd", maxZoom: 19,
-    }).addTo(map);
+
+    /* Lo sfondo arriva quando la mappa sta per comparire (vedi lib/sfondoMappa.js):
+       chi non scorre fino alle sedi non scarica MapLibre. Senza WebGL2, o se il
+       caricamento fallisce, ripiega sulle tessere standard di OpenStreetMap:
+       meno pulite, ma la mappa resta leggibile. */
+    let spenta = false;
+    const tessereDiRiserva = () => {
+      if (spenta) return;
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(map);
+    };
+    const caricaSfondo = () => {
+      if (!document.createElement("canvas").getContext("webgl2")) return tessereDiRiserva();
+      import("../lib/sfondoMappa.js")
+        .then(({ sfondoVettoriale }) => sfondoVettoriale())
+        .then((sfondo) => { if (!spenta) sfondo.addTo(map); })
+        .catch(tessereDiRiserva);
+    };
+    const osservatore = "IntersectionObserver" in window
+      ? new IntersectionObserver((voci) => {
+          if (voci.some((v) => v.isIntersecting)) { osservatore.disconnect(); caricaSfondo(); }
+        }, { rootMargin: "600px 0px" })
+      : null;
+    if (osservatore) osservatore.observe(mapRef.current); else caricaSfondo();
 
     const icon = L.divIcon({
       className: "",
@@ -90,7 +114,13 @@ export function Locations() {
     const bounds = L.latLngBounds(SEDI.map((s) => s.coords));
     map.fitBounds(bounds, { padding: [46, 46] });
 
-    return () => { map.remove(); mapObj.current = null; };
+    /* Aprire una sede allunga la colonna a sinistra, e con lei il riquadro della
+       mappa. Leaflet si accorge solo dei cambi della finestra: senza avviso lo
+       sfondo resta della misura vecchia e sotto compare una striscia grigia. */
+    const misura = "ResizeObserver" in window ? new ResizeObserver(() => map.invalidateSize()) : null;
+    misura?.observe(mapRef.current);
+
+    return () => { spenta = true; osservatore?.disconnect(); misura?.disconnect(); map.remove(); mapObj.current = null; };
   }, []);
 
   const select = (s) => {
