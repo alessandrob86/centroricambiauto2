@@ -15,6 +15,11 @@ import { supabase } from "./supabase.js";
  *   3. Non si registra due volte la stessa cosa di fila. Aprire e chiudere
  *      lo stesso prodotto cinque volte in un minuto è una persona indecisa,
  *      non cinque visualizzazioni.
+ *
+ * Chi non ha fatto l'accesso non manda nemmeno la richiesta: sul database la
+ * funzione `traccia()` è chiamabile solo da `authenticated` (ad `anon` è tolta
+ * apposta), quindi per un visitatore anonimo la risposta sarebbe un 401 a ogni
+ * pagina, rumore in console e una chiamata di rete inutile.
  */
 
 const RIPETIZIONE_MS = 60_000;
@@ -34,10 +39,20 @@ function troppoPresto(chiave) {
 
 /** Registra un fatto. Non attende, non solleva. */
 export function traccia(sito, evento, oggetto = null, dettaglio = {}) {
-  const chiave = `${sito}|${evento}|${oggetto ?? ""}`;
-  if (troppoPresto(chiave)) return;
-  supabase
-    .rpc("traccia", { p_sito: sito, p_evento: evento, p_oggetto: oggetto, p_dettaglio: dettaglio })
+  /* La sessione si legge dalla memoria del browser: nessuna chiamata di rete
+     in più (la stessa lettura la fa comunque supabase prima di ogni rpc). */
+  supabase.auth
+    .getSession()
+    .then(({ data }) => {
+      const utente = data?.session?.user?.id;
+      if (!utente) return;
+      /* Nella chiave c'è anche chi: se nello stesso minuto si esce e rientra
+         con un altro account, la visita del secondo non va scartata. */
+      if (troppoPresto(`${utente}|${sito}|${evento}|${oggetto ?? ""}`)) return;
+      return supabase.rpc("traccia", {
+        p_sito: sito, p_evento: evento, p_oggetto: oggetto, p_dettaglio: dettaglio,
+      });
+    })
     .then(() => {}, () => {});
 }
 

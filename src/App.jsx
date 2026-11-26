@@ -91,8 +91,9 @@ export default function App() {
   /* Posizioni di scroll per pagina: il tasto Indietro riporta dov'eri. */
   const scrollPos = React.useRef({});
 
-  /* Traccia la pagina, ma solo per chi è loggato: la funzione sul database
-     scarta chi non ha un token. Store, area interna e vetrina si distinguono,
+  /* Traccia la pagina, ma solo per chi è loggato: per chi non ha fatto
+     l'accesso tracciaVisita non chiama proprio il database, che lo
+     rifiuterebbe (401). Store, area interna e vetrina si distinguono,
      perché rispondono a domande diverse. */
   useEffect(() => {
     const dove = page === "store" ? "cra" : page === "interno" ? "interno" : "vetrina";
