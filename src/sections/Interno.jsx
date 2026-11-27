@@ -11,6 +11,10 @@ import {
 import * as api from "../lib/internoApi.js";
 import * as push from "../lib/push.js";
 
+/* La scheda Lubrificanti è grande e serve a chi lavora sui lubrificanti: si scarica solo
+   quando la si apre. */
+const Lubrificanti = React.lazy(() => import("./lubrificanti/index.jsx"));
+
 const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
 /* ============================================================
@@ -500,6 +504,11 @@ function InternoInner({ onNavigate, tab: tabUrl }) {
               {tab === "clienti" && <MieiClienti {...comuni} />}
               {tab === "statistiche" && <Statistiche {...comuni} />}
               {tab === "profilo" && <Profilo {...comuni} />}
+              {tab === "lub" && (
+                <React.Suspense fallback={<p className="dip-vuoto">Caricamento…</p>}>
+                  <Lubrificanti {...comuni} />
+                </React.Suspense>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
