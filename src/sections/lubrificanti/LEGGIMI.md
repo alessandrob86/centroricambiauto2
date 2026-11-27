@@ -88,12 +88,13 @@ formato della casa.
 
 ## 4. Le schermate (proposta C «Ognuno il suo banco»)
 
-Il ruolo decide dove si arriva:
+Si arriva sempre su «Trova l'olio», qualunque sia il ruolo (scelta del 27/11); il ruolo decide
+quali altre schermate ci sono:
 
-- **Trova l'olio** (tutti): cerca per codice, nome o gradazione; per ogni olio i formati, il prezzo
+- **Trova l'olio** (tutti, si atterra qui): cerca per codice, nome o gradazione; per ogni olio i formati, il prezzo
   di vendita e le alternative degli altri marchi. Le alternative «da verificare» hanno il prezzo in
   grigio. Chi comanda vede anche costo e margine e può segnalare un dubbio.
-- **Ordine** (manager, finanza, admin — si atterra qui): l'elenco a cascata del marchio (famiglia →
+- **Ordine** (manager, finanza, admin): l'elenco a cascata del marchio (famiglia →
   olio → formati) con le caselle, filtro per formato (tutti, uno o due), pannello con Suggeritore
   (dalle condizioni e dall'ABC, tetti 60 · 45 · 20), Alternative e Paragone facoltativo con un altro
   marchio sulle stesse righe; barra in basso con totale, omaggi, soglia; stampa per la filiale.
@@ -114,7 +115,7 @@ Il ruolo decide dove si arriva:
 
 - [x] I permessi sono provati per ogni ruolo della tabella al punto 2 (70 controlli, e 14 rotture
       deliberate vengono prese).
-- [ ] Ogni ruolo atterra sulla sua schermata e non vede ciò che il punto 2 gli nega.
+- [ ] Ogni ruolo atterra su «Trova l'olio» e non vede ciò che il punto 2 gli nega.
 - [ ] Funziona sul telefono (larghezza 390 px).
 - [ ] I tre stati — caricamento, errore, vuoto — sono scritti in italiano.
 

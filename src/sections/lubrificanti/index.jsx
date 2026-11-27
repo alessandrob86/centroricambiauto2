@@ -13,10 +13,10 @@ const { useState, useEffect, useCallback, useMemo } = React;
 /* ============================================================
    LUBRIFICANTI — «ognuno il suo banco» (proposta C, scelta il 26/11/2026).
 
-   Il ruolo decide dove si arriva:
-     · manager, finanza e amministratore → l'Ordine (elenco a cascata,
-       suggeritore, alternative, paragone);
-     · tutto il resto del personale → «Trova l'olio», solo prezzi di vendita.
+   Si arriva sempre su «Trova l'olio», per tutti (scelta dell'utente, 27/11).
+   Manager, finanza e amministratore hanno in più l'Ordine (elenco a cascata,
+   suggeritore, alternative, paragone) e i Prezzi di vendita; l'amministratore
+   anche Listini e condizioni. Gli altri vedono solo i prezzi di vendita.
    `puoGestire` e `isAdmin` decidono soltanto cosa MOSTRARE: costi, condizioni,
    ordini e giacenze a chi non comanda non arrivano nemmeno, li ferma il database.
    ============================================================ */
@@ -26,7 +26,7 @@ export default function Lub(props) {
   const [catalogo, setCatalogo] = useState(null);
   const [acquisto, setAcquisto] = useState(null);
   const [errore, setErrore] = useState(null);
-  const [pagina, setPagina] = useState(puoGestire ? "ordine" : "trova");
+  const [pagina, setPagina] = useState("trova");
   const [richiestaOrdine, setRichiestaOrdine] = useState(null);
 
   const carica = useCallback(async () => {
