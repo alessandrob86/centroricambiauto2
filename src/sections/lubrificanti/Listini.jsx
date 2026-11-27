@@ -3,6 +3,7 @@ import { Icon } from "../../components/Icon.jsx";
 import { dataIt } from "./aiuti.js";
 import * as api from "./api.js";
 import { numero, TETTI_PARTENZA, GIORNI_PERIODO_ABC } from "./calcolo.js";
+import Specifiche from "./Specifiche.jsx";
 
 const { useState, useMemo, useEffect } = React;
 
@@ -184,7 +185,8 @@ function Coda({ indici, catalogo, setErr, ricarica }) {
               {voci.map(({ e, o }) => (
                 <tr key={e.id}>
                   <td><span className="mod-lub-marchio-nome">{indici.marchi.get(o.marchio_id)?.nome}</span><span className="mod-lub-piccolo">{o.nome}</span>
-                    <span className="mod-lub-piccolo">{[o.sae, o.norme].filter(Boolean).join(" · ")}</span>
+                    {o.sae && <span className="mod-lub-piccolo">{o.sae}</span>}
+                    <Specifiche olio={o} />
                     {e.nota && <span className="mod-lub-piccolo">Nota: {e.nota}</span>}</td>
                   <td>{e.principale ? <span className="mod-lub-bollo">principale</span> : <span className="mod-lub-bollo">secondaria</span>}</td>
                   <td >

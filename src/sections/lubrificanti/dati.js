@@ -101,22 +101,26 @@ export function costruisciIndici(catalogo, acquisto) {
 }
 
 /* Cerca negli oli: codice di un formato, nome, gradazione, famiglia. */
+/* Nella ricerca contano solo lettere e cifre: «229.52» e «22952», «C2/C3» e «c2 c3»,
+   «5W-30» e «5w30», «9.55535-S1» e «955535s1» trovano gli stessi oli. Gli accenti non contano. */
+const essenziale = (s) => String(s ?? "").toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "");
+
 export function cerca(indici, testo, { marchioId } = {}) {
-  const t = testo.trim().toLowerCase();
+  const t = essenziale(testo);
   if (t.length < 2) return [];
-  const parole = t.split(/\s+/);
+  const parole = String(testo).split(/[\s,;]+/).map(essenziale).filter(Boolean);
   const trovati = [];
   for (const o of indici.oli.values()) {
     if (marchioId && o.marchio_id !== marchioId) continue;
     const fam = indici.famiglieDellOlio(o).map((e) => indici.famiglie.get(e.famiglia_id)).filter(Boolean);
+    /* Un campo per pezzo, separati da «|»: una parola cercata non può cavalcare due campi. */
     const pagliaio = [
       o.nome, o.codice, o.sae, o.norme, o.omologazioni, indici.marchi.get(o.marchio_id)?.nome,
       ...o.formati.map((f) => f.codice), ...fam.map((f) => `${f.codice} ${f.titolo}`),
-    ].filter(Boolean).join(" ").toLowerCase().replace(/[\s-]+/g, " ");
-    const compatto = pagliaio.replace(/ /g, "");
-    if (parole.every((p) => pagliaio.includes(p) || compatto.includes(p.replace(/-/g, "")))) {
-      const codiceEsatto = o.formati.some((f) => f.codice.toLowerCase() === t);
-      trovati.push({ olio: o, punti: (codiceEsatto ? 10 : 0) + (o.nome.toLowerCase().includes(t) ? 3 : 0) });
+    ].filter(Boolean).map(essenziale).join("|");
+    if (parole.every((p) => pagliaio.includes(p))) {
+      const codiceEsatto = o.formati.some((f) => essenziale(f.codice) === t);
+      trovati.push({ olio: o, punti: (codiceEsatto ? 10 : 0) + (essenziale(o.nome).includes(t) ? 3 : 0) });
     }
   }
   return trovati.sort((a, b) => b.punti - a.punti || a.olio.nome.localeCompare(b.olio.nome)).map((x) => x.olio);

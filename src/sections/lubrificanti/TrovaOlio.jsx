@@ -3,6 +3,7 @@ import { Icon } from "../../components/Icon.jsx";
 import * as api from "./api.js";
 import { cerca } from "./dati.js";
 import { GRUPPI, gruppo, euro, numero, margine, venditaLitro, confezione } from "./calcolo.js";
+import Specifiche from "./Specifiche.jsx";
 
 const { useState, useMemo, useRef, useEffect } = React;
 
@@ -205,6 +206,7 @@ function Riga({ x, indici, colonne, conCosti, puoGestire, cercato, onSegnala, ap
         <span className="mod-lub-marchio-nome">{marchio?.nome}{marchio?.casa ? " · nostro marchio" : ""}</span>
         <span className="mod-lub-piccolo">{x.olio.nome}</span>
         {verifica && <span className="mod-lub-bollo giallo">da verificare</span>}
+        <Specifiche olio={x.olio} />
       </th>
       {colonne.map((g) => {
         const fs = perGruppo.get(g.chiave) ?? [];
